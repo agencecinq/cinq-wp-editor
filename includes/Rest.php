@@ -270,6 +270,17 @@ final class Rest {
 			return $zone;
 		}
 
+		$holder = Lock::holder( $post );
+
+		// Someone took the page over: their changes are the ones to publish.
+		if ( null !== $holder ) {
+			return new WP_Error(
+				'cinq_wp_editor_locked',
+				sprintf( '%s modifie ce contenu : rien n’a été publié. Vos modifications restent dans votre brouillon.', $holder->display_name ),
+				array( 'status' => 409 )
+			);
+		}
+
 		$mapped = Model::map( $zone, $post, self::blocks( $request ) );
 
 		if ( ! empty( $mapped['errors'] ) ) {

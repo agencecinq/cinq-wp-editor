@@ -78,7 +78,22 @@ final class Admin {
 			array( self::class, 'render' )
 		);
 
-		add_action( 'load-' . self::$hook, array( self::class, 'title' ) );
+		add_action( 'load-' . self::$hook, array( self::class, 'load' ) );
+	}
+
+	/**
+	 * Prepares the screen: takes the lock over when asked, then names it.
+	 *
+	 * @return void
+	 */
+	public static function load(): void {
+		$post = self::current_post();
+
+		if ( $post instanceof WP_Post ) {
+			Lock::take_over( $post );
+		}
+
+		self::title();
 	}
 
 	/**
@@ -89,7 +104,7 @@ final class Admin {
 	 *
 	 * @return void
 	 */
-	public static function title(): void {
+	private static function title(): void {
 		global $title;
 
 		$post  = self::current_post();
@@ -137,7 +152,7 @@ final class Admin {
 		wp_enqueue_script(
 			'cinq-wp-editor',
 			CINQ_WP_EDITOR_URL . 'assets/editor.js',
-			array( 'wp-element', 'wp-components', 'wp-data', 'wp-notices', 'wp-date', 'wp-keyboard-shortcuts', 'wp-commands', 'wp-api-fetch', 'wp-url', 'media-editor' ),
+			array( 'wp-element', 'wp-components', 'wp-data', 'wp-notices', 'wp-date', 'wp-keyboard-shortcuts', 'wp-commands', 'wp-api-fetch', 'wp-url', 'media-editor', 'heartbeat' ),
 			Plugin::asset_version( 'assets/editor.js' ),
 			true
 		);
@@ -149,6 +164,7 @@ final class Admin {
 					'namespace' => Rest::NAMESPACE,
 					'toolbars'  => self::toolbars(),
 					'dashicons' => self::dashicons(),
+					'lock'      => Lock::open( $post ),
 				)
 			) . ';',
 			'before'

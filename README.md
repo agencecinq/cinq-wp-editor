@@ -67,7 +67,8 @@ TinyMCE through the classic editor API, the admin color scheme, `Modal` for conf
 | Editing | After 300 ms without typing, a single `PUT …/draft` call validates the blocks with ACF, writes them with ACF onto a hidden `cinq_wp_editor_draft` post (one per page and per user) and returns the HTML of the changed or added blocks only, rendered alone rather than with the whole page. |
 | Preview | The iframe shows the real page with `?cinq-wp-editor={id}`. When the page's template does not render its blocks, the editor says so and points to the classic edit screen. The `acf/pre_load_value` filter serves the draft's rows in place of the page's: ACF formats them as usual, and the theme renders them without knowing. A copy of `blocks/blocks.html.twig` placed in front of the theme's wraps each block in a `data-cinq-block` marker. |
 | Update | The returned block replaces the old one in the preview. Moving or deleting a block happens directly in the preview, without waiting for the server; an added block shows « Chargement du bloc… » until it is rendered. If a block cannot be rendered alone, the preview reloads the whole page. |
-| Publishing | `POST …/publish` validates everything, refuses as a whole if one field is invalid (never half a page), writes with ACF, then deletes the draft. |
+| Lock | Opening the editor sets WordPress's post lock (`_edit_lock`), renewed by the edit screen's heartbeat (`wp-refresh-post-lock`) every ten seconds and given back on leaving (`wp-remove-post-lock`). The classic edit screen, the block editor and this one see each other's lock. |
+| Publishing | `POST …/publish` refuses while someone else holds the lock, validates everything, refuses as a whole if one field is invalid (never half a page), writes with ACF, then deletes the draft. |
 
 The interface uses `wp.element` and `wp.components`, already provided by WordPress: no build
 step, the files in `assets/` are served as they are.
@@ -157,7 +158,8 @@ http://127.0.0.1:9400/wp-admin/admin.php?page=cinq-wp-editor&post=4.
 - A theme JS component missing at load time (a block of a type never seen on the page) may not
   initialise before the preview is reloaded.
 - No step-by-step undo: **Abandonner** goes back to the published version.
-- Two people on the same page each have their own draft: the last one to publish wins.
+- Two people on the same page: WordPress's post lock keeps it to one at a time, as on the classic
+  edit screen. The one who takes over does not see the other's draft, which stays theirs.
 - The preview hides the theme's cookie banner (`cinq-consent`): to be generalised to other themes.
 - Drag and drop in the list could not be tested automatically (the arrows, which make the same
   move, were).

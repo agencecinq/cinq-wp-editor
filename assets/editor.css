@@ -733,3 +733,25 @@ html.wp-toolbar:has(.cinq-wp-editor-screen) {
 	grid-template-columns: 1fr 1fr;
 	gap: 8px;
 }
+
+/* Post lock: who holds the page, next to their avatar. */
+
+.cinq-lock {
+	max-width: 480px;
+}
+
+.cinq-lock__body {
+	display: flex;
+	gap: 16px;
+	align-items: flex-start;
+	margin-bottom: 24px;
+}
+
+.cinq-lock__body p {
+	margin: 0 0 8px;
+}
+
+.cinq-lock__avatar {
+	flex: none;
+	border-radius: 50%;
+}

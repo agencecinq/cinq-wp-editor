@@ -548,6 +548,43 @@
 	}
 
 	/**
+	 * The post is locked by someone else, as the block editor says it: who
+	 * holds it, and the way back or the way in. Nothing behind can be used.
+	 */
+	function LockedModal({ lock, post }) {
+		const takeOver = !lock.takenOver && lock.canTakeOver;
+
+		return h(
+			Modal,
+			{
+				title: lock.takenOver ? "Quelqu’un d’autre a pris le contrôle" : "Ce contenu est déjà en cours de modification",
+				className: "cinq-lock",
+				isDismissible: false,
+				shouldCloseOnEsc: false,
+				shouldCloseOnClickOutside: false,
+				onRequestClose: () => {},
+			},
+			h(
+				"div",
+				{ className: "cinq-lock__body" },
+				lock.avatar && h("img", { className: "cinq-lock__avatar", src: lock.avatar, alt: "", width: 64, height: 64 }),
+				h(
+					"div",
+					null,
+					h("p", null, lock.text),
+					lock.takenOver && h("p", null, "Vos modifications non publiées restent dans votre brouillon : vous les retrouverez en rouvrant la page.")
+				)
+			),
+			h(
+				"div",
+				{ className: "cinq-confirm__actions" },
+				h(Button, { variant: takeOver ? "secondary" : "primary", href: post.listUrl }, "Revenir à la liste"),
+				takeOver && h(Button, { variant: "primary", href: lock.takeOverUrl }, "Prendre le contrôle")
+			)
+		);
+	}
+
+	/**
 	 * The « Options » menu of a block or a row, as the block editor's list
 	 * view has one: an action missing from the props is left out, one passed
 	 * as null is shown disabled.
@@ -1384,6 +1421,9 @@
 		const timer = useRef(0);
 		const inFlight = useRef(false);
 		const publishAfterSave = useRef(false);
+		// WordPress's post lock: held while the page is open here, or someone else's.
+		const lockValue = useRef(config.lock.value);
+		const [locked, setLocked] = useState(config.lock.holder ? { ...config.lock.holder, takenOver: false } : null);
 		const again = useRef(false);
 		const pending = useRef(false);
 		const dirty = useRef(new Set());
@@ -1679,7 +1719,7 @@
 		 * it could see the draft written again once published.
 		 */
 		function requestPublish() {
-			if (!changed || status === "publishing") {
+			if (!changed || status === "publishing" || locked) {
 				return;
 			}
 
@@ -1764,6 +1804,66 @@
 			}
 		}
 
+		/* Post lock */
+
+		/**
+		 * Keeps the lock with the edit screen's own heartbeat: every ten
+		 * seconds the lock is renewed, or WordPress says who took it over. On
+		 * leaving, the lock is given back as the edit screen gives it back.
+		 */
+		useEffect(() => {
+			const $ = window.jQuery;
+
+			if (!$ || !wp.heartbeat) {
+				return;
+			}
+
+			wp.heartbeat.interval(10);
+
+			const send = (event, data) => {
+				if (lockValue.current) {
+					data["wp-refresh-post-lock"] = { post_id: config.postId, lock: lockValue.current };
+				}
+			};
+
+			const tick = (event, data) => {
+				const received = data["wp-refresh-post-lock"];
+
+				if (!received) {
+					return;
+				}
+
+				if (received.lock_error) {
+					lockValue.current = "";
+					setLocked({ text: received.lock_error.text, avatar: received.lock_error.avatar_src_2x || received.lock_error.avatar_src || "", takenOver: true });
+				} else if (received.new_lock) {
+					lockValue.current = received.new_lock;
+				}
+			};
+
+			const release = () => {
+				if (!lockValue.current) {
+					return;
+				}
+
+				const body = new FormData();
+
+				body.append("action", "wp-remove-post-lock");
+				body.append("_wpnonce", config.lock.nonce);
+				body.append("post_ID", String(config.postId));
+				body.append("active_post_lock", lockValue.current);
+				navigator.sendBeacon(config.lock.ajaxUrl, body);
+			};
+
+			$(document).on("heartbeat-send.cinq-wp-editor", send).on("heartbeat-tick.cinq-wp-editor", tick);
+			window.addEventListener("pagehide", release);
+
+			return () => {
+				$(document).off(".cinq-wp-editor");
+				window.removeEventListener("pagehide", release);
+			};
+		}, []);
+
 		/* Shortcuts and commands */
 
 		useEffect(() => {
@@ -1795,7 +1895,7 @@
 		};
 
 		useCommand({ name: "cinq-wp-editor/add-block", label: "Ajouter un bloc", icon: "plus", callback: run(() => setPicker(true)), disabled: !state });
-		useCommand({ name: "cinq-wp-editor/publish", label: live ? "Publier les modifications" : "Enregistrer la page", icon: "upload", callback: run(requestPublish), disabled: !changed });
+		useCommand({ name: "cinq-wp-editor/publish", label: live ? "Publier les modifications" : "Enregistrer la page", icon: "upload", callback: run(requestPublish), disabled: !changed || Boolean(locked) });
 		useCommand({ name: "cinq-wp-editor/discard", label: "Abandonner le brouillon", icon: "undo", callback: run(discard), disabled: !changed });
 		useCommand({ name: "cinq-wp-editor/blocks", label: blocksOpen ? "Masquer la liste des blocs" : "Afficher la liste des blocs", icon: "list-view", callback: run(() => setBlocksOpen((open) => !open)) });
 		useCommand({ name: "cinq-wp-editor/inspector", label: inspectorOpen ? "Masquer les réglages" : "Afficher les réglages", icon: "admin-generic", callback: run(() => setInspectorOpen((open) => !open)) });
@@ -1867,7 +1967,7 @@
 					changed && h(Button, { variant: "tertiary", isDestructive: true, onClick: discard, disabled: status === "publishing" }, "Abandonner"),
 					h(
 						Button,
-						{ variant: "primary", onClick: requestPublish, disabled: !changed || status === "publishing", isBusy: status === "publishing" },
+						{ variant: "primary", onClick: requestPublish, disabled: !changed || status === "publishing" || Boolean(locked), isBusy: status === "publishing" },
 						isPublished ? "Publier" : "Enregistrer"
 					),
 					h(Button, { icon: "admin-generic", label: "Réglages", isPressed: inspectorOpen, "aria-controls": "cinq-wp-editor-inspector", onClick: () => setInspectorOpen((open) => !open) })
@@ -1900,6 +2000,7 @@
 				errors,
 				onChange: (block) => updateBlock(items[selectedIndex].uid, block),
 			}),
+			locked && h(LockedModal, { lock: locked, post: state.post }),
 			picker && h(BlockPicker, { layouts: state.layouts, onPick: addBlock, onClose: () => setPicker(false) }),
 			confirm &&
 				h(Confirm, {
