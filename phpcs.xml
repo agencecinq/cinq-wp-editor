@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<ruleset name="CINQ-MCP-Standards">
+    <description>Règles de l'agence pour WordPress, appliquées au plugin MCP.</description>
+
+    <file>.</file>
+
+    <rule ref="WordPress" />
+
+    <rule ref="WordPress.WP.I18n">
+        <properties>
+            <property name="text_domain" type="array">
+                <element value="cinq-editor" />
+            </property>
+        </properties>
+    </rule>
+
+    <exclude-pattern>*/node_modules/*</exclude-pattern>
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+    <exclude-pattern>*/tests/*</exclude-pattern>
+
+    <rule ref="WordPress.Files.FileName">
+        <properties>
+            <property name="strict_class_file_names" value="false" />
+        </properties>
+        <exclude name="WordPress.Files.FileName.InvalidClassFileName" />
+        <exclude name="WordPress.Files.FileName.NotHyphenatedLowercase" />
+    </rule>
+</ruleset>

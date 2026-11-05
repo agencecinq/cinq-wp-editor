@@ -1,0 +1,621 @@
+/* CINQ Éditeur: the editor takes the whole window, admin chrome hidden. */
+
+.cinq-editor-screen #adminmenumain,
+.cinq-editor-screen #wpadminbar,
+.cinq-editor-screen #wpfooter,
+.cinq-editor-screen #screen-meta-links,
+.cinq-editor-screen #wpbody-content > .notice,
+.cinq-editor-screen #wpbody-content > .update-nag {
+	display: none;
+}
+
+html.wp-toolbar:has(.cinq-editor-screen) {
+	padding-top: 0;
+}
+
+.cinq-editor-screen #wpcontent,
+.cinq-editor-screen #wpbody-content {
+	margin: 0;
+	padding: 0;
+}
+
+.cinq-editor {
+	--cinq-border: #dcdcde;
+	--cinq-muted: #646970;
+	--cinq-accent: #2271b1;
+	--cinq-danger: #d63638;
+
+	position: fixed;
+	inset: 0;
+	z-index: 1000;
+	display: grid;
+	grid-template-columns: 300px minmax(0, 1fr) 360px;
+	grid-template-rows: 56px auto minmax(0, 1fr);
+	grid-template-areas:
+		"top top top"
+		"notice notice notice"
+		"blocks stage inspector";
+	background: #f0f0f1;
+	color: #1e1e1e;
+}
+
+.cinq-editor__loading,
+.cinq-editor__fatal {
+	grid-area: stage;
+	display: grid;
+	place-items: center;
+	padding: 24px;
+}
+
+/* Top bar */
+
+.cinq-topbar {
+	grid-area: top;
+	display: grid;
+	grid-template-columns: 1fr auto 1fr;
+	align-items: center;
+	gap: 16px;
+	padding: 0 12px;
+	background: #fff;
+	border-bottom: 1px solid var(--cinq-border);
+}
+
+.cinq-topbar__start,
+.cinq-topbar__end {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+}
+
+.cinq-topbar__end {
+	justify-content: flex-end;
+}
+
+.cinq-topbar__title {
+	display: block;
+	overflow: hidden;
+	font-size: 14px;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+.cinq-topbar__type {
+	font-size: 12px;
+	color: var(--cinq-muted);
+}
+
+.cinq-topbar__devices {
+	display: flex;
+	gap: 4px;
+}
+
+.cinq-status {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	margin-right: 8px;
+	font-size: 12px;
+	color: var(--cinq-muted);
+}
+
+.cinq-status .components-spinner {
+	margin: 0;
+}
+
+.cinq-status.is-error {
+	color: var(--cinq-danger);
+}
+
+.cinq-notice {
+	grid-area: notice;
+}
+
+.cinq-notice .components-notice {
+	margin: 0;
+}
+
+/* Panels */
+
+.cinq-panel {
+	overflow-y: auto;
+	background: #fff;
+}
+
+.cinq-panel__title {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+	padding: 16px;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.cinq-count {
+	display: inline-block;
+	min-width: 18px;
+	margin-left: 6px;
+	padding: 0 6px;
+	font-size: 11px;
+	font-weight: 500;
+	line-height: 18px;
+	text-align: center;
+	color: var(--cinq-muted);
+	background: #f0f0f1;
+	border-radius: 9px;
+}
+
+.cinq-help {
+	margin: 4px 0 0;
+	font-size: 12px;
+	line-height: 1.5;
+	color: var(--cinq-muted);
+}
+
+.cinq-guidance {
+	margin: 8px 0 0;
+	padding: 8px 10px;
+	font-size: 12px;
+	line-height: 1.5;
+	background: #fcf9e8;
+	border-left: 3px solid #dba617;
+}
+
+.cinq-error {
+	margin: 4px 0 0;
+	font-size: 12px;
+	color: var(--cinq-danger);
+}
+
+.cinq-dot {
+	display: inline-block;
+	width: 8px;
+	height: 8px;
+	margin-left: 8px;
+	vertical-align: middle;
+	background: var(--cinq-danger);
+	border-radius: 50%;
+}
+
+/* Block list */
+
+.cinq-blocks {
+	grid-area: blocks;
+	display: flex;
+	flex-direction: column;
+	border-right: 1px solid var(--cinq-border);
+}
+
+.cinq-blocks__list {
+	flex: 1;
+	margin: 0;
+	padding: 0 8px;
+	list-style: none;
+}
+
+.cinq-blocks__item {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	margin: 0 0 2px;
+	padding: 2px 4px 2px 0;
+	border-radius: 4px;
+}
+
+.cinq-blocks__item:hover,
+.cinq-blocks__item.is-hovered {
+	background: #f6f7f7;
+}
+
+.cinq-blocks__item.is-selected {
+	background: #e9f0f8;
+	box-shadow: inset 2px 0 0 var(--cinq-accent);
+}
+
+.cinq-blocks__item.is-dragging {
+	opacity: 0.4;
+}
+
+.cinq-blocks__item.is-over-before {
+	box-shadow: inset 0 2px 0 var(--cinq-accent);
+}
+
+.cinq-blocks__item.is-over-after {
+	box-shadow: inset 0 -2px 0 var(--cinq-accent);
+}
+
+.cinq-blocks__item.has-error .cinq-blocks__label::after {
+	content: "";
+	display: inline-block;
+	width: 7px;
+	height: 7px;
+	margin-left: 6px;
+	vertical-align: middle;
+	background: var(--cinq-danger);
+	border-radius: 50%;
+}
+
+.cinq-blocks__grip {
+	width: 14px;
+	font-size: 11px;
+	letter-spacing: -2px;
+	text-align: center;
+	color: #a7aaad;
+	cursor: grab;
+}
+
+.cinq-blocks__select {
+	flex: 1;
+	min-width: 0;
+	padding: 6px 4px;
+	text-align: left;
+	background: none;
+	border: 0;
+	cursor: pointer;
+}
+
+.cinq-blocks__select:focus-visible {
+	outline: 2px solid var(--cinq-accent);
+	outline-offset: -2px;
+}
+
+.cinq-blocks__label {
+	display: block;
+	font-size: 13px;
+	font-weight: 500;
+}
+
+.cinq-blocks__summary {
+	display: block;
+	overflow: hidden;
+	font-size: 12px;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+	color: var(--cinq-muted);
+}
+
+.cinq-blocks__actions {
+	display: none;
+}
+
+.cinq-blocks__item:hover .cinq-blocks__actions,
+.cinq-blocks__item:focus-within .cinq-blocks__actions,
+.cinq-blocks__item.is-selected .cinq-blocks__actions {
+	display: flex;
+}
+
+.cinq-blocks__actions .components-button {
+	min-width: 24px;
+	padding: 0;
+}
+
+.cinq-blocks__add {
+	position: sticky;
+	bottom: 0;
+	padding: 12px 16px;
+	background: #fff;
+	border-top: 1px solid var(--cinq-border);
+}
+
+.cinq-blocks__add .components-button {
+	justify-content: center;
+	width: 100%;
+}
+
+/* Stage */
+
+.cinq-stage {
+	grid-area: stage;
+	display: flex;
+	justify-content: center;
+	padding: 16px;
+	overflow: hidden;
+}
+
+.cinq-stage__frame {
+	width: 100%;
+	height: 100%;
+	background: #fff;
+	border: 0;
+	box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+	transition: width 0.2s ease;
+}
+
+.cinq-stage.is-mobile .cinq-stage__frame {
+	width: 390px;
+}
+
+/* Inspector */
+
+.cinq-inspector {
+	grid-area: inspector;
+	border-left: 1px solid var(--cinq-border);
+}
+
+.cinq-inspector.is-empty {
+	padding: 24px 16px;
+	font-size: 13px;
+	color: var(--cinq-muted);
+}
+
+.cinq-inspector__head {
+	padding: 0 16px 16px;
+	border-bottom: 1px solid var(--cinq-border);
+}
+
+.cinq-inspector__head .cinq-panel__title {
+	padding: 16px 0 0;
+	font-size: 15px;
+}
+
+.cinq-inspector .components-notice {
+	margin: 12px 16px 0;
+}
+
+.cinq-field + .cinq-field,
+.cinq-group + .cinq-field,
+.cinq-field + .cinq-group {
+	margin-top: 16px;
+}
+
+.cinq-label,
+.cinq-group > legend,
+.cinq-repeater > legend,
+.cinq-link > legend,
+.cinq-choices > legend {
+	display: block;
+	margin-bottom: 8px;
+	padding: 0;
+	font-size: 11px;
+	font-weight: 500;
+	text-transform: uppercase;
+}
+
+.cinq-field.has-error input,
+.cinq-field.has-error textarea,
+.cinq-field.has-error select {
+	border-color: var(--cinq-danger);
+}
+
+.cinq-group,
+.cinq-link,
+.cinq-choices,
+.cinq-repeater {
+	min-width: 0;
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+.cinq-group {
+	padding: 12px;
+	background: #f6f7f7;
+	border-radius: 4px;
+}
+
+.cinq-link > * + * {
+	margin-top: 8px;
+}
+
+.cinq-unsupported {
+	padding: 10px 12px;
+	font-size: 12px;
+	background: #f6f7f7;
+	border-left: 3px solid #a7aaad;
+}
+
+.cinq-unsupported p {
+	margin: 4px 0 0;
+}
+
+/* Media */
+
+.cinq-thumb {
+	display: block;
+	max-width: 100%;
+	max-height: 160px;
+	margin-bottom: 8px;
+	object-fit: contain;
+	background: #f0f0f1;
+}
+
+.cinq-thumb.is-loading,
+.cinq-thumb.is-file {
+	padding: 12px;
+	font-size: 12px;
+	color: var(--cinq-muted);
+}
+
+.cinq-media__actions {
+	display: flex;
+	gap: 8px;
+}
+
+.cinq-gallery {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 6px;
+	margin-bottom: 8px;
+}
+
+.cinq-gallery__item {
+	position: relative;
+}
+
+.cinq-gallery__item .cinq-thumb {
+	width: 100%;
+	height: 72px;
+	margin: 0;
+	object-fit: cover;
+}
+
+.cinq-gallery__item .components-button {
+	position: absolute;
+	top: 2px;
+	right: 2px;
+	background: #fff;
+}
+
+/* Posts */
+
+.cinq-posts__selected,
+.cinq-posts__results {
+	margin: 0 0 8px;
+	padding: 0;
+	list-style: none;
+}
+
+.cinq-posts__selected li {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 4px 4px 4px 8px;
+	font-size: 13px;
+	background: #f6f7f7;
+	border-radius: 4px;
+}
+
+.cinq-posts__selected li + li {
+	margin-top: 4px;
+}
+
+.cinq-posts__results {
+	margin-top: 4px;
+	border: 1px solid var(--cinq-border);
+	border-radius: 4px;
+}
+
+.cinq-posts__results li {
+	padding: 4px 8px;
+}
+
+/* Repeater */
+
+.cinq-repeater__rows {
+	margin: 0 0 8px;
+	padding: 0;
+	list-style: none;
+	border: 1px solid var(--cinq-border);
+	border-radius: 4px;
+}
+
+.cinq-repeater__rows:empty {
+	display: none;
+}
+
+.cinq-repeater__row + .cinq-repeater__row {
+	border-top: 1px solid var(--cinq-border);
+}
+
+.cinq-repeater__row.has-error {
+	box-shadow: inset 3px 0 0 var(--cinq-danger);
+}
+
+.cinq-repeater__head {
+	display: flex;
+	align-items: center;
+	padding-right: 4px;
+}
+
+.cinq-repeater__toggle {
+	display: flex;
+	flex: 1;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+	padding: 8px;
+	text-align: left;
+	background: none;
+	border: 0;
+	cursor: pointer;
+}
+
+.cinq-repeater__index {
+	font: 500 11px/1 ui-monospace, SFMono-Regular, Menlo, monospace;
+	color: var(--cinq-muted);
+}
+
+.cinq-repeater__summary {
+	overflow: hidden;
+	font-size: 13px;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+.cinq-repeater__head .components-button {
+	min-width: 24px;
+	padding: 0;
+}
+
+.cinq-repeater__body {
+	padding: 4px 12px 12px;
+}
+
+/* Block picker */
+
+.cinq-picker__list {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	gap: 8px;
+	margin: 16px 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.cinq-picker__item {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	width: 100%;
+	height: 100%;
+	padding: 12px;
+	text-align: left;
+	background: #fff;
+	border: 1px solid var(--cinq-border);
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.cinq-picker__item:hover,
+.cinq-picker__item:focus-visible {
+	border-color: var(--cinq-accent);
+	outline: 0;
+	box-shadow: 0 0 0 1px var(--cinq-accent);
+}
+
+.cinq-picker__item strong {
+	font-size: 13px;
+}
+
+.cinq-picker__item span {
+	font-size: 12px;
+	line-height: 1.5;
+	color: var(--cinq-muted);
+}
+
+/* Narrower screens: the inspector slides over the stage. */
+
+@media (max-width: 1180px) {
+	.cinq-editor {
+		grid-template-columns: 260px minmax(0, 1fr);
+		grid-template-areas:
+			"top top"
+			"notice notice"
+			"blocks stage";
+	}
+
+	.cinq-inspector {
+		position: fixed;
+		top: 56px;
+		right: 0;
+		bottom: 0;
+		width: 340px;
+		box-shadow: -4px 0 16px rgb(0 0 0 / 0.08);
+	}
+
+	.cinq-inspector.is-empty {
+		display: none;
+	}
+}

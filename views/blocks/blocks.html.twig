@@ -1,0 +1,34 @@
+{#
+ # Blocks, as the editor's preview renders them
+ #
+ # The theme's own `blocks/blocks.html.twig`, with two additions the editor
+ # relies on: the container is always there, even on a page with no block yet,
+ # and each block sits in a `data-cinq-block` marker carrying its index.
+ # `display: contents` keeps the markers out of the layout.
+ #
+ # @package CinqEditor
+ #}
+
+<div class="{{ html_classes( classes | default( [] ) | join( ' ' ) ) | trim }}" data-cinq-blocks>
+	{%- block prepend -%}{%- endblock -%}
+
+	{%- block body -%}
+		{%- for block in blocks | default( [] ) -%}
+			<div data-cinq-block="{{ loop.index0 }}" style="display: contents">
+				{{-
+					include(
+						"blocks/#{ block.acf_fc_layout | lower | replace( { '_': '-' } ) }.html.twig",
+						{
+							block: block,
+							loop: loop.index0,
+							classes: [ 'block-index-' ~ loop.index0 ],
+						},
+						ignore_missing: true
+					)
+				-}}
+			</div>
+		{%- endfor -%}
+	{%- endblock -%}
+
+	{%- block append -%}{%- endblock -%}
+</div>
