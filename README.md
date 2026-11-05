@@ -1,11 +1,11 @@
-# CINQ WP Editor (V0, prototype)
+# CINQ WP Editor
 
 A WordPress plugin that edits the ACF blocks of a page **on one screen**: the list of blocks on
 the left, the real page in the middle, the settings of the selected block on the right. Change a
 title and the page updates before your eyes.
 
-> Status: prototype, open for discussion. It runs end to end on the agencecinq theme in a test
-> WordPress, and on a local copy of Eigrene, but has never been installed on a live site.
+> Status: 0.2.0, in production on [agencecinq.com](https://www.agencecinq.com) since November 2026.
+> It runs end to end on the Agence CINQ and Eigrene themes.
 
 ## Built for CINQ's way of making WordPress sites
 
