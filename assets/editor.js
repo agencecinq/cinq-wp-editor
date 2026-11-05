@@ -17,16 +17,29 @@
 		BaseControl,
 		Button,
 		CheckboxControl,
+		ColorIndicator,
+		ColorPicker,
+		DatePicker,
+		DateTimePicker,
+		Dropdown,
+		DropdownMenu,
+		MenuGroup,
+		MenuItem,
 		Modal,
 		Notice,
+		NoticeList,
 		PanelBody,
 		SearchControl,
 		SelectControl,
+		SnackbarList,
 		Spinner,
 		TextControl,
 		TextareaControl,
+		TimePicker,
 		ToggleControl,
 	} = wp.components;
+	const { useSelect, useDispatch } = wp.data;
+	const { gmdateI18n, getSettings: getDateSettings } = wp.date;
 	const apiFetch = wp.apiFetch;
 	// The classic editor's API: `wp.editor` until the block editor takes the name.
 	const classicEditor = wp.oldEditor || wp.editor;
@@ -35,6 +48,9 @@
 	const SAVE_DELAY = 300;
 	const ORIGIN = window.location.origin;
 	const API = `/${config.namespace}/posts/${config.postId}`;
+
+	// The editor's notices, apart from any other screen's, in WordPress's own store.
+	const NOTICES = "cinq-wp-editor";
 
 	let uidSeed = 0;
 	const uid = () => `block-${++uidSeed}`;
@@ -229,14 +245,17 @@
 			case "repeater":
 				return h(RepeaterField, { field, value, onChange, path, errors });
 
+			case "date_picker":
+			case "date_time_picker":
+			case "time_picker":
+				control = h(DateField, { field, label, help, value, onChange });
+				break;
+
 			case "text":
 			case "email":
 			case "url":
 			case "password":
 			case "oembed":
-			case "date_picker":
-			case "date_time_picker":
-			case "time_picker":
 				control = h(TextControl, {
 					...common,
 					type: field.type === "email" ? "email" : field.type === "url" ? "url" : "text",
@@ -260,7 +279,7 @@
 				break;
 
 			case "color_picker":
-				control = h(TextControl, { ...common, type: "color", value: value || "#000000", onChange });
+				control = h(ColorField, { field, label, help, value, onChange });
 				break;
 
 			case "textarea":
@@ -353,6 +372,174 @@
 			{ className: `cinq-field cinq-field--${field.type}${own.length ? " has-error" : ""}` },
 			control,
 			own.map((message, index) => h("p", { key: index, className: "cinq-error" }, message))
+		);
+	}
+
+	/**
+	 * Dates as ACF stores them: `Ymd` for a date, `Y-m-d H:i:s` for a date and
+	 * time, `H:i:s` for a time. WordPress's pickers read and write ISO strings.
+	 */
+	const DATE_KINDS = {
+		date_picker: {
+			picker: DatePicker,
+			toIso: (value) => (/^\d{8}$/.test(value) ? `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}T00:00:00` : null),
+			fromIso: (iso) => iso.slice(0, 10).replaceAll("-", ""),
+			format: (formats) => formats.date,
+		},
+		date_time_picker: {
+			picker: DateTimePicker,
+			toIso: (value) => (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(value) ? value.replace(" ", "T") : null),
+			fromIso: (iso) => iso.slice(0, 19).replace("T", " "),
+			format: (formats) => `${formats.date} ${formats.time}`,
+		},
+		time_picker: {
+			picker: TimePicker,
+			toIso: (value) => (/^\d{2}:\d{2}(:\d{2})?$/.test(value) ? `1970-01-01T${value}` : null),
+			fromIso: (iso) => iso.slice(11, 19),
+			format: (formats) => formats.time,
+		},
+	};
+
+	/**
+	 * A date, time or both, as the block editor sets a post's date: a button
+	 * showing the value in the field's display format, opening the picker.
+	 */
+	function DateField({ field, label, help, value, onChange }) {
+		const kind = DATE_KINDS[field.type];
+		const settings = getDateSettings();
+		const iso = kind.toIso(String(value ?? ""));
+		// The block editor's own test for a 12-hour site format.
+		const is12Hour = /a(?!\\)/i.test(settings.formats.time.toLowerCase().replace(/\\\\/g, "").split("").reverse().join(""));
+		// Wall-clock values: formatted as UTC so no time zone shifts them.
+		const shown = iso ? gmdateI18n(field.display_format || kind.format(settings.formats), `${iso}Z`) : "";
+		const pickerProps =
+			field.type === "time_picker"
+				? { currentTime: iso, is12Hour }
+				: { currentDate: iso, is12Hour, startOfWeek: field.first_day === undefined ? settings.l10n.startOfWeek : Number(field.first_day) };
+
+		return h(
+			"div",
+			{ className: "components-base-control cinq-date" },
+			h(BaseControl.VisualLabel, null, label),
+			h(Dropdown, {
+				popoverProps: { placement: "left-start" },
+				renderToggle: ({ isOpen, onToggle }) =>
+					h(Button, { variant: "secondary", onClick: onToggle, "aria-expanded": isOpen, "aria-label": `${field.label} : ${shown || "aucune valeur"}` }, shown || "Choisir…"),
+				renderContent: ({ onClose }) =>
+					h(
+						"div",
+						{ className: "cinq-date__picker" },
+						h(kind.picker, { ...pickerProps, onChange: (next) => onChange(kind.fromIso(next)) }),
+						!Number(field.required) &&
+							value &&
+							h(
+								Button,
+								{
+									variant: "tertiary",
+									isDestructive: true,
+									onClick: () => {
+										onChange("");
+										onClose();
+									},
+								},
+								"Effacer"
+							)
+					),
+			}),
+			help && h("p", { className: "components-base-control__help" }, help)
+		);
+	}
+
+	/**
+	 * `#rrggbbaa` from WordPress's picker, as ACF stores a colour with
+	 * opacity: `rgba(r,g,b,a)`.
+	 */
+	const toRgba = (hex) => {
+		const [red, green, blue, alpha] = [1, 3, 5, 7].map((start) => parseInt(hex.slice(start, start + 2), 16));
+
+		return `rgba(${red},${green},${blue},${Number((alpha / 255).toFixed(2))})`;
+	};
+
+	/**
+	 * A colour, as the block editor picks one: a swatch and its value,
+	 * opening WordPress's colour picker.
+	 */
+	function ColorField({ field, label, help, value, onChange }) {
+		const alpha = Boolean(Number(field.enable_opacity));
+		const color = typeof value === "string" ? value : "";
+
+		return h(
+			"div",
+			{ className: "components-base-control cinq-color" },
+			h(BaseControl.VisualLabel, null, label),
+			h(Dropdown, {
+				popoverProps: { placement: "left-start" },
+				renderToggle: ({ isOpen, onToggle }) =>
+					h(
+						Button,
+						{ variant: "secondary", className: "cinq-color__toggle", onClick: onToggle, "aria-expanded": isOpen, "aria-label": `${field.label} : ${color || "aucune couleur"}` },
+						h(ColorIndicator, { colorValue: color || "transparent" }),
+						color || "Choisir…"
+					),
+				renderContent: ({ onClose }) =>
+					h(
+						"div",
+						{ className: "cinq-color__picker" },
+						h(ColorPicker, {
+							color: color || undefined,
+							enableAlpha: alpha,
+							onChange: (next) => onChange(alpha && next.length === 9 ? toRgba(next) : next),
+						}),
+						!Number(field.required) &&
+							color &&
+							h(
+								Button,
+								{
+									variant: "tertiary",
+									isDestructive: true,
+									onClick: () => {
+										onChange("");
+										onClose();
+									},
+								},
+								"Effacer"
+							)
+					),
+			}),
+			help && h("p", { className: "components-base-control__help" }, help)
+		);
+	}
+
+	/**
+	 * The « Options » menu of a block or a row, as the block editor's list
+	 * view has one: an action missing from the props is left out, one passed
+	 * as null is shown disabled.
+	 */
+	function RowMenu({ label, onDuplicate, onUp, onDown, onRemove }) {
+		const item = (text, action, extra = {}) =>
+			action === undefined
+				? null
+				: h(MenuItem, { ...extra, disabled: action === null, onClick: action ? () => action() : undefined }, text);
+
+		return h(
+			DropdownMenu,
+			{ icon: "ellipsis", label: `Options : ${label}`, toggleProps: { size: "small" }, popoverProps: { placement: "bottom-end" } },
+			({ onClose }) => {
+				const then = (action) =>
+					action
+						? () => {
+								onClose();
+								action();
+							}
+						: action;
+
+				return h(
+					Fragment,
+					null,
+					h(MenuGroup, null, item("Dupliquer", then(onDuplicate)), item("Monter", then(onUp)), item("Descendre", then(onDown))),
+					h(MenuGroup, null, item("Supprimer", then(onRemove), { isDestructive: true }))
+				);
+			}
 		);
 	}
 
@@ -714,6 +901,12 @@
 			onChange([...rows, defaultsFor(field.sub_fields)]);
 			setOpen(rows.length);
 		};
+		const duplicate = (index) => {
+			const next = rows.slice();
+			next.splice(index + 1, 0, copy(rows[index]));
+			onChange(next);
+			setOpen(index + 1);
+		};
 
 		return h(
 			"fieldset",
@@ -739,9 +932,13 @@
 								h("span", { className: "cinq-repeater__index" }, String(index + 1).padStart(2, "0")),
 								h("span", { className: "cinq-repeater__summary" }, summaryOf(row) || "Élément vide")
 							),
-							h(Button, { icon: "arrow-up-alt2", size: "small", label: "Monter", disabled: index === 0, onClick: () => move(index, -1) }),
-							h(Button, { icon: "arrow-down-alt2", size: "small", label: "Descendre", disabled: index === rows.length - 1, onClick: () => move(index, 1) }),
-							h(Button, { icon: "trash", size: "small", label: "Supprimer", isDestructive: true, disabled: rows.length <= min, onClick: () => remove(index) })
+							h(RowMenu, {
+								label: `élément ${index + 1}`,
+								onDuplicate: max > 0 && rows.length >= max ? null : () => duplicate(index),
+								onUp: index === 0 ? null : () => move(index, -1),
+								onDown: index === rows.length - 1 ? null : () => move(index, 1),
+								onRemove: rows.length <= min ? null : () => remove(index),
+							})
 						),
 						open === index && h("div", { className: "cinq-repeater__body" }, h(Fields, { fields: field.sub_fields, value: row, onChange: (next) => update(index, next), path: rowPath, errors }))
 					);
@@ -818,10 +1015,13 @@
 						h(
 							"span",
 							{ className: "cinq-blocks__actions" },
-							h(Button, { icon: "arrow-up-alt2", size: "small", label: "Monter", disabled: index === 0, onClick: () => onMove(index, index - 1) }),
-							h(Button, { icon: "arrow-down-alt2", size: "small", label: "Descendre", disabled: index === items.length - 1, onClick: () => onMove(index, index + 1) }),
-							h(Button, { icon: "admin-page", size: "small", label: "Dupliquer", onClick: () => onDuplicate(index) }),
-							h(Button, { icon: "trash", size: "small", label: "Supprimer", isDestructive: true, onClick: () => onRemove(index) })
+							h(RowMenu, {
+								label: layout ? layout.label : item.block.acf_fc_layout,
+								onDuplicate: () => onDuplicate(index),
+								onUp: index === 0 ? null : () => onMove(index, index - 1),
+								onDown: index === items.length - 1 ? null : () => onMove(index, index + 1),
+								onRemove: () => onRemove(index),
+							})
 						)
 					);
 				})
@@ -951,9 +1151,13 @@
 		const [changed, setChanged] = useState(false);
 		const [picker, setPicker] = useState(false);
 		const [device, setDevice] = useState("desktop");
-		const [notice, setNotice] = useState(null);
-		// The template of the page renders no block zone: changes would show nowhere.
-		const [unrendered, setUnrendered] = useState(false);
+		// Notices as the block editor shows them: a banner for what needs
+		// attention, a snackbar for what went well. A fixed id per kind makes a
+		// new notice replace the previous one instead of piling up.
+		const notices = useSelect((select) => select("core/notices").getNotices(NOTICES), []);
+		const { createNotice, removeNotice } = useDispatch("core/notices");
+		const say = (status, content, options) => createNotice(status, content, { context: NOTICES, ...options });
+		const forget = (id) => removeNotice(id, NOTICES);
 
 		const frame = useRef(null);
 		const itemsRef = useRef(items);
@@ -1004,7 +1208,7 @@
 					setChanged(Boolean(data.draft));
 
 					if (data.draft) {
-						setNotice({ status: "info", text: "Vous reprenez votre brouillon : il n’est pas encore publié." });
+						say("info", "Vous reprenez votre brouillon : il n’est pas encore publié.", { id: "draft" });
 					}
 				})
 				.catch((error) => setLoadError(error.message || "Impossible d’ouvrir ce contenu."));
@@ -1021,7 +1225,16 @@
 				}
 
 				if (data.type === "ready") {
-					setUnrendered(data.blocks === false);
+					// The template of the page renders no block zone: changes would show nowhere.
+					if (data.blocks === false) {
+						say("warning", "Le gabarit de cette page n’affiche pas ses blocs : vos modifications ne s’y verront pas.", {
+							id: "unrendered",
+							isDismissible: false,
+							actions: [{ label: "Modifier dans l’éditeur classique", url: state.post.editUrl }],
+						});
+					} else {
+						forget("unrendered");
+					}
 
 					// The preview has no admin color scheme: lend it the editor's.
 					toFrame({ type: "theme", rgb: getComputedStyle(document.body).getPropertyValue("--wp-admin-theme-color--rgb").trim() });
@@ -1114,9 +1327,10 @@
 
 				setErrors(response.errors || []);
 				setStatus("saved");
+				forget("save");
 			} catch (error) {
 				setStatus("error");
-				setNotice({ status: "error", text: error.message || "Le brouillon n’a pas pu être enregistré." });
+				say("error", error.message || "Le brouillon n’a pas pu être enregistré.", { id: "save" });
 			}
 
 			inFlight.current = false;
@@ -1230,7 +1444,7 @@
 		async function publish() {
 			clearTimeout(timer.current);
 			setStatus("publishing");
-			setNotice(null);
+			forget("publish");
 
 			try {
 				const response = await apiFetch({ path: `${API}/publish`, method: "POST", data: { blocks: itemsRef.current.map((item) => item.block) } });
@@ -1241,11 +1455,26 @@
 				setChanged(false);
 				setStatus("idle");
 				setState((current) => ({ ...current, published: response.blocks, draft: null }));
-				setNotice({ status: "success", text: state.post.status === "publish" ? "Publié : la page en ligne est à jour." : "Enregistré." });
+				const live = state.post.status === "publish";
+
+				forget("draft");
+				say("success", live ? "Page publiée : la page en ligne est à jour." : "Page enregistrée.", {
+					id: "publish",
+					type: "snackbar",
+					actions: live ? [{ label: "Voir la page", url: state.post.viewUrl }] : [],
+				});
 			} catch (error) {
+				const invalid = (error.data && error.data.errors) || [];
+				const first = invalid.length ? /^blocks\[(\d+)\]/.exec(invalid[0].path) : null;
+				const item = first ? itemsRef.current[Number(first[1])] : null;
+				const count = invalid.length ? ` (${invalid.length} champ${invalid.length > 1 ? "s" : ""} à corriger)` : "";
+
 				setStatus("error");
-				setErrors((error.data && error.data.errors) || []);
-				setNotice({ status: "error", text: error.message || "La publication a échoué." });
+				setErrors(invalid);
+				say("error", (error.message || "La publication a échoué.") + count, {
+					id: "publish",
+					actions: item ? [{ label: "Voir le premier", onClick: () => selectFromList(item.uid) }] : [],
+				});
 			}
 		}
 
@@ -1270,10 +1499,11 @@
 				setErrors([]);
 				setChanged(false);
 				setStatus("idle");
-				setNotice(null);
+				["draft", "save", "publish"].forEach(forget);
+				say("info", "Brouillon abandonné : la page est revenue à sa version publiée.", { id: "discard", type: "snackbar" });
 				frame.current.contentWindow.location.reload();
 			} catch (error) {
-				setNotice({ status: "error", text: error.message || "Le brouillon n’a pas pu être abandonné." });
+				say("error", error.message || "Le brouillon n’a pas pu être abandonné.", { id: "discard" });
 			}
 		}
 
@@ -1328,19 +1558,8 @@
 					)
 				)
 			),
-			(notice || unrendered) &&
-				h(
-					"div",
-					{ className: "cinq-notice" },
-					unrendered &&
-						h(
-							Notice,
-							{ status: "warning", isDismissible: false, actions: [{ label: "Modifier dans l’éditeur classique", url: state.post.editUrl }] },
-							"Le gabarit de cette page n’affiche pas ses blocs : vos modifications ne s’y verront pas."
-						),
-					notice &&
-						h(Notice, { status: notice.status, onRemove: () => setNotice(null) }, notice.text, errors.length && notice.status === "error" ? ` (${errors.length} champ${errors.length > 1 ? "s" : ""} à corriger)` : "")
-				),
+			h("div", { className: "cinq-notice" }, h(NoticeList, { notices: notices.filter((item) => item.type !== "snackbar"), onRemove: forget })),
+			h("div", { className: "cinq-snackbars" }, h(SnackbarList, { notices: notices.filter((item) => item.type === "snackbar"), onRemove: forget })),
 			h(BlockList, {
 				items,
 				layouts,

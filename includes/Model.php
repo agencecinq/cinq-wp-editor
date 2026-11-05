@@ -56,6 +56,9 @@ final class Model {
 		'toolbar',
 		'tabs',
 		'media_upload',
+		'display_format',
+		'first_day',
+		'enable_opacity',
 	);
 
 	/**

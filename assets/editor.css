@@ -282,7 +282,8 @@ html.wp-toolbar:has(.cinq-wp-editor-screen) {
 
 .cinq-blocks__item:hover .cinq-blocks__actions,
 .cinq-blocks__item:focus-within .cinq-blocks__actions,
-.cinq-blocks__item.is-selected .cinq-blocks__actions {
+.cinq-blocks__item.is-selected .cinq-blocks__actions,
+.cinq-blocks__actions:has([aria-expanded="true"]) {
 	display: flex;
 }
 
@@ -641,4 +642,34 @@ html.wp-toolbar:has(.cinq-wp-editor-screen) {
 	display: flex;
 	justify-content: flex-end;
 	gap: 8px;
+}
+
+/* Snackbars: bottom left, over the list of blocks, as in the block editor. */
+
+.cinq-snackbars {
+	position: fixed;
+	bottom: 16px;
+	left: 16px;
+	z-index: 100000;
+	width: min(480px, calc(100vw - 32px));
+}
+
+/* Date and colour fields: a button opening WordPress's picker. */
+
+.cinq-date .components-button,
+.cinq-color .components-button {
+	display: flex;
+	gap: 8px;
+}
+
+.cinq-date__picker,
+.cinq-color__picker {
+	display: grid;
+	gap: 8px;
+	padding: 8px;
+}
+
+.cinq-date__picker > .components-button,
+.cinq-color__picker > .components-button {
+	justify-self: start;
 }
