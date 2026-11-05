@@ -71,7 +71,7 @@ Run `composer install`, then `composer lint` (phpcs) or `composer lint:fix` (php
 * Fields are validated by ACF, with the rules and the messages of the edit screen. A block the theme no longer has, or no longer offers on the post, is reported on the block.
 * Backslashes typed in a field are kept. HTML is filtered as ACF filters it for users without `unfiltered_html`.
 * The editor stays off, and says why in the admin, when ACF Pro, Timber or `views/blocks/block.html.twig` is missing.
-* Breaking: the preview markers are the theme's. The editor no longer carries a copy of the theme's `blocks/blocks.html.twig`: the theme renders each block through `views/blocks/block.html.twig`, which puts the block in its marker when the `cinq_wp_editor` Twig global is set, and marks the container of its stack. Migration: add `views/blocks/block.html.twig` to the theme and include it from `views/blocks/blocks.html.twig`, as Eigrene and Agence CINQ do.
+* Breaking: the preview markers are the theme's. The editor no longer carries a copy of the theme's `blocks/blocks.html.twig`: the theme renders each block through `views/blocks/block.html.twig`, which puts the block in its marker when the `cinq_wp_editor` Twig global is set, and marks the container of its stack. Migration: add `views/blocks/block.html.twig` to the theme and include it from `views/blocks/blocks.html.twig`, as Agence CINQ does.
 * When the template of a page does not render its blocks, the editor says so above the preview, with a link to the classic edit screen.
 * Rich text fields use TinyMCE, with ACF's toolbars, tabs and media button, instead of a field of raw HTML.
 * The editor and the preview follow the admin color scheme.
