@@ -2,12 +2,12 @@
 /**
  * Admin screen and entry points.
  *
- * @package CinqEditor
+ * @package CinqWpEditor
  */
 
 declare( strict_types = 1 );
 
-namespace CinqEditor;
+namespace CinqWpEditor;
 
 use WP_Admin_Bar;
 use WP_Post;
@@ -23,7 +23,7 @@ final class Admin {
 	/**
 	 * Slug of the editor screen.
 	 */
-	public const PAGE = 'cinq-editor';
+	public const PAGE = 'cinq-wp-editor';
 
 	/**
 	 * Hook suffix of the editor screen.
@@ -111,7 +111,7 @@ final class Admin {
 			return;
 		}
 
-		echo '<div id="cinq-editor" class="cinq-editor"></div>';
+		echo '<div id="cinq-wp-editor" class="cinq-wp-editor"></div>';
 	}
 
 	/**
@@ -133,17 +133,17 @@ final class Admin {
 
 		wp_enqueue_media();
 		wp_enqueue_editor();
-		wp_enqueue_style( 'cinq-editor', CINQ_EDITOR_URL . 'assets/editor.css', array( 'wp-components' ), Plugin::asset_version( 'assets/editor.css' ) );
+		wp_enqueue_style( 'cinq-wp-editor', CINQ_WP_EDITOR_URL . 'assets/editor.css', array( 'wp-components' ), Plugin::asset_version( 'assets/editor.css' ) );
 		wp_enqueue_script(
-			'cinq-editor',
-			CINQ_EDITOR_URL . 'assets/editor.js',
+			'cinq-wp-editor',
+			CINQ_WP_EDITOR_URL . 'assets/editor.js',
 			array( 'wp-element', 'wp-components', 'wp-api-fetch', 'wp-url', 'media-editor' ),
 			Plugin::asset_version( 'assets/editor.js' ),
 			true
 		);
 		wp_add_inline_script(
-			'cinq-editor',
-			'window.cinqEditor = ' . wp_json_encode(
+			'cinq-wp-editor',
+			'window.cinqWpEditor = ' . wp_json_encode(
 				array(
 					'postId'    => $post->ID,
 					'namespace' => Rest::NAMESPACE,
@@ -192,7 +192,7 @@ final class Admin {
 		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
 
 		if ( null !== $screen && '' !== self::$hook && $screen->id === self::$hook ) {
-			$classes .= ' cinq-editor-screen';
+			$classes .= ' cinq-wp-editor-screen';
 		}
 
 		return $classes;
@@ -210,10 +210,10 @@ final class Admin {
 			return $actions;
 		}
 
-		$actions['cinq_editor'] = sprintf(
+		$actions['cinq_wp_editor'] = sprintf(
 			'<a href="%s">%s</a>',
 			esc_url( self::url( $post->ID ) ),
-			esc_html__( 'Éditeur visuel', 'cinq-editor' )
+			esc_html__( 'Éditeur visuel', 'cinq-wp-editor' )
 		);
 
 		return $actions;
@@ -233,7 +233,7 @@ final class Admin {
 		printf(
 			'<div class="misc-pub-section"><a class="button" href="%s">%s</a></div>',
 			esc_url( self::url( $post->ID ) ),
-			esc_html__( 'Ouvrir l’éditeur visuel', 'cinq-editor' )
+			esc_html__( 'Ouvrir l’éditeur visuel', 'cinq-wp-editor' )
 		);
 	}
 
@@ -256,8 +256,8 @@ final class Admin {
 
 		$bar->add_node(
 			array(
-				'id'    => 'cinq-editor',
-				'title' => esc_html__( 'Éditer en visuel', 'cinq-editor' ),
+				'id'    => 'cinq-wp-editor',
+				'title' => esc_html__( 'Éditer en visuel', 'cinq-wp-editor' ),
 				'href'  => self::url( $post->ID ),
 			)
 		);

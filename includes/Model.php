@@ -2,12 +2,12 @@
 /**
  * What the editor knows about a post.
  *
- * @package CinqEditor
+ * @package CinqWpEditor
  */
 
 declare( strict_types = 1 );
 
-namespace CinqEditor;
+namespace CinqWpEditor;
 
 use WP_Error;
 use WP_Post;
@@ -69,7 +69,7 @@ final class Model {
 
 		if ( null === $zone ) {
 			return new WP_Error(
-				'cinq_editor_no_zone',
+				'cinq_wp_editor_no_zone',
 				sprintf( 'Le contenu « %s » n’a pas de zone de blocs.', get_the_title( $post ) ),
 				array( 'status' => 400 )
 			);

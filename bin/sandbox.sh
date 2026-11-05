@@ -35,7 +35,7 @@ cat > "$BOX/blueprint.json" <<'JSON'
 	"steps": [
 		{ "step": "installPlugin", "pluginData": { "resource": "wordpress.org/plugins", "slug": "secure-custom-fields" } },
 		{ "step": "activateTheme", "themeFolderName": "agencecinq" },
-		{ "step": "activatePlugin", "pluginPath": "cinq-editor/cinq-editor.php" },
+		{ "step": "activatePlugin", "pluginPath": "cinq-wp-editor/cinq-wp-editor.php" },
 		{ "step": "setSiteOptions", "options": { "permalink_structure": "/%postname%/", "blogname": "CINQ (bac à sable)" } },
 		{ "step": "wp-cli", "command": "wp post create --post_type=page --post_title='Test éditeur visuel' --post_status=publish --page_template=page-templates/blocks-page.php" }
 	]
@@ -49,5 +49,5 @@ npx -y @wp-playground/cli@latest server \
 	--php=8.4 \
 	--blueprint="$BOX/blueprint.json" \
 	--mount="$BOX/agencecinq:/wordpress/wp-content/themes/agencecinq" \
-	--mount="$HERE:/wordpress/wp-content/plugins/cinq-editor" \
+	--mount="$HERE:/wordpress/wp-content/plugins/cinq-wp-editor" \
 	--mount="$HERE/bin/mu-plugins:/wordpress/wp-content/mu-plugins"

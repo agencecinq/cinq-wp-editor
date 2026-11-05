@@ -2,12 +2,12 @@
 /**
  * Blocks between the editor and ACF.
  *
- * @package CinqEditor
+ * @package CinqWpEditor
  */
 
 declare( strict_types = 1 );
 
-namespace CinqEditor;
+namespace CinqWpEditor;
 
 defined( 'ABSPATH' ) || exit;
 

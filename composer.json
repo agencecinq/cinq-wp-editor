@@ -1,0 +1,25 @@
+{
+	"name": "agencecinq/cinq-wp-editor",
+	"description": "Edits the ACF blocks of a page with a live preview, as Shopify's theme editor does.",
+	"type": "wordpress-plugin",
+	"license": "MIT",
+	"require": {
+		"php": ">=8.4"
+	},
+	"require-dev": {
+		"phpcompatibility/php-compatibility": "^10.0@alpha",
+		"phpcompatibility/phpcompatibility-paragonie": "^2.0@alpha",
+		"phpcompatibility/phpcompatibility-wp": "^3.0@alpha",
+		"wp-coding-standards/wpcs": "^3.0"
+	},
+	"config": {
+		"allow-plugins": {
+			"dealerdirect/phpcodesniffer-composer-installer": true
+		},
+		"sort-packages": true
+	},
+	"scripts": {
+		"lint": "phpcs",
+		"lint:fix": "phpcbf"
+	}
+}

@@ -2,12 +2,12 @@
 /**
  * Plugin bootstrap.
  *
- * @package CinqEditor
+ * @package CinqWpEditor
  */
 
 declare( strict_types = 1 );
 
-namespace CinqEditor;
+namespace CinqWpEditor;
 
 use Timber\Timber;
 
@@ -61,7 +61,7 @@ final class Plugin {
 	 * @return string
 	 */
 	public static function asset_version( string $path ): string {
-		$mtime = filemtime( CINQ_EDITOR_PATH . $path );
+		$mtime = filemtime( CINQ_WP_EDITOR_PATH . $path );
 
 		return VERSION . ( false === $mtime ? '' : '.' . $mtime );
 	}

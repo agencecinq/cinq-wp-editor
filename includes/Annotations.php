@@ -2,12 +2,12 @@
 /**
  * Block annotations of the theme.
  *
- * @package CinqEditor
+ * @package CinqWpEditor
  */
 
 declare( strict_types = 1 );
 
-namespace CinqEditor;
+namespace CinqWpEditor;
 
 defined( 'ABSPATH' ) || exit;
 

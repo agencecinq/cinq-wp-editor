@@ -986,7 +986,7 @@
 			const target = frame.current && frame.current.contentWindow;
 
 			if (target) {
-				target.postMessage({ source: "cinq-editor", labels: labelsRef.current, ...message }, ORIGIN);
+				target.postMessage({ source: "cinq-wp-editor", labels: labelsRef.current, ...message }, ORIGIN);
 			}
 		};
 
@@ -1014,7 +1014,7 @@
 			const listen = (event) => {
 				const data = event.data;
 
-				if (event.origin !== ORIGIN || !data || data.source !== "cinq-editor-preview") {
+				if (event.origin !== ORIGIN || !data || data.source !== "cinq-wp-editor-preview") {
 					return;
 				}
 
@@ -1276,11 +1276,11 @@
 		/* Render */
 
 		if (loadError) {
-			return h("div", { className: "cinq-editor__fatal" }, h(Notice, { status: "error", isDismissible: false }, loadError));
+			return h("div", { className: "cinq-wp-editor__fatal" }, h(Notice, { status: "error", isDismissible: false }, loadError));
 		}
 
 		if (!state) {
-			return h("div", { className: "cinq-editor__loading" }, h(Spinner));
+			return h("div", { className: "cinq-wp-editor__loading" }, h(Spinner));
 		}
 
 		const statusText = {
@@ -1368,9 +1368,9 @@
 		);
 	}
 
-	const root = document.getElementById("cinq-editor");
+	const root = document.getElementById("cinq-wp-editor");
 
 	if (root) {
 		createRoot(root).render(h(App));
 	}
-})(window.wp, window.cinqEditor);
+})(window.wp, window.cinqWpEditor);

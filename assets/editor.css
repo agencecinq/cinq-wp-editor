@@ -1,25 +1,25 @@
 /* CINQ Éditeur: the editor takes the whole window, admin chrome hidden. */
 
-.cinq-editor-screen #adminmenumain,
-.cinq-editor-screen #wpadminbar,
-.cinq-editor-screen #wpfooter,
-.cinq-editor-screen #screen-meta-links,
-.cinq-editor-screen #wpbody-content > .notice,
-.cinq-editor-screen #wpbody-content > .update-nag {
+.cinq-wp-editor-screen #adminmenumain,
+.cinq-wp-editor-screen #wpadminbar,
+.cinq-wp-editor-screen #wpfooter,
+.cinq-wp-editor-screen #screen-meta-links,
+.cinq-wp-editor-screen #wpbody-content > .notice,
+.cinq-wp-editor-screen #wpbody-content > .update-nag {
 	display: none;
 }
 
-html.wp-toolbar:has(.cinq-editor-screen) {
+html.wp-toolbar:has(.cinq-wp-editor-screen) {
 	padding-top: 0;
 }
 
-.cinq-editor-screen #wpcontent,
-.cinq-editor-screen #wpbody-content {
+.cinq-wp-editor-screen #wpcontent,
+.cinq-wp-editor-screen #wpbody-content {
 	margin: 0;
 	padding: 0;
 }
 
-.cinq-editor {
+.cinq-wp-editor {
 	--cinq-border: #dcdcde;
 	--cinq-muted: #646970;
 	--cinq-accent: var(--wp-admin-theme-color);
@@ -39,8 +39,8 @@ html.wp-toolbar:has(.cinq-editor-screen) {
 	color: #1e1e1e;
 }
 
-.cinq-editor__loading,
-.cinq-editor__fatal {
+.cinq-wp-editor__loading,
+.cinq-wp-editor__fatal {
 	grid-area: stage;
 	display: grid;
 	place-items: center;
@@ -598,7 +598,7 @@ html.wp-toolbar:has(.cinq-editor-screen) {
 /* Narrower screens: the inspector slides over the stage. */
 
 @media (max-width: 1180px) {
-	.cinq-editor {
+	.cinq-wp-editor {
 		grid-template-columns: 260px minmax(0, 1fr);
 		grid-template-areas:
 			"top top"

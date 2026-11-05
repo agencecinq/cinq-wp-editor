@@ -2,12 +2,12 @@
 /**
  * Single-block rendering.
  *
- * @package CinqEditor
+ * @package CinqWpEditor
  */
 
 declare( strict_types = 1 );
 
-namespace CinqEditor;
+namespace CinqWpEditor;
 
 use Timber\Timber;
 use WP_Post;
@@ -78,7 +78,7 @@ final class Renderer {
 				}
 
 				$rendered = Timber::compile(
-					'cinq-editor/block.html.twig',
+					'cinq-wp-editor/block.html.twig',
 					array_merge(
 						$context,
 						array(

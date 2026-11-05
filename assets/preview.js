@@ -13,7 +13,7 @@
 	}
 
 	const ORIGIN = window.location.origin;
-	const SOURCE = "cinq-editor-preview";
+	const SOURCE = "cinq-wp-editor-preview";
 
 	let labels = [];
 	let selected = null;
@@ -30,9 +30,9 @@
 		const box = document.createElement("div");
 		const label = document.createElement("span");
 
-		box.className = `cinq-editor-box ${modifier}`;
+		box.className = `cinq-wp-editor-box ${modifier}`;
 		box.hidden = true;
-		label.className = "cinq-editor-box__label";
+		label.className = "cinq-wp-editor-box__label";
 		box.appendChild(label);
 		document.body.appendChild(box);
 
@@ -123,12 +123,12 @@
 			return;
 		}
 
-		root.querySelectorAll(":scope > .cinq-editor-empty").forEach((node) => node.remove());
+		root.querySelectorAll(":scope > .cinq-wp-editor-empty").forEach((node) => node.remove());
 
 		const wrappers = root.querySelectorAll("[data-cinq-block]");
 
 		wrappers.forEach((wrapper) => {
-			wrapper.querySelectorAll(":scope > .cinq-editor-empty").forEach((node) => node.remove());
+			wrapper.querySelectorAll(":scope > .cinq-wp-editor-empty").forEach((node) => node.remove());
 
 			if (rectOf(wrapper)) {
 				return;
@@ -137,7 +137,7 @@
 			const index = Number(wrapper.dataset.cinqBlock);
 			const placeholder = document.createElement("div");
 
-			placeholder.className = "cinq-editor-empty";
+			placeholder.className = "cinq-wp-editor-empty";
 			placeholder.textContent = `${labels[index] || "Bloc"} : ce bloc n’affiche rien ici. Un champ requis est peut-être vide, ou son contenu vient d’ailleurs (Yoast, Central, GitHub…).`;
 			wrapper.appendChild(placeholder);
 		});
@@ -145,7 +145,7 @@
 		if (!wrappers.length) {
 			const placeholder = document.createElement("div");
 
-			placeholder.className = "cinq-editor-empty is-page";
+			placeholder.className = "cinq-wp-editor-empty is-page";
 			placeholder.textContent = "Cette page n’a pas encore de bloc. Ajoutez-en un depuis le panneau de gauche.";
 			root.appendChild(placeholder);
 		}
@@ -199,7 +199,7 @@
 				wrapper = document.createElement("div");
 				wrapper.style.display = "contents";
 				wrapper.dataset.cinqUid = uid;
-				wrapper.innerHTML = '<div class="cinq-editor-loading">Chargement du bloc…</div>';
+				wrapper.innerHTML = '<div class="cinq-wp-editor-loading">Chargement du bloc…</div>';
 			}
 
 			wrapper.dataset.cinqBlock = String(position);
@@ -269,7 +269,7 @@
 	window.addEventListener("message", (event) => {
 		const data = event.data;
 
-		if (event.origin !== ORIGIN || !data || data.source !== "cinq-editor") {
+		if (event.origin !== ORIGIN || !data || data.source !== "cinq-wp-editor") {
 			return;
 		}
 
@@ -299,7 +299,7 @@
 
 			case "theme":
 				if (data.rgb) {
-					document.documentElement.style.setProperty("--cinq-editor-accent", data.rgb);
+					document.documentElement.style.setProperty("--cinq-wp-editor-accent", data.rgb);
 				}
 				break;
 

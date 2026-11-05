@@ -7,13 +7,13 @@
 add_action(
 	'wp_loaded',
 	static function (): void {
-		if ( get_option( 'cinq_sandbox_seeded' ) || ! class_exists( '\CinqEditor\Zone' ) ) {
+		if ( get_option( 'cinq_sandbox_seeded' ) || ! class_exists( '\CinqWpEditor\Zone' ) ) {
 			return;
 		}
 
 		// The blueprint creates the page after WordPress first loads: wait for it.
 		$page = get_page_by_path( 'test-editeur-visuel' );
-		$zone = $page ? \CinqEditor\Zone::for_post( $page ) : null;
+		$zone = $page ? \CinqWpEditor\Zone::for_post( $page ) : null;
 
 		if ( ! $page || ! $zone ) {
 			return;
@@ -59,7 +59,7 @@ add_action(
 		set_theme_mod( 'nav_menu_locations', $locations );
 
 		$blocks = json_decode( (string) file_get_contents( __DIR__ . '/seed.json' ), true );
-		$mapped = \CinqEditor\Model::map( $zone, $page, $blocks );
+		$mapped = \CinqWpEditor\Model::map( $zone, $page, $blocks );
 
 		$zone->write( $page->ID, $mapped['rows'] );
 

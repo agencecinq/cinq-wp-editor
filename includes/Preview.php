@@ -2,12 +2,12 @@
 /**
  * Live preview.
  *
- * @package CinqEditor
+ * @package CinqWpEditor
  */
 
 declare( strict_types = 1 );
 
-namespace CinqEditor;
+namespace CinqWpEditor;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -28,7 +28,7 @@ final class Preview {
 	/**
 	 * Query argument carrying the ID of the post being previewed.
 	 */
-	public const QUERY_ARG = 'cinq-editor';
+	public const QUERY_ARG = 'cinq-wp-editor';
 
 	/**
 	 * Theme template every block goes through, and the editor's copy replaces.
@@ -165,7 +165,7 @@ final class Preview {
 	 * @return array<int|string, mixed>
 	 */
 	public static function locations( array $locations ): array {
-		$views = CINQ_EDITOR_PATH . 'views/';
+		$views = CINQ_WP_EDITOR_PATH . 'views/';
 
 		if ( isset( $locations['__main__'] ) && is_array( $locations['__main__'] ) ) {
 			array_unshift( $locations['__main__'], $views );
@@ -183,7 +183,7 @@ final class Preview {
 	 * @return void
 	 */
 	public static function enqueue(): void {
-		wp_enqueue_style( 'cinq-editor-preview', CINQ_EDITOR_URL . 'assets/preview.css', array(), Plugin::asset_version( 'assets/preview.css' ) );
-		wp_enqueue_script( 'cinq-editor-preview', CINQ_EDITOR_URL . 'assets/preview.js', array(), Plugin::asset_version( 'assets/preview.js' ), true );
+		wp_enqueue_style( 'cinq-wp-editor-preview', CINQ_WP_EDITOR_URL . 'assets/preview.css', array(), Plugin::asset_version( 'assets/preview.css' ) );
+		wp_enqueue_script( 'cinq-wp-editor-preview', CINQ_WP_EDITOR_URL . 'assets/preview.js', array(), Plugin::asset_version( 'assets/preview.js' ), true );
 	}
 }

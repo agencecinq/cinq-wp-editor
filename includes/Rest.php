@@ -2,12 +2,12 @@
 /**
  * REST routes of the editor.
  *
- * @package CinqEditor
+ * @package CinqWpEditor
  */
 
 declare( strict_types = 1 );
 
-namespace CinqEditor;
+namespace CinqWpEditor;
 
 use WP_Error;
 use WP_Post;
@@ -25,7 +25,7 @@ final class Rest {
 	/**
 	 * Route namespace.
 	 */
-	public const NAMESPACE = 'cinq-editor/v1';
+	public const NAMESPACE = 'cinq-wp-editor/v1';
 
 	/**
 	 * Registers the routes.
@@ -191,7 +191,7 @@ final class Rest {
 		$draft_id = Drafts::save( $zone, $post, get_current_user_id(), $blocks, $mapped['rows'] );
 
 		if ( 0 === $draft_id ) {
-			return new WP_Error( 'cinq_editor_draft_failed', 'Le brouillon n’a pas pu être enregistré.', array( 'status' => 500 ) );
+			return new WP_Error( 'cinq_wp_editor_draft_failed', 'Le brouillon n’a pas pu être enregistré.', array( 'status' => 500 ) );
 		}
 
 		$render = array_values( array_unique( array_map( 'intval', (array) $request->get_param( 'render' ) ) ) );
@@ -249,7 +249,7 @@ final class Rest {
 
 		if ( ! empty( $mapped['errors'] ) ) {
 			return new WP_Error(
-				'cinq_editor_invalid',
+				'cinq_wp_editor_invalid',
 				'Certains champs ne sont pas valides : rien n’a été publié.',
 				array(
 					'status' => 422,
@@ -284,7 +284,7 @@ final class Rest {
 		$post = get_post( (int) $request['id'] );
 
 		if ( ! $post instanceof WP_Post || Drafts::POST_TYPE === $post->post_type ) {
-			return new WP_Error( 'cinq_editor_not_found', 'Contenu introuvable.', array( 'status' => 404 ) );
+			return new WP_Error( 'cinq_wp_editor_not_found', 'Contenu introuvable.', array( 'status' => 404 ) );
 		}
 
 		return $post;

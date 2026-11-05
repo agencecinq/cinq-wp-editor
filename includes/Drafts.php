@@ -2,12 +2,12 @@
 /**
  * Draft storage.
  *
- * @package CinqEditor
+ * @package CinqWpEditor
  */
 
 declare( strict_types = 1 );
 
-namespace CinqEditor;
+namespace CinqWpEditor;
 
 use WP_Post;
 
@@ -29,12 +29,12 @@ final class Drafts {
 	/**
 	 * Hidden post type holding the drafts.
 	 */
-	public const POST_TYPE = 'cinq_editor_draft';
+	public const POST_TYPE = 'cinq_wp_editor_draft';
 
 	/**
 	 * Meta key of the editor state.
 	 */
-	private const STATE_META = '_cinq_editor_blocks';
+	private const STATE_META = '_cinq_wp_editor_blocks';
 
 	/**
 	 * Registers the post type.

@@ -2,12 +2,12 @@
 /**
  * Block zone of a post.
  *
- * @package CinqEditor
+ * @package CinqWpEditor
  */
 
 declare( strict_types = 1 );
 
-namespace CinqEditor;
+namespace CinqWpEditor;
 
 use WP_Error;
 use WP_Post;
@@ -134,7 +134,7 @@ final class Zone {
 
 		if ( count( $rows ) !== $stored ) {
 			return new WP_Error(
-				'cinq_editor_write_failed',
+				'cinq_wp_editor_write_failed',
 				sprintf( 'La page contient %d bloc(s) après en avoir enregistré %d : rechargez l’éditeur avant de continuer.', $stored, count( $rows ) ),
 				array( 'status' => 500 )
 			);

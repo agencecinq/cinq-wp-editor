@@ -1,23 +1,23 @@
 /* CINQ Éditeur, inside the preview frame. */
 
-.cinq-editor-box {
+.cinq-wp-editor-box {
 	position: absolute;
 	z-index: 2147483000;
 	box-sizing: border-box;
 	pointer-events: none;
-	border: 2px solid rgb(var(--cinq-editor-accent, 34, 113, 177));
+	border: 2px solid rgb(var(--cinq-wp-editor-accent, 34, 113, 177));
 }
 
-.cinq-editor-box[hidden] {
+.cinq-wp-editor-box[hidden] {
 	display: none;
 }
 
-.cinq-editor-box.is-hover {
+.cinq-wp-editor-box.is-hover {
 	border-style: dashed;
-	border-color: rgba(var(--cinq-editor-accent, 34, 113, 177), 0.6);
+	border-color: rgba(var(--cinq-wp-editor-accent, 34, 113, 177), 0.6);
 }
 
-.cinq-editor-box__label {
+.cinq-wp-editor-box__label {
 	position: absolute;
 	top: -22px;
 	left: -2px;
@@ -25,23 +25,23 @@
 	font: 500 12px/20px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 	white-space: nowrap;
 	color: #fff;
-	background: rgb(var(--cinq-editor-accent, 34, 113, 177));
+	background: rgb(var(--cinq-wp-editor-accent, 34, 113, 177));
 }
 
-.cinq-editor-box.is-hover .cinq-editor-box__label {
-	background: rgba(var(--cinq-editor-accent, 34, 113, 177), 0.8);
+.cinq-wp-editor-box.is-hover .cinq-wp-editor-box__label {
+	background: rgba(var(--cinq-wp-editor-accent, 34, 113, 177), 0.8);
 }
 
-.cinq-editor-box.is-at-top .cinq-editor-box__label {
+.cinq-wp-editor-box.is-at-top .cinq-wp-editor-box__label {
 	top: 0;
 	left: 0;
 }
 
-.cinq-editor-box__label:empty {
+.cinq-wp-editor-box__label:empty {
 	display: none;
 }
 
-.cinq-editor-empty {
+.cinq-wp-editor-empty {
 	margin: 16px;
 	padding: 32px 24px;
 	font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -51,7 +51,7 @@
 	border: 1px dashed #8c8f94;
 }
 
-.cinq-editor-empty.is-page {
+.cinq-wp-editor-empty.is-page {
 	margin: 64px 16px;
 }
 
@@ -60,17 +60,17 @@ cinq-consent {
 	display: none !important;
 }
 
-.cinq-editor-loading {
+.cinq-wp-editor-loading {
 	margin: 16px;
 	padding: 32px 24px;
 	font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 	color: #50575e;
 	text-align: center;
 	background: #f6f7f7;
-	animation: cinq-editor-pulse 1s ease-in-out infinite alternate;
+	animation: cinq-wp-editor-pulse 1s ease-in-out infinite alternate;
 }
 
-@keyframes cinq-editor-pulse {
+@keyframes cinq-wp-editor-pulse {
 	to {
 		opacity: 0.5;
 	}
