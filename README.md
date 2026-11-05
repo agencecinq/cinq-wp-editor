@@ -127,7 +127,8 @@ and attaches it to the release with `update.json`.
 
 ## Development
 
-`pnpm install`, then `pnpm build`, or `pnpm start` to rebuild on every change. A clone without
+`pnpm install`, then `pnpm build`, or `pnpm start` to rebuild on every change. `pnpm lint:js` checks
+the script against WordPress's JavaScript standards, and `pnpm format` formats it. A clone without
 `build/` stays off and says so in the admin. The release workflow builds it for the zip: nothing
 built is committed.
 

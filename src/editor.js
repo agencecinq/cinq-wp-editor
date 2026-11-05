@@ -6,9 +6,9 @@
  * as the user's draft after a short pause, then the preview fetches the page
  * again and swaps the changed block in.
  *
- * Written in JSX and built with @wordpress/scripts, as WordPress's own
- * screens are: the @wordpress packages are WordPress's scripts, loaded by
- * handle; only @wordpress/icons, which WordPress does not ship as a script,
+ * Written in JSX and built with `@wordpress/scripts`, as WordPress's own
+ * screens are: the `@wordpress` packages are WordPress's scripts, loaded by
+ * handle; only `@wordpress/icons`, which WordPress does not ship as a script,
  * is bundled.
  */
 import apiFetch from '@wordpress/api-fetch';
@@ -44,11 +44,14 @@ import {
 	TimePicker,
 	ToggleControl,
 } from '@wordpress/components';
+// The post editor gives LinkControl this search: the editor does the same.
+// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 import { __experimentalFetchLinkSuggestions as fetchLinkSuggestions } from '@wordpress/core-data';
 import { dispatch, useDispatch, useSelect } from '@wordpress/data';
 import { getSettings as getDateSettings, gmdateI18n } from '@wordpress/date';
 import {
 	createRoot,
+	useCallback,
 	useEffect,
 	useMemo,
 	useRef,
@@ -110,6 +113,8 @@ const DEVICES = [
 /**
  * Hands ⌘S / Ctrl+S typed in a frame (TinyMCE, the preview) to the
  * document, where the editor's shortcut listens.
+ *
+ * @param {KeyboardEvent} event Key pressed in the frame.
  */
 const forwardSave = ( event ) => {
 	if (
@@ -119,7 +124,7 @@ const forwardSave = ( event ) => {
 	) {
 		event.preventDefault();
 		document.dispatchEvent(
-			new KeyboardEvent( 'keydown', {
+			new window.KeyboardEvent( 'keydown', {
 				key: 's',
 				metaKey: event.metaKey,
 				ctrlKey: event.ctrlKey,
@@ -133,12 +138,15 @@ let uidSeed = 0;
 const uid = () => `block-${ ++uidSeed }`;
 const copy = ( value ) =>
 	value === undefined ? undefined : JSON.parse( JSON.stringify( value ) );
-const toArray = ( value ) =>
-	Array.isArray( value )
-		? value
-		: value === undefined || value === null || value === ''
-			? []
-			: [ value ];
+const toArray = ( value ) => {
+	if ( Array.isArray( value ) ) {
+		return value;
+	}
+
+	return value === undefined || value === null || value === ''
+		? []
+		: [ value ];
+};
 
 /* ------------------------------------------------------------------ */
 /* Values                                                              */
@@ -183,11 +191,11 @@ function defaultFor( field ) {
 			if ( field.multiple ) {
 				return toArray( fallback );
 			}
-			return Array.isArray( fallback )
-				? fallback[ 0 ]
-				: fallback === '' || fallback === null
-					? undefined
-					: fallback;
+			if ( Array.isArray( fallback ) ) {
+				return fallback[ 0 ];
+			}
+
+			return fallback === '' || fallback === null ? undefined : fallback;
 
 		case 'link':
 			return fallback && typeof fallback === 'object'
@@ -211,6 +219,11 @@ function defaultFor( field ) {
  *
  * A rule pointing at a field that is not a sibling is considered met: the
  * field shows, which is the safe side.
+ *
+ * @param {Object}   field    Field, with its `conditional_logic`.
+ * @param {Object[]} siblings Fields of the same row.
+ * @param {Object}   values   Values of the row, keyed by field name.
+ * @return {boolean} Whether the field shows.
  */
 function isVisible( field, siblings, values ) {
 	const groups = field.conditional_logic;
@@ -238,11 +251,10 @@ function isVisible( field, siblings, values ) {
 				value === false ||
 				value === '0' ||
 				( Array.isArray( value ) && ! value.length );
+			const checked = value === true || Number( value ) === 1;
 			const asString =
 				target.type === 'true_false'
-					? value === true || Number( value ) === 1
-						? '1'
-						: '0'
+					? String( Number( checked ) )
 					: String( value ?? '' );
 			const equals = Array.isArray( value )
 				? value.map( String ).includes( String( rule.value ) )
@@ -270,6 +282,9 @@ function isVisible( field, siblings, values ) {
 
 /**
  * A line of text that tells two blocks of the same type apart in the list.
+ *
+ * @param {unknown} value Block or row values.
+ * @return {string} A few words of its first text.
  */
 function summaryOf( value ) {
 	const found = [];
@@ -423,11 +438,9 @@ function Field( { field, value, onChange, path, errors } ) {
 				<TextControl
 					{ ...common }
 					type={
-						field.type === 'email'
-							? 'email'
-							: field.type === 'url'
-								? 'url'
-								: 'text'
+						[ 'email', 'url' ].includes( field.type )
+							? field.type
+							: 'text'
 					}
 					value={ value ?? '' }
 					placeholder={ field.placeholder || undefined }
@@ -690,6 +703,17 @@ function Field( { field, value, onChange, path, errors } ) {
 }
 
 /**
+ * Props of a field control.
+ *
+ * @typedef {Object} FieldProps
+ * @property {Object}                   field    ACF field, as the editor receives it.
+ * @property {string}                   label    Label, with « * » when the field is required.
+ * @property {string}                   [help]   Instructions of the field.
+ * @property {unknown}                  value    Value, as ACF stores it.
+ * @property {(value: unknown) => void} onChange Called with the new value.
+ */
+
+/**
  * Dates as ACF stores them: `Ymd` for a date, `Y-m-d H:i:s` for a date and
  * time, `H:i:s` for a time. WordPress's pickers read and write ISO strings.
  */
@@ -726,6 +750,8 @@ const DATE_KINDS = {
 /**
  * A date, time or both, as the block editor sets a post's date: a button
  * showing the value in the field's display format, opening the picker.
+ *
+ * @param {FieldProps} props Field props.
  */
 function DateField( { field, label, help, value, onChange } ) {
 	const kind = DATE_KINDS[ field.type ];
@@ -809,6 +835,9 @@ function DateField( { field, label, help, value, onChange } ) {
 /**
  * `#rrggbbaa` from WordPress's picker, as ACF stores a colour with
  * opacity: `rgba(r,g,b,a)`.
+ *
+ * @param {string} hex Colour, `#rrggbbaa`.
+ * @return {string} The same colour, `rgba(r,g,b,a)`.
  */
 const toRgba = ( hex ) => {
 	const [ red, green, blue, alpha ] = [ 1, 3, 5, 7 ].map( ( start ) =>
@@ -821,6 +850,8 @@ const toRgba = ( hex ) => {
 /**
  * A colour, as the block editor picks one: a swatch and its value,
  * opening WordPress's colour picker.
+ *
+ * @param {FieldProps} props Field props.
  */
 function ColorField( { field, label, help, value, onChange } ) {
 	const alpha = Boolean( Number( field.enable_opacity ) );
@@ -883,6 +914,10 @@ function ColorField( { field, label, help, value, onChange } ) {
 /**
  * The post is locked by someone else, as the block editor says it: who
  * holds it, and the way back or the way in. Nothing behind can be used.
+ *
+ * @param {Object} props      Modal props.
+ * @param {Object} props.lock Who holds the lock: `text`, `avatar`, `canTakeOver`, `takeOverUrl`, `takenOver`.
+ * @param {Object} props.post The post: its `listUrl`.
  */
 function LockedModal( { lock, post } ) {
 	const takeOver = ! lock.takenOver && lock.canTakeOver;
@@ -942,6 +977,13 @@ function LockedModal( { lock, post } ) {
  * The « Options » menu of a block or a row, as the block editor's list
  * view has one: an action missing from the props is left out, one passed
  * as null is shown disabled.
+ *
+ * @param {Object}            props               Menu props.
+ * @param {string}            props.label         Name of the block or row.
+ * @param {(() => void)|null} [props.onDuplicate] Duplicates it; null shows it disabled.
+ * @param {(() => void)|null} [props.onUp]        Moves it up; null shows it disabled.
+ * @param {(() => void)|null} [props.onDown]      Moves it down; null shows it disabled.
+ * @param {(() => void)|null} [props.onRemove]    Removes it; null shows it disabled.
  */
 function RowMenu( { label, onDuplicate, onUp, onDown, onRemove } ) {
 	const item = ( text, action, extra = {} ) =>
@@ -1000,6 +1042,8 @@ let editorSeed = 0;
  * with the theme's `acf/fields/wysiwyg/toolbars`), same Visual / Code tabs,
  * same « Ajouter un média » button. The textarea is created outside React,
  * which must not touch the markup TinyMCE builds around it.
+ *
+ * @param {FieldProps} props Field props.
  */
 function WysiwygField( { field, label, help, value, onChange } ) {
 	const id = useMemo( () => `cinq-wysiwyg-${ ++editorSeed }`, [] );
@@ -1061,7 +1105,8 @@ function WysiwygField( { field, label, help, value, onChange } ) {
 			classicEditor.remove( id );
 			node.replaceChildren();
 		};
-	}, [ id ] );
+		// The field's settings stay the same while it is shown.
+	}, [ id, field.media_upload, field.tabs, field.toolbar ] );
 
 	// A value changed from outside, by « Abandonner » for instance.
 	useEffect( () => {
@@ -1082,7 +1127,7 @@ function WysiwygField( { field, label, help, value, onChange } ) {
 		} else {
 			document.getElementById( id ).value = next;
 		}
-	}, [ value ] );
+	}, [ value, id ] );
 
 	return (
 		<BaseControl
@@ -1099,6 +1144,13 @@ function WysiwygField( { field, label, help, value, onChange } ) {
 /**
  * A confirmation, as the block editor asks one: a small modal, the
  * destructive action in red, Escape or « Annuler » to back out.
+ *
+ * @param {Object}     props           Dialog props.
+ * @param {string}     props.title     Question asked.
+ * @param {string}     props.text      What the action does.
+ * @param {string}     props.label     Label of the destructive button.
+ * @param {() => void} props.onConfirm Called on confirming.
+ * @param {() => void} props.onCancel  Called on backing out.
  */
 function Confirm( { title, text, label, onConfirm, onCancel } ) {
 	return (
@@ -1151,6 +1203,8 @@ function ChoiceList( { field, label, help, value, onChange } ) {
  * opened from a button showing the link. Search, direct entry, the link
  * text and « Ouvrir dans un nouvel onglet » are WordPress's own. ACF stores
  * `{ title, url, target }`.
+ *
+ * @param {FieldProps} props Field props.
  */
 function LinkField( { field, label, help, value, onChange } ) {
 	const link = value && typeof value === 'object' && value.url ? value : null;
@@ -1370,6 +1424,21 @@ function GalleryField( { field, label, help, value, onChange } ) {
  * not know yet, `search` finds candidates, `extra` are fixed options shown
  * before any search, such as a page link's archives.
  */
+/**
+ * Returns a ref always holding the latest value, for an effect that must read
+ * it without running again each time it changes.
+ *
+ * @param {unknown} value Value to keep.
+ * @return {{current: unknown}} Ref to the value.
+ */
+function useLatest( value ) {
+	const ref = useRef( value );
+
+	ref.current = value;
+
+	return ref;
+}
+
 function ReferenceField( {
 	label,
 	help,
@@ -1391,17 +1460,23 @@ function ReferenceField( {
 	);
 	const [ query, setQuery ] = useState( '' );
 	const [ results, setResults ] = useState( [] );
+	// The callers pass new functions on each render: searching again for
+	// that would never end.
+	const titlesRef = useLatest( titles );
+	const source = useLatest( { lookup, search, extra } );
+	const key = JSON.stringify( ids );
 
 	useEffect( () => {
-		const missing = ids.filter(
-			( id ) => typeof id === 'number' && ! ( id in titles )
+		const missing = JSON.parse( key ).filter(
+			( id ) => typeof id === 'number' && ! ( id in titlesRef.current )
 		);
 
 		if ( ! missing.length ) {
 			return;
 		}
 
-		lookup( missing )
+		source.current
+			.lookup( missing )
 			.then( ( list ) =>
 				setTitles( ( known ) => ( {
 					...known,
@@ -1411,7 +1486,7 @@ function ReferenceField( {
 				} ) )
 			)
 			.catch( () => {} );
-	}, [ ids.join( ',' ) ] );
+	}, [ key, titlesRef, source ] );
 
 	useEffect( () => {
 		const term = query.trim().toLowerCase();
@@ -1422,22 +1497,27 @@ function ReferenceField( {
 		}
 
 		const timer = setTimeout( () => {
-			const fixed = extra.filter( ( item ) =>
+			const fixed = source.current.extra.filter( ( item ) =>
 				item.title.toLowerCase().includes( term )
 			);
 
-			search( query )
+			source.current
+				.search( query )
 				.then( ( list ) => setResults( [ ...fixed, ...list ] ) )
 				.catch( () => setResults( fixed ) );
 		}, 250 );
 
 		return () => clearTimeout( timer );
-	}, [ query ] );
+	}, [ query, source ] );
 
-	const set = ( next ) =>
-		onChange(
-			multiple ? next : next.length ? next[ next.length - 1 ] : ''
-		);
+	const set = ( next ) => {
+		if ( multiple ) {
+			onChange( next );
+			return;
+		}
+
+		onChange( next.length ? next[ next.length - 1 ] : '' );
+	};
 	const shown = ( query.trim().length < 2 ? extra : results ).filter(
 		( item ) => ! ids.includes( item.id )
 	);
@@ -1504,6 +1584,8 @@ function ReferenceField( {
 /**
  * Contents, through WordPress's search route: post objects, relationships
  * and page links, whose archives come as fixed options.
+ *
+ * @param {FieldProps} props Field props.
  */
 function PostField( { field, label, help, value, onChange } ) {
 	const subtype =
@@ -1551,6 +1633,8 @@ function PostField( { field, label, help, value, onChange } ) {
 /**
  * Users, through the editor's own route: ACF's search, among the roles the
  * field allows.
+ *
+ * @param {FieldProps} props Field props.
  */
 function UserField( { field, label, help, value, onChange } ) {
 	const find = ( args ) =>
@@ -1587,6 +1671,8 @@ function UserField( { field, label, help, value, onChange } ) {
 /**
  * An icon, as ACF's icon picker stores it: `{ type, value }`, a Dashicon
  * class, an attachment ID or a URL. One tab per kind the field allows.
+ *
+ * @param {FieldProps} props Field props.
  */
 function IconField( { field, label, help, value, onChange } ) {
 	const tabs = field.icon_tabs || [];
@@ -1703,6 +1789,8 @@ function IconField( { field, label, help, value, onChange } ) {
  * A place, as ACF's Google Map field stores it: an address and its
  * coordinates. ACF draws a Google map only with an API key; the fields are
  * the same either way, and a link shows the place on Google Maps.
+ *
+ * @param {FieldProps} props Field props.
  */
 function MapField( { field, label, help, value, onChange } ) {
 	const place = value && typeof value === 'object' ? value : {};
@@ -1935,20 +2023,29 @@ function BlockList( {
 					const hasError =
 						errorsUnder( errors, `blocks[${ index }]` ).length > 0;
 					const classes = [ 'cinq-blocks__item' ];
-					if ( item.uid === selected ) classes.push( 'is-selected' );
-					if ( index === hovered ) classes.push( 'is-hovered' );
-					if ( index === dragging ) classes.push( 'is-dragging' );
+					if ( item.uid === selected ) {
+						classes.push( 'is-selected' );
+					}
+					if ( index === hovered ) {
+						classes.push( 'is-hovered' );
+					}
+					if ( index === dragging ) {
+						classes.push( 'is-dragging' );
+					}
 					if (
 						over === index &&
 						dragging !== null &&
 						dragging !== index
-					)
+					) {
 						classes.push(
 							dragging < index
 								? 'is-over-after'
 								: 'is-over-before'
 						);
-					if ( hasError ) classes.push( 'has-error' );
+					}
+					if ( hasError ) {
+						classes.push( 'has-error' );
+					}
 					return (
 						<li
 							key={ item.uid }
@@ -2228,9 +2325,15 @@ function App() {
 		[]
 	);
 	const { createNotice, removeNotice } = useDispatch( noticesStore );
-	const say = ( status, content, options ) =>
-		createNotice( status, content, { context: NOTICES, ...options } );
-	const forget = ( id ) => removeNotice( id, NOTICES );
+	const say = useCallback(
+		( kind, content, options ) =>
+			createNotice( kind, content, { context: NOTICES, ...options } ),
+		[ createNotice ]
+	);
+	const forget = useCallback(
+		( id ) => removeNotice( id, NOTICES ),
+		[ removeNotice ]
+	);
 
 	const frame = useRef( null );
 	const itemsRef = useRef( items );
@@ -2273,7 +2376,7 @@ function App() {
 
 	// Reads the labels from a ref: a save scheduled several renders ago
 	// must still send the current ones.
-	const toFrame = ( message ) => {
+	const toFrame = useCallback( ( message ) => {
 		const target = frame.current && frame.current.contentWindow;
 
 		if ( target ) {
@@ -2286,7 +2389,7 @@ function App() {
 				ORIGIN
 			);
 		}
-	};
+	}, [] );
 
 	/* Load */
 
@@ -2314,7 +2417,7 @@ function App() {
 					error.message || 'Impossible d’ouvrir ce contenu.'
 				)
 			);
-	}, [] );
+	}, [ say ] );
 
 	/* Messages from the preview */
 
@@ -2354,7 +2457,8 @@ function App() {
 				// The preview has no admin color scheme: lend it the editor's.
 				toFrame( {
 					type: 'theme',
-					rgb: getComputedStyle( document.body )
+					rgb: window
+						.getComputedStyle( document.body )
 						.getPropertyValue( '--wp-admin-theme-color--rgb' )
 						.trim(),
 				} );
@@ -2395,17 +2499,20 @@ function App() {
 			scroll: scrollOnSelect.current,
 		} );
 		scrollOnSelect.current = false;
-	}, [ selected, selectedIndex ] );
+	}, [ selected, selectedIndex, toFrame ] );
+
+	const labelsKey = labels.join( '|' );
+	const orderKey = JSON.stringify( order );
 
 	useEffect( () => {
 		toFrame( { type: 'labels' } );
-	}, [ labels.join( '|' ) ] );
+	}, [ labelsKey, toFrame ] );
 
 	// Moves and removals show at once: the preview reorders its own
 	// blocks, nothing is fetched.
 	useEffect( () => {
-		toFrame( { type: 'order', uids: order } );
-	}, [ order.join( ',' ) ] );
+		toFrame( { type: 'order', uids: JSON.parse( orderKey ) } );
+	}, [ orderKey, toFrame ] );
 
 	/* Saving */
 
@@ -2507,6 +2614,9 @@ function App() {
 	 * `renderUid` names a block the preview needs again from the server: one
 	 * whose fields changed, or a new one. Moves and removals pass null: the
 	 * preview already shows them.
+	 *
+	 * @param {Object[]} nextItems Blocks after the change.
+	 * @param {?string}  renderUid Block the preview needs again from the server, or null.
 	 */
 	function commit( nextItems, renderUid ) {
 		if ( renderUid ) {
