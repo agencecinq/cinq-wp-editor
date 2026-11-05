@@ -7,6 +7,22 @@ title and the page updates before your eyes.
 > Status: prototype, open for discussion. It runs end to end on the agencecinq theme in a test
 > WordPress, and on a local copy of Eigrene, but has never been installed on a live site.
 
+## Built for CINQ's way of making WordPress sites
+
+This plugin depends entirely on how [CINQ](https://agencecinq.com) builds WordPress sites. It is
+not a general-purpose page editor. It expects:
+
+- the page's blocks in an ACF Pro flexible content field named `blocks`;
+- a Timber theme that renders each block through `views/blocks/block.html.twig`, marked for the
+  editor as described in [Theme convention](#theme-convention);
+- the latest releases of WordPress, ACF Pro and Timber, with no compatibility code for older ones;
+- optionally, the conventions of CINQ themes: a `mcp.json` describing the blocks, and the
+  `cinq_schemes()` and `cinq_palette()` helpers for colour swatches.
+
+Anyone may use it, under the MIT licence. Keep in mind that it follows CINQ's stack and its
+choices, and changes with them: a site built another way will need its own adaptations, and
+these are not something the plugin sets out to support.
+
 ## The idea
 
 Our sites are made of ACF blocks (a `blocks` flexible content field). In the classic admin, the
