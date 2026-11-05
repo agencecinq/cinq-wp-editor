@@ -76,13 +76,14 @@ final class Renderer {
 					continue;
 				}
 
+				// The theme's own template for one block, marker included.
 				$rendered = Timber::compile(
-					'cinq-wp-editor/block.html.twig',
+					'blocks/block.html.twig',
 					array_merge(
 						$context,
 						array(
 							'block' => $blocks[ $index ],
-							'index' => $index,
+							'loop'  => $index,
 						)
 					)
 				);

@@ -26,7 +26,7 @@ This plugin adds that layer **without changing anything in ACF or the theme**:
   A layout added to the theme shows up in the editor without touching the plugin.
 
 It depends on ACF Pro and the theme alone. On start, it checks that the theme has the right
-architecture: ACF Pro active, Timber, and a `views/blocks/blocks.html.twig` template. Otherwise it
+architecture: ACF Pro active, Timber, and a `views/blocks/block.html.twig` template. Otherwise it
 stays off and says so in the admin. For each post, it asks ACF which field groups apply to it
 (post type, page template…) and looks there for the `blocks` flexible content: a page without a
 block zone has no link to the editor.
@@ -67,7 +67,7 @@ colour pickers, and an
 |---|---|
 | Opening | `GET /cinq-wp-editor/v1/posts/{id}` returns the layouts offered, the published blocks and the draft, if any. |
 | Editing | After 300 ms without typing, a single `PUT …/draft` call validates the blocks with ACF, writes them with ACF onto a hidden `cinq_wp_editor_draft` post (one per page and per user) and returns the HTML of the changed or added blocks only, rendered alone rather than with the whole page. |
-| Preview | The iframe shows the real page with `?cinq-wp-editor={id}`. When the page's template does not render its blocks, the editor says so and points to the classic edit screen. The `acf/pre_load_value` filter serves the draft's rows in place of the page's: ACF formats them as usual, and the theme renders them without knowing. A copy of `blocks/blocks.html.twig` placed in front of the theme's wraps each block in a `data-cinq-block` marker. |
+| Preview | The iframe shows the real page with `?cinq-wp-editor={id}`. When the page's template does not render its blocks, the editor says so and points to the classic edit screen. The `acf/pre_load_value` filter serves the draft's rows in place of the page's: ACF formats them as usual, and the theme renders them without knowing. The theme wraps each block in a `data-cinq-block` marker, as long as the `cinq_wp_editor` Twig global is set: see the theme convention below. |
 | Update | The returned block replaces the old one in the preview. Moving or deleting a block happens directly in the preview, without waiting for the server; an added block shows « Loading the block… » until it is rendered. If a block cannot be rendered alone, the preview reloads the whole page. |
 | Lock | Opening the editor sets WordPress's post lock (`_edit_lock`), renewed by the edit screen's heartbeat (`wp-refresh-post-lock`) every ten seconds and given back on leaving (`wp-remove-post-lock`). The classic edit screen, the block editor and this one see each other's lock. |
 | Publishing | `POST …/publish` refuses while someone else holds the lock, validates everything, refuses as a whole if one field is invalid (never half a page), writes with ACF, then deletes the draft. |
@@ -95,18 +95,42 @@ includes/
   Renderer.php           rendering of a single block for the quick update
   PluginUpdater.php      updates from GitHub releases
   Readme.php             README.txt as sections for the details modal
-views/                   Twig templates placed in front of the theme's
 src/editor.js            the editor's interface, built into build/ (not in Git)
 assets/                  editor styles (editor.css) and preview script (preview.js/css)
 bin/sandbox.sh           throwaway test WordPress
 .github/workflows/       release on tag: zip and update.json
 ```
 
+## Theme convention
+
+The theme renders each block through `views/blocks/block.html.twig`, the only place that knows
+how a layout is included. The stack of `views/blocks/blocks.html.twig` goes through it, and so
+does the editor when it renders a block alone: the editor carries no copy of the theme's
+templates. In the editor's preview, and there only, the `cinq_wp_editor` Twig global is set:
+
+```twig
+{# views/blocks/block.html.twig #}
+{%- set html -%}
+	{{- include( 'blocks/' ~ ( block.acf_fc_layout | lower | replace( { '_': '-' } ) ) ~ '.html.twig', { block: block, loop: loop }, ignore_missing: true ) -}}
+{%- endset -%}
+
+{%- if cinq_wp_editor | default( false ) -%}
+	<div data-cinq-block="{{ loop }}" style="display: contents">{{- html -}}</div>
+{%- else -%}
+	{{- html -}}
+{%- endif -%}
+```
+
+`views/blocks/blocks.html.twig` includes it for each block with `loop: loop.index0`, renders its
+stack even with no block when `cinq_wp_editor` is set, so a first one can be added, and puts
+`data-cinq-blocks` on the stack's container (a `display: contents` one if it has none). The
+public page is unchanged.
+
 ## Requirements
 
 - WordPress 7.1+, the latest release only, PHP 8.4+
 - ACF Pro 6.8+ and Timber 2.5+, their latest releases
-- A Timber theme rendering its blocks through `views/blocks/blocks.html.twig` (the convention of CINQ themes)
+- A Timber theme rendering each block through `views/blocks/block.html.twig` (the convention of CINQ themes, see below)
 - Optional: a `mcp.json` at the theme root, for the catalogue descriptions
 
 To install it on a site: upload `cinq-wp-editor.zip` from the

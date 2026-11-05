@@ -17,7 +17,7 @@ Repository: [agencecinq/cinq-wp-editor](https://github.com/agencecinq/cinq-wp-ed
 * WordPress 7.1 or later: the editor follows the latest WordPress release only, to use what it brings as soon as it ships
 * PHP 8.4 or later
 * ACF Pro 6.8 or later, and a theme on Timber 2.5 or later: their latest releases, as for WordPress
-* A Timber theme rendering its blocks through `views/blocks/blocks.html.twig`, the convention of CINQ themes
+* A Timber theme rendering each block through `views/blocks/block.html.twig`, the convention of CINQ themes: in the editor's preview (the `cinq_wp_editor` Twig global), it wraps the block in `<div data-cinq-block="{{ loop }}" style="display: contents">`, and `views/blocks/blocks.html.twig` marks its container with `data-cinq-blocks`, rendered even with no block. The public page is unchanged.
 * Optional: a `mcp.json` at the theme root, whose `blocks` entries describe the blocks in the catalogue
 
 The editor checks them on every request. Missing one, it stays off and says why in the admin.
@@ -70,7 +70,8 @@ Run `composer install`, then `composer lint` (phpcs) or `composer lint:fix` (php
 * The block zone of a post comes from the field groups ACF applies to it: a page whose template the theme leaves out, such as a styleguide, no longer opens in the editor.
 * Fields are validated by ACF, with the rules and the messages of the edit screen. A block the theme no longer has, or no longer offers on the post, is reported on the block.
 * Backslashes typed in a field are kept. HTML is filtered as ACF filters it for users without `unfiltered_html`.
-* The editor stays off, and says why in the admin, when ACF Pro, Timber or `views/blocks/blocks.html.twig` is missing.
+* The editor stays off, and says why in the admin, when ACF Pro, Timber or `views/blocks/block.html.twig` is missing.
+* Breaking: the preview markers are the theme's. The editor no longer carries a copy of the theme's `blocks/blocks.html.twig`: the theme renders each block through `views/blocks/block.html.twig`, which puts the block in its marker when the `cinq_wp_editor` Twig global is set, and marks the container of its stack. Migration: add `views/blocks/block.html.twig` to the theme and include it from `views/blocks/blocks.html.twig`, as Eigrene and Agence CINQ do.
 * When the template of a page does not render its blocks, the editor says so above the preview, with a link to the classic edit screen.
 * Rich text fields use TinyMCE, with ACF's toolbars, tabs and media button, instead of a field of raw HTML.
 * The editor and the preview follow the admin color scheme.

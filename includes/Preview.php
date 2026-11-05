@@ -9,8 +9,6 @@ declare( strict_types = 1 );
 
 namespace CinqWpEditor;
 
-use Timber\Loader;
-
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -21,9 +19,10 @@ defined( 'ABSPATH' ) || exit;
  * is wrapped in a marker so the editor can find it, and a small script lets
  * the visitor select a block instead of following its links.
  *
- * The marker comes from a copy of the theme's `blocks/blocks.html.twig` put in
- * front of the theme's views. Every CINQ theme renders its blocks through that
- * template, so no theme has to change for the editor to work.
+ * The markers are the theme's: its `blocks/blocks.html.twig` and
+ * `blocks/block.html.twig` put them in when the `cinq_wp_editor` Twig global
+ * says the page is the editor's preview. A theme with those two templates is
+ * one the editor works with; the public page stays as it was.
  */
 final class Preview {
 
@@ -33,9 +32,10 @@ final class Preview {
 	public const QUERY_ARG = 'cinq-wp-editor';
 
 	/**
-	 * Theme template every block goes through, and the editor's copy replaces.
+	 * Theme template every block goes through, in its preview marker when
+	 * the editor asks for it: what makes a theme one the editor works with.
 	 */
-	public const TEMPLATE = 'views/blocks/blocks.html.twig';
+	public const TEMPLATE = 'views/blocks/block.html.twig';
 
 	/**
 	 * Post being previewed, once the request is known to be a preview.
@@ -129,7 +129,7 @@ final class Preview {
 
 		if ( ! has_filter( 'acf/pre_load_value', array( self::class, 'load_draft' ) ) ) {
 			add_filter( 'acf/pre_load_value', array( self::class, 'load_draft' ), 10, 3 );
-			add_filter( 'timber/locations', array( self::class, 'locations' ) );
+			add_filter( 'timber/twig', array( self::class, 'twig' ) );
 		}
 	}
 
@@ -161,15 +161,18 @@ final class Preview {
 	}
 
 	/**
-	 * Puts the editor's views in front of the theme's.
+	 * Tells the theme's templates they render the editor's preview.
 	 *
-	 * @param array<string, array<int, string>> $locations Twig locations, keyed by namespace.
-	 * @return array<string, array<int, string>>
+	 * A global rather than a context variable: an include made without the
+	 * context still sees it.
+	 *
+	 * @param \Twig\Environment $twig Twig environment.
+	 * @return \Twig\Environment
 	 */
-	public static function locations( array $locations ): array {
-		array_unshift( $locations[ Loader::MAIN_NAMESPACE ], CINQ_WP_EDITOR_PATH . 'views/' );
+	public static function twig( $twig ) {
+		$twig->addGlobal( 'cinq_wp_editor', true );
 
-		return $locations;
+		return $twig;
 	}
 
 	/**
