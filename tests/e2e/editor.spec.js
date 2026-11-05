@@ -7,9 +7,13 @@ test.describe( 'CINQ WP Editor', () => {
 	let pageId;
 
 	test.beforeEach( async ( { requestUtils } ) => {
+		// A theme may keep its blocks to one page template, as Agence CINQ does.
 		const created = await requestUtils.createPage( {
 			title: 'E2E: CINQ WP Editor',
 			status: 'draft',
+			...( process.env.E2E_PAGE_TEMPLATE && {
+				template: process.env.E2E_PAGE_TEMPLATE,
+			} ),
 		} );
 
 		pageId = created.id;

@@ -174,7 +174,9 @@ WP_PASSWORD=…
 NODE_EXTRA_CA_CERTS=/Users/…/Local/run/router/nginx/certs/eigrene.local.crt
 ```
 
-`NODE_EXTRA_CA_CERTS` makes Node trust a Local site's self-signed certificate. Give the
+`NODE_EXTRA_CA_CERTS` makes Node trust a Local site's self-signed certificate. On a theme that
+keeps its blocks to one page template, name it with `E2E_PAGE_TEMPLATE`, such as
+`page-templates/blocks-page.php` on Agence CINQ. Give the
 administrator the `en_US` locale: the tests read the interface in its source language.
 
 The interface is in English, translated into French in `languages/`: `__()` in PHP,
