@@ -98,6 +98,31 @@ final class Rest {
 
 		register_rest_route(
 			self::NAMESPACE,
+			'/posts/(?P<id>\d+)/users',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( self::class, 'users' ),
+				'permission_callback' => array( self::class, 'can_edit' ),
+				'args'                => $id + array(
+					'field'   => array(
+						'type'     => 'string',
+						'required' => true,
+					),
+					'search'  => array(
+						'type'    => 'string',
+						'default' => '',
+					),
+					'include' => array(
+						'type'    => 'array',
+						'items'   => array( 'type' => 'integer' ),
+						'default' => array(),
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
 			'/posts/(?P<id>\d+)/publish',
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
@@ -272,6 +297,54 @@ final class Rest {
 				'blocks'    => Model::read_blocks( $zone, $post->ID ),
 			)
 		);
+	}
+
+	/**
+	 * Finds users for a user field, as ACF's own search does on the edit
+	 * screen: among the roles the field allows, by name, login or e-mail.
+	 *
+	 * The core route only lists authors of published posts to whoever cannot
+	 * `list_users`, and does not filter them by role for them: an editor could
+	 * not pick a user there that ACF lets them pick.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function users( WP_REST_Request $request ) {
+		$field = acf_get_field( (string) $request['field'] );
+
+		if ( ! is_array( $field ) || 'user' !== ( $field['type'] ?? '' ) ) {
+			return new WP_Error( 'cinq_wp_editor_not_user_field', 'Ce champ n’est pas un champ utilisateur.', array( 'status' => 400 ) );
+		}
+
+		$include = array_filter( array_map( 'absint', (array) $request['include'] ) );
+		$search  = trim( (string) $request['search'] );
+		$args    = array(
+			'fields'  => array( 'ID', 'display_name' ),
+			'number'  => 20,
+			'orderby' => 'display_name',
+		);
+
+		if ( ! empty( $field['role'] ) ) {
+			$args['role__in'] = (array) $field['role'];
+		}
+
+		if ( ! empty( $include ) ) {
+			$args['include'] = $include;
+		} elseif ( '' !== $search ) {
+			$args['search']         = '*' . $search . '*';
+			$args['search_columns'] = array( 'user_login', 'user_nicename', 'user_email', 'display_name' );
+		}
+
+		$users = array_map(
+			static fn( $user ): array => array(
+				'id'    => (int) $user->ID,
+				'title' => (string) $user->display_name,
+			),
+			get_users( $args )
+		);
+
+		return new WP_REST_Response( $users );
 	}
 
 	/**

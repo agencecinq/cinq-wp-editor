@@ -59,6 +59,10 @@ final class Model {
 		'display_format',
 		'first_day',
 		'enable_opacity',
+		'role',
+		'center_lat',
+		'center_lng',
+		'zoom',
 	);
 
 	/**
@@ -186,6 +190,59 @@ final class Model {
 	}
 
 	/**
+	 * Returns the tabs of an icon picker the editor can draw, as ACF offers
+	 * them: its own list, filtered by the user's capabilities and by
+	 * `acf/fields/icon_picker/tabs`, then by the field's setting.
+	 *
+	 * @param array<string, mixed> $field Icon picker field.
+	 * @return array<int, array{name: string, label: string}>
+	 */
+	private static function icon_tabs( array $field ): array {
+		$type    = acf_get_field_type( 'icon_picker' );
+		$tabs    = $type && method_exists( $type, 'get_tabs' ) ? (array) $type->get_tabs() : array();
+		$allowed = is_array( $field['tabs'] ?? null ) ? $field['tabs'] : array_keys( $tabs );
+		$out     = array();
+
+		foreach ( $tabs as $name => $label ) {
+			// Custom icon lists from other plugins are left to the edit screen.
+			if ( in_array( $name, $allowed, true ) && in_array( $name, array( 'dashicons', 'media_library', 'url' ), true ) ) {
+				$out[] = array(
+					'name'  => (string) $name,
+					'label' => wp_strip_all_tags( (string) $label ),
+				);
+			}
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Returns the archives a page link may point to, as ACF lists them: those
+	 * of the field's post types, or of every public post type.
+	 *
+	 * @param array<string, mixed> $field Page link field.
+	 * @return array<int, array{id: string, title: string}>
+	 */
+	private static function archives( array $field ): array {
+		$post_types = empty( $field['post_type'] ) ? get_post_types( array( 'public' => true ) ) : (array) $field['post_type'];
+		$out        = array();
+
+		foreach ( $post_types as $post_type ) {
+			$link   = get_post_type_archive_link( (string) $post_type );
+			$object = get_post_type_object( (string) $post_type );
+
+			if ( $link && $object ) {
+				$out[] = array(
+					'id'    => $link,
+					'title' => sprintf( 'Archive : %s', $object->labels->name ),
+				);
+			}
+		}
+
+		return $out;
+	}
+
+	/**
 	 * Keeps what the client needs from a list of resolved ACF fields.
 	 *
 	 * @param array<int, mixed> $fields Resolved fields.
@@ -208,6 +265,14 @@ final class Model {
 
 			if ( isset( $kept['instructions'] ) ) {
 				$kept['instructions'] = wp_strip_all_tags( (string) $kept['instructions'] );
+			}
+
+			if ( 'icon_picker' === ( $kept['type'] ?? '' ) ) {
+				$kept['icon_tabs'] = self::icon_tabs( $field );
+			}
+
+			if ( 'page_link' === ( $kept['type'] ?? '' ) && ! empty( $field['allow_archives'] ) ) {
+				$kept['archives'] = self::archives( $field );
 			}
 
 			if ( ! empty( $field['sub_fields'] ) && is_array( $field['sub_fields'] ) ) {

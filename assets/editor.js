@@ -33,6 +33,7 @@
 		SelectControl,
 		SnackbarList,
 		Spinner,
+		TabPanel,
 		TextControl,
 		TextareaControl,
 		TimePicker,
@@ -342,7 +343,20 @@
 
 			case "post_object":
 			case "relationship":
+			case "page_link":
 				control = h(PostField, { field, label, help, value, onChange });
+				break;
+
+			case "user":
+				control = h(UserField, { field, label, help, value, onChange });
+				break;
+
+			case "icon_picker":
+				control = h(IconField, { field, label, help, value, onChange });
+				break;
+
+			case "google_map":
+				control = h(MapField, { field, label, help, value, onChange });
 				break;
 
 			case "taxonomy":
@@ -803,42 +817,53 @@
 		);
 	}
 
-	function PostField({ field, label, help, value, onChange }) {
-		const multiple = field.type === "relationship" || Boolean(Number(field.multiple));
-		const ids = toArray(value).map(Number).filter(Boolean);
-		const subtype = Array.isArray(field.post_type) && field.post_type.length ? field.post_type.join(",") : "any";
-		const [titles, setTitles] = useState({});
+	/**
+	 * Picks references: contents, users or archives. Selected ones are listed
+	 * by title, a search finds more. `lookup` names the selected IDs it does
+	 * not know yet, `search` finds candidates, `extra` are fixed options shown
+	 * before any search, such as a page link's archives.
+	 */
+	function ReferenceField({ label, help, multiple, value, onChange, lookup, search, extra = [], placeholder, empty }) {
+		// IDs come back from ACF as strings; archive links are URLs.
+		const normalize = (item) => (/^\d+$/.test(String(item)) ? Number(item) : String(item));
+		const ids = toArray(value).map(normalize).filter(Boolean);
+		const [titles, setTitles] = useState(() => Object.fromEntries(extra.map((item) => [item.id, item.title])));
 		const [query, setQuery] = useState("");
 		const [results, setResults] = useState([]);
 
 		useEffect(() => {
-			const missing = ids.filter((id) => !(id in titles));
+			const missing = ids.filter((id) => typeof id === "number" && !(id in titles));
 
 			if (!missing.length) {
 				return;
 			}
 
-			apiFetch({ path: addQueryArgs("/wp/v2/search", { include: missing.join(","), type: "post", subtype, per_page: missing.length }) })
+			lookup(missing)
 				.then((list) => setTitles((known) => ({ ...known, ...Object.fromEntries(list.map((item) => [item.id, item.title])) })))
 				.catch(() => {});
 		}, [ids.join(",")]);
 
 		useEffect(() => {
-			if (query.trim().length < 2) {
+			const term = query.trim().toLowerCase();
+
+			if (term.length < 2) {
 				setResults([]);
 				return;
 			}
 
 			const timer = setTimeout(() => {
-				apiFetch({ path: addQueryArgs("/wp/v2/search", { search: query, type: "post", subtype, per_page: 8 }) })
-					.then(setResults)
-					.catch(() => setResults([]));
+				const fixed = extra.filter((item) => item.title.toLowerCase().includes(term));
+
+				search(query)
+					.then((list) => setResults([...fixed, ...list]))
+					.catch(() => setResults(fixed));
 			}, 250);
 
 			return () => clearTimeout(timer);
 		}, [query]);
 
 		const set = (next) => onChange(multiple ? next : next.length ? next[next.length - 1] : "");
+		const shown = (query.trim().length < 2 ? extra : results).filter((item) => !ids.includes(item.id));
 
 		return h(
 			"div",
@@ -852,40 +877,198 @@
 							h(
 								"li",
 								{ key: id },
-								h("span", null, titles[id] || `#${id}`),
+								h("span", null, titles[id] || (typeof id === "number" ? `#${id}` : id)),
 								h(Button, { icon: "no-alt", size: "small", label: "Retirer", onClick: () => set(ids.filter((item) => item !== id)) })
 							)
 						)
 				  )
-				: h("p", { className: "cinq-help" }, multiple ? "Aucun contenu choisi." : "Aucun contenu choisi."),
-			h(SearchControl, { value: query, onChange: setQuery, placeholder: "Rechercher un contenu…", __nextHasNoMarginBottom: true }),
-			results.length
+				: h("p", { className: "cinq-help" }, empty),
+			h(SearchControl, { value: query, onChange: setQuery, placeholder, __nextHasNoMarginBottom: true }),
+			shown.length
 				? h(
 						"ul",
 						{ className: "cinq-posts__results" },
-						results
-							.filter((item) => !ids.includes(item.id))
-							.map((item) =>
+						shown.map((item) =>
+							h(
+								"li",
+								{ key: item.id },
 								h(
-									"li",
-									{ key: item.id },
-									h(
-										Button,
-										{
-											variant: "link",
-											onClick: () => {
-												setTitles((known) => ({ ...known, [item.id]: item.title }));
-												set([...ids, item.id]);
-												setQuery("");
-											},
+									Button,
+									{
+										variant: "link",
+										onClick: () => {
+											setTitles((known) => ({ ...known, [item.id]: item.title }));
+											set([...ids, item.id]);
+											setQuery("");
 										},
-										item.title || `#${item.id}`
-									)
+									},
+									item.title || `#${item.id}`
 								)
 							)
+						)
 				  )
 				: null,
 			help && h("p", { className: "cinq-help" }, help)
+		);
+	}
+
+	/**
+	 * Contents, through WordPress's search route: post objects, relationships
+	 * and page links, whose archives come as fixed options.
+	 */
+	function PostField({ field, label, help, value, onChange }) {
+		const subtype = Array.isArray(field.post_type) && field.post_type.length ? field.post_type.join(",") : "any";
+		const find = (args) => apiFetch({ path: addQueryArgs("/wp/v2/search", { type: "post", subtype, ...args }) });
+
+		return h(ReferenceField, {
+			label,
+			help,
+			value,
+			onChange,
+			multiple: field.type === "relationship" || Boolean(Number(field.multiple)),
+			lookup: (ids) => find({ include: ids.join(","), per_page: ids.length }),
+			search: (query) => find({ search: query, per_page: 8 }),
+			extra: field.archives || [],
+			placeholder: "Rechercher un contenu…",
+			empty: "Aucun contenu choisi.",
+		});
+	}
+
+	/**
+	 * Users, through the editor's own route: ACF's search, among the roles the
+	 * field allows.
+	 */
+	function UserField({ field, label, help, value, onChange }) {
+		const find = (args) => apiFetch({ path: addQueryArgs(`${API}/users`, { field: field.key, ...args }) });
+
+		return h(ReferenceField, {
+			label,
+			help,
+			value,
+			onChange,
+			multiple: Boolean(Number(field.multiple)),
+			lookup: (ids) => find({ include: ids }),
+			search: (query) => find({ search: query }),
+			placeholder: "Rechercher un utilisateur…",
+			empty: "Aucun utilisateur choisi.",
+		});
+	}
+
+	/**
+	 * An icon, as ACF's icon picker stores it: `{ type, value }`, a Dashicon
+	 * class, an attachment ID or a URL. One tab per kind the field allows.
+	 */
+	function IconField({ field, label, help, value, onChange }) {
+		const tabs = field.icon_tabs || [];
+		const icon = value && typeof value === "object" && value.type ? value : null;
+		const [query, setQuery] = useState("");
+		const set = (type, next) => onChange(next === "" || next === null ? "" : { type, value: next });
+
+		if (!tabs.length) {
+			return h("p", { className: "cinq-help" }, `${field.label} : aucun onglet de ce champ n’est disponible ici.`);
+		}
+
+		const term = query.trim().toLowerCase();
+		const dashicons = Object.entries(config.dashicons || {}).filter(([name, text]) => !term || name.includes(term) || text.toLowerCase().includes(term));
+
+		const panels = {
+			dashicons: () =>
+				h(
+					Fragment,
+					null,
+					h(SearchControl, { value: query, onChange: setQuery, placeholder: "Rechercher une icône…", __nextHasNoMarginBottom: true }),
+					h(
+						"div",
+						{ className: "cinq-icons", role: "list" },
+						dashicons.map(([name, text]) =>
+							h(Button, {
+								key: name,
+								role: "listitem",
+								icon: name.replace(/^dashicons-/, ""),
+								label: text,
+								isPressed: Boolean(icon && icon.type === "dashicons" && icon.value === name),
+								onClick: () => set("dashicons", name),
+							})
+						)
+					)
+				),
+			media_library: () =>
+				h(MediaField, {
+					field: { ...field, type: "image" },
+					label: "Image",
+					value: icon && icon.type === "media_library" ? icon.value : "",
+					onChange: (id) => set("media_library", id),
+				}),
+			url: () =>
+				h(TextControl, {
+					label: "Adresse de l’image",
+					type: "url",
+					value: icon && icon.type === "url" ? icon.value : "",
+					onChange: (url) => set("url", url),
+					__nextHasNoMarginBottom: true,
+				}),
+		};
+
+		return h(
+			"div",
+			{ className: "components-base-control cinq-icon" },
+			h(BaseControl.VisualLabel, null, label),
+			h(
+				TabPanel,
+				{
+					className: "cinq-icon__tabs",
+					initialTabName: icon && tabs.some((tab) => tab.name === icon.type) ? icon.type : tabs[0].name,
+					tabs: tabs.map((tab) => ({ name: tab.name, title: tab.label })),
+				},
+				(tab) => h("div", { className: "cinq-icon__panel" }, panels[tab.name]())
+			),
+			icon &&
+				!Number(field.required) &&
+				h(Button, { variant: "tertiary", isDestructive: true, size: "compact", onClick: () => onChange("") }, "Retirer l’icône"),
+			help && h("p", { className: "components-base-control__help" }, help)
+		);
+	}
+
+	/**
+	 * A place, as ACF's Google Map field stores it: an address and its
+	 * coordinates. ACF draws a Google map only with an API key; the fields are
+	 * the same either way, and a link shows the place on Google Maps.
+	 */
+	function MapField({ field, label, help, value, onChange }) {
+		const place = value && typeof value === "object" ? value : {};
+		const set = (key, next) => {
+			const updated = { ...place, [key]: next };
+			const filled = ["address", "lat", "lng"].some((name) => updated[name] !== "" && updated[name] !== undefined && updated[name] !== null);
+
+			onChange(filled ? updated : "");
+		};
+		const lat = place.lat ?? "";
+		const lng = place.lng ?? "";
+		const number = (key, text, extra) =>
+			h(TextControl, {
+				label: text,
+				type: "number",
+				step: "any",
+				value: place[key] ?? "",
+				onChange: (next) => set(key, next === "" ? "" : Number(next)),
+				__nextHasNoMarginBottom: true,
+				...extra,
+			});
+
+		return h(
+			"fieldset",
+			{ className: "cinq-group cinq-map" },
+			h("legend", null, label),
+			help && h("p", { className: "cinq-help" }, help),
+			h(TextControl, { label: "Adresse", value: place.address ?? "", onChange: (next) => set("address", next), __nextHasNoMarginBottom: true }),
+			h(
+				"div",
+				{ className: "cinq-map__coords" },
+				number("lat", "Latitude", { placeholder: field.center_lat || undefined }),
+				number("lng", "Longitude", { placeholder: field.center_lng || undefined })
+			),
+			number("zoom", "Zoom", { min: 1, max: 21, step: 1, placeholder: field.zoom || undefined }),
+			lat !== "" && lng !== "" && h(Button, { variant: "link", href: `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`, target: "_blank" }, "Voir sur Google Maps")
 		);
 	}
 

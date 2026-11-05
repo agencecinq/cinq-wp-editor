@@ -680,3 +680,32 @@ html.wp-toolbar:has(.cinq-wp-editor-screen) {
 .cinq-color__picker > .components-button {
 	justify-self: start;
 }
+
+/* Icon picker: tabs as ACF's, a grid of Dashicons. */
+
+.cinq-icon__panel {
+	display: grid;
+	gap: 8px;
+	padding-top: 8px;
+}
+
+.cinq-icons {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
+	gap: 4px;
+	max-height: 220px;
+	overflow-y: auto;
+}
+
+/* Map: latitude and longitude side by side. */
+
+.cinq-map {
+	display: grid;
+	gap: 12px;
+}
+
+.cinq-map__coords {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 8px;
+}

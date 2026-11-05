@@ -243,11 +243,12 @@ add_action(
 				'return_format' => 'id',
 			),
 			array(
-				'key'       => $key( 'page_link' ),
-				'name'      => 'page_link',
-				'label'     => 'Lien vers une page',
-				'type'      => 'page_link',
-				'post_type' => array( 'page' ),
+				'key'            => $key( 'page_link' ),
+				'name'           => 'page_link',
+				'label'          => 'Lien vers une page ou une archive',
+				'type'           => 'page_link',
+				'post_type'      => array( 'page', 'post', 'case_study' ),
+				'allow_archives' => 1,
 			),
 			array(
 				'key'           => $key( 'relationship' ),
@@ -324,6 +325,7 @@ add_action(
 				'name'  => 'icon',
 				'label' => 'Icône',
 				'type'  => 'icon_picker',
+				'tabs'  => array( 'dashicons', 'media_library', 'url' ),
 			),
 			array(
 				'key'   => $key( 'map' ),

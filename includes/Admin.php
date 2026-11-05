@@ -148,6 +148,7 @@ final class Admin {
 					'postId'    => $post->ID,
 					'namespace' => Rest::NAMESPACE,
 					'toolbars'  => self::toolbars(),
+					'dashicons' => self::dashicons(),
 				)
 			) . ';',
 			'before'
@@ -180,6 +181,17 @@ final class Admin {
 		}
 
 		return $toolbars;
+	}
+
+	/**
+	 * Returns the Dashicons ACF's icon picker offers, with its labels.
+	 *
+	 * @return array<string, string> Labels keyed by class, such as `dashicons-admin-home`.
+	 */
+	private static function dashicons(): array {
+		$type = acf_get_field_type( 'icon_picker' );
+
+		return $type && method_exists( $type, 'get_dashicons' ) ? (array) $type->get_dashicons() : array();
 	}
 
 	/**
