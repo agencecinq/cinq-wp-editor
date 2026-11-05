@@ -9,7 +9,6 @@ declare( strict_types = 1 );
 
 namespace CinqEditor;
 
-use CinqWpMcp\Acf\Zone;
 use Timber\Timber;
 use WP_Post;
 use WP_Query;
@@ -42,7 +41,7 @@ final class Renderer {
 	public static function blocks( WP_Post $post, Zone $zone, int $draft_id, array $indexes ): array {
 		$html = array_fill_keys( $indexes, null );
 
-		if ( empty( $indexes ) || ! class_exists( Timber::class ) || ! $zone->is_top_level() ) {
+		if ( empty( $indexes ) || ! class_exists( Timber::class ) ) {
 			return $html;
 		}
 
@@ -69,7 +68,7 @@ final class Renderer {
 		}
 
 		try {
-			$blocks  = get_field( $zone->meta_name(), $post->ID );
+			$blocks  = get_field( $zone->name(), $post->ID );
 			$blocks  = is_array( $blocks ) ? array_values( $blocks ) : array();
 			$context = Timber::context();
 

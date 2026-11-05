@@ -9,6 +9,8 @@ declare( strict_types = 1 );
 
 namespace CinqEditor;
 
+use Timber\Timber;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -26,6 +28,29 @@ final class Plugin {
 		Preview::register();
 		Rest::register();
 		Admin::register();
+	}
+
+	/**
+	 * Returns what the site lacks for the editor to run.
+	 *
+	 * @return array<int, string> Human-readable reasons, empty when it can run.
+	 */
+	public static function missing(): array {
+		$missing = array();
+
+		if ( ! function_exists( 'acf_get_field_groups' ) ) {
+			$missing[] = 'il a besoin d’ACF Pro.';
+		}
+
+		if ( ! class_exists( Timber::class ) ) {
+			$missing[] = 'le thème n’utilise pas Timber.';
+		}
+
+		if ( ! is_readable( get_theme_file_path( Preview::TEMPLATE ) ) ) {
+			$missing[] = sprintf( 'le thème n’a pas de gabarit %s.', Preview::TEMPLATE );
+		}
+
+		return $missing;
 	}
 
 	/**

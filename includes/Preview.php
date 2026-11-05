@@ -9,8 +9,6 @@ declare( strict_types = 1 );
 
 namespace CinqEditor;
 
-use CinqWpMcp\Acf\Zone;
-
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -31,6 +29,11 @@ final class Preview {
 	 * Query argument carrying the ID of the post being previewed.
 	 */
 	public const QUERY_ARG = 'cinq-editor';
+
+	/**
+	 * Theme template every block goes through, and the editor's copy replaces.
+	 */
+	public const TEMPLATE = 'views/blocks/blocks.html.twig';
 
 	/**
 	 * Post being previewed, once the request is known to be a preview.
@@ -145,7 +148,7 @@ final class Preview {
 			return $value;
 		}
 
-		$is_zone = ( $field['key'] ?? '' ) === self::$zone->key() || ( $field['name'] ?? '' ) === self::$zone->meta_name();
+		$is_zone = ( $field['key'] ?? '' ) === self::$zone->key() || ( $field['name'] ?? '' ) === self::$zone->name();
 
 		if ( ! $is_zone ) {
 			return $value;

@@ -26,9 +26,22 @@ Ce plugin ajoute cette surcouche **sans rien changer à ACF ni au thème** :
   descriptions et consignes de `mcp.json` (celles que lit Claude) servent aussi au catalogue de
   blocs. Un layout ajouté au thème apparaît dans l'éditeur sans toucher au plugin.
 
-Il s'appuie sur [CINQ WP MCP](https://github.com/agencecinq/cinq-wp-mcp), qui sait déjà lire
-les zones de blocs, valider des valeurs et les écrire proprement pour Claude : l'éditeur
-réutilise ces briques plutôt que de les refaire.
+Il ne dépend que d'ACF Pro et du thème. Au démarrage, il vérifie que le thème a la bonne
+architecture : ACF Pro actif, Timber, et un gabarit `views/blocks/blocks.html.twig`. Sinon, il
+reste éteint et le dit dans l'admin. Pour chaque contenu, il demande à ACF quels groupes de
+champs s'y appliquent (type de contenu, gabarit de page…) et y cherche le contenu flexible
+`blocks` : une page sans zone de blocs n'a pas de lien vers l'éditeur.
+
+| Ce que fait l'éditeur | Avec quoi |
+|---|---|
+| Trouver la zone de blocs d'un contenu | `acf_get_field_groups()`, qui applique les règles d'emplacement du thème |
+| Savoir quels blocs proposer | `acf_prepare_field()`, comme l'écran d'édition, moins les blocs `hidden` de `mcp.json` |
+| Valider | `acf_validate_value()` : les mêmes règles et les mêmes messages que l'écran d'édition |
+| Enregistrer | `acf_update_value()`, avec le filtrage HTML d'ACF pour qui n'a pas `unfiltered_html` |
+| Décrire les blocs | `blocks` de `mcp.json`, lu dans le thème parent puis le thème enfant |
+
+[CINQ WP MCP](https://github.com/agencecinq/cinq-wp-mcp) lit les mêmes champs ACF et le même
+`mcp.json` : Claude et l'éditeur proposent les mêmes blocs sans partager de code.
 
 ## Ce que voit la personne qui édite
 
@@ -48,10 +61,10 @@ d'édition d'une page (**Ouvrir l'éditeur visuel**) ou depuis la barre d'admin 
 | Étape | Ce qui se passe |
 |---|---|
 | Ouverture | `GET /cinq-editor/v1/posts/{id}` renvoie les layouts proposés, les blocs publiés et le brouillon éventuel. |
-| Modification | Après 300 ms sans frappe, un seul appel `PUT …/draft` valide les blocs avec le `ValueMapper` du MCP, les écrit avec ACF sur un post caché `cinq_editor_draft` (un par page et par utilisateur) et renvoie le HTML des seuls blocs modifiés ou ajoutés. C'est le principe de la *Section Rendering API* de Shopify. |
+| Modification | Après 300 ms sans frappe, un seul appel `PUT …/draft` valide les blocs avec ACF, les écrit avec ACF sur un post caché `cinq_editor_draft` (un par page et par utilisateur) et renvoie le HTML des seuls blocs modifiés ou ajoutés. C'est le principe de la *Section Rendering API* de Shopify. |
 | Aperçu | L'iframe affiche la vraie page avec `?cinq-editor={id}`. Le filtre `acf/pre_load_value` sert les lignes du brouillon à la place de celles de la page : ACF les formate comme d'habitude, le thème les affiche sans rien savoir. Une copie de `blocks/blocks.html.twig` placée devant celle du thème entoure chaque bloc d'un repère `data-cinq-block`. |
 | Mise à jour | Le bloc renvoyé remplace l'ancien dans l'aperçu. Déplacer ou supprimer un bloc se fait directement dans l'aperçu, sans attendre le serveur ; un bloc ajouté affiche « Chargement du bloc… » jusqu'à son rendu. Si un bloc ne peut pas être rendu seul, l'aperçu recharge la page entière. |
-| Publication | `POST …/publish` valide tout, refuse en bloc si un champ est invalide (jamais une demi-page), écrit avec le `ZoneStore` du MCP puis supprime le brouillon. |
+| Publication | `POST …/publish` valide tout, refuse en bloc si un champ est invalide (jamais une demi-page), écrit avec ACF puis supprime le brouillon. |
 
 L'interface utilise `wp.element` et `wp.components`, déjà fournis par WordPress : pas d'étape de
 build, les fichiers de `assets/` sont servis tels quels.
@@ -61,7 +74,10 @@ cinq-editor.php          en-tête du plugin, chargement des classes
 includes/
   Admin.php              écran plein page, liens d'accès, scripts
   Rest.php               les quatre routes (état, brouillon, abandon, publication)
-  Model.php              zones, layouts et validation, via CINQ WP MCP
+  Model.php              ce que l'éditeur sait d'un contenu : zone, blocs proposés, champs
+  Zone.php               le contenu flexible d'un contenu, lu et écrit avec ACF
+  Blocks.php             blocs de l'éditeur ↔ lignes ACF, validées par ACF
+  Annotations.php        descriptions des blocs, lues dans le mcp.json du thème
   Drafts.php             brouillons (post caché par page et par utilisateur)
   Preview.php            la vraie page, servie avec le brouillon et les repères
   Renderer.php           rendu d'un bloc seul pour la mise à jour rapide
@@ -72,10 +88,10 @@ bin/sandbox.sh           WordPress de test jetable
 
 ## Prérequis
 
-- WordPress 6.9+, PHP 8.1+ (le thème agencecinq demande PHP 8.4)
-- ACF Pro ou Secure Custom Fields
-- [CINQ WP MCP](https://github.com/agencecinq/cinq-wp-mcp) 1.x, activé
-- Un thème Timber qui affiche ses blocs via `blocks/blocks.html.twig` (convention des thèmes CINQ)
+- WordPress 6.9+, PHP 8.4+
+- ACF Pro
+- Un thème Timber qui affiche ses blocs via `views/blocks/blocks.html.twig` (convention des thèmes CINQ)
+- Facultatif : un `mcp.json` à la racine du thème, pour les descriptions du catalogue
 
 Pour l'installer sur un site : cloner ce dépôt dans `wp-content/plugins/`, puis activer
 **CINQ Éditeur**.
@@ -89,12 +105,12 @@ bash bin/sandbox.sh
 Lance un WordPress jetable ([WP Playground](https://github.com/WordPress/wordpress-playground),
 PHP 8.4, SQLite) sur http://127.0.0.1:9400, déjà connecté en admin, avec :
 
-- le thème agencecinq et CINQ WP MCP tels que sur GitHub (`origin/main`, construits) ;
-- Secure Custom Fields et MCP Adapter ;
+- le thème agencecinq tel que sur GitHub (`origin/main`, construit) ;
+- Secure Custom Fields, à la place d'ACF Pro, qui demande une licence ;
 - ce plugin monté en direct : une modification se voit au rechargement ;
 - une page **Test éditeur visuel** remplie de vrais blocs (`bin/mu-plugins/seed.json`).
 
-Le script attend les dépôts `wp-cinq` et `cinq-wp-mcp` à côté de celui-ci, et demande Node,
+Le script attend le dépôt `wp-cinq` à côté de celui-ci, et demande Node,
 Composer et pnpm. La base vit en mémoire : elle repart de zéro à chaque lancement. L'éditeur est
 sur http://127.0.0.1:9400/wp-admin/admin.php?page=cinq-editor&post=4.
 

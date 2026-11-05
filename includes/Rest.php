@@ -153,7 +153,7 @@ final class Rest {
 					'viewUrl'    => (string) get_permalink( $post ),
 					'previewUrl' => Preview::url( $post ),
 				),
-				'zone'      => $zone->id,
+				'zone'      => $zone->name(),
 				'layouts'   => Model::layouts( $zone, $post ),
 				'published' => Model::read_blocks( $zone, $post->ID ),
 				'draft'     => $draft_blocks,
@@ -165,7 +165,7 @@ final class Rest {
 	/**
 	 * Saves the editor's blocks as the user's draft, and renders the changed ones.
 	 *
-	 * Rows the mapper could not take are left out of what the preview shows,
+	 * Blocks ACF could not take are left out of what the preview shows,
 	 * and reported; the blocks themselves are kept whole in the draft. The
 	 * blocks listed in `render` come back as HTML, so the preview swaps them in
 	 * without fetching the page: one round trip per change.

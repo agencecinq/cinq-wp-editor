@@ -4,8 +4,7 @@
  * Description:       Édite les blocs ACF d'une page à la manière de l'éditeur de thème Shopify : la liste des blocs, l'aperçu en direct du vrai site et les réglages du bloc sélectionné.
  * Version:           0.1.0
  * Requires at least: 6.9
- * Requires PHP:      8.1
- * Requires Plugins:  cinq-wp-mcp
+ * Requires PHP:      8.4
  * Author:            CINQ
  * Author URI:        https://agencecinq.com
  * License:           MIT
@@ -42,16 +41,23 @@ spl_autoload_register(
 	}
 );
 
-// The zones, the layouts, the value mapping and the storage all come from
-// CINQ WP MCP: the editor is a second client of the same model, not a copy.
+// The editor runs on what the theme already has: its ACF fields, its Timber
+// views and its `blocks/blocks.html.twig`. Missing one, it stays off. After
+// the theme is set up: Timber comes with the theme's dependencies.
 add_action(
-	'plugins_loaded',
+	'after_setup_theme',
 	static function (): void {
-		if ( ! class_exists( '\CinqWpMcp\Acf\ZoneRegistry' ) || ! function_exists( 'acf_get_value' ) ) {
+		$missing = Plugin::missing();
+
+		if ( ! empty( $missing ) ) {
 			add_action(
 				'admin_notices',
-				static function (): void {
-					echo '<div class="notice notice-error"><p>' . esc_html__( 'CINQ Éditeur a besoin de CINQ WP MCP et d’ACF Pro (ou Secure Custom Fields).', 'cinq-editor' ) . '</p></div>';
+				static function () use ( $missing ): void {
+					if ( ! current_user_can( 'activate_plugins' ) ) {
+						return;
+					}
+
+					echo '<div class="notice notice-error"><p>' . esc_html__( 'CINQ Éditeur est inactif :', 'cinq-editor' ) . ' ' . esc_html( implode( ' ', $missing ) ) . '</p></div>';
 				}
 			);
 			return;

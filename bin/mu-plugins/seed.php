@@ -7,13 +7,13 @@
 add_action(
 	'wp_loaded',
 	static function (): void {
-		if ( get_option( 'cinq_sandbox_seeded' ) || ! class_exists( '\CinqWpMcp\Acf\ZoneRegistry' ) ) {
+		if ( get_option( 'cinq_sandbox_seeded' ) || ! class_exists( '\CinqEditor\Zone' ) ) {
 			return;
 		}
 
 		// The blueprint creates the page after WordPress first loads: wait for it.
 		$page = get_page_by_path( 'test-editeur-visuel' );
-		$zone = \CinqWpMcp\Acf\ZoneRegistry::primary_for_post_type( 'page' );
+		$zone = $page ? \CinqEditor\Zone::for_post( $page ) : null;
 
 		if ( ! $page || ! $zone ) {
 			return;
@@ -59,13 +59,12 @@ add_action(
 		set_theme_mod( 'nav_menu_locations', $locations );
 
 		$blocks = json_decode( (string) file_get_contents( __DIR__ . '/seed.json' ), true );
-		$mapper = ( new \CinqWpMcp\Acf\ValueMapper( false ) )->scope_to_zone( $zone, 'page', $page->ID );
-		$rows   = $mapper->map_blocks( $blocks );
+		$mapped = \CinqEditor\Model::map( $zone, $page, $blocks );
 
-		\CinqWpMcp\Content\ZoneStore::write( $zone, \CinqWpMcp\Content\Target::post( $page->ID ), $rows );
+		$zone->write( $page->ID, $mapped['rows'] );
 
-		if ( $mapper->has_errors() ) {
-			file_put_contents( __DIR__ . '/seed-errors.log', print_r( $mapper->get_errors(), true ) );
+		if ( ! empty( $mapped['errors'] ) ) {
+			file_put_contents( __DIR__ . '/seed-errors.log', print_r( $mapped['errors'], true ) );
 		}
 	},
 	99
