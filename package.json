@@ -6,7 +6,9 @@
 	"packageManager": "pnpm@12.8.1",
 	"scripts": {
 		"build": "wp-scripts build src/editor.js",
-		"start": "wp-scripts start src/editor.js"
+		"start": "wp-scripts start src/editor.js",
+		"format": "wp-scripts format src",
+		"lint:js": "wp-scripts lint-js src"
 	},
 	"dependencies": {
 		"@wordpress/icons": "^20.0.0"
