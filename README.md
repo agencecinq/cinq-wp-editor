@@ -137,6 +137,11 @@ PHP 8.4, SQLite) on http://127.0.0.1:9400, already logged in as admin, with:
 - this plugin mounted live: a change shows on reload;
 - a **Test éditeur visuel** page filled with real blocks (`bin/mu-plugins/seed.json`).
 
+The sandbox also loads `bin/mu-plugins/test-block.php`: a « Test de l’éditeur (tous les champs) »
+block with every ACF Pro field type, added to the theme's `blocks` field without touching the
+theme, and rendered as ACF formats each value. To try it on a local site, link it into
+`wp-content/mu-plugins/` and add the block to a draft page.
+
 The script expects the `wp-cinq` repository next to this one, and needs Node, Composer and pnpm.
 The database lives in memory: it starts from scratch on each run. The editor is at
 http://127.0.0.1:9400/wp-admin/admin.php?page=cinq-wp-editor&post=4.
