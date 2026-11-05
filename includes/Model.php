@@ -53,6 +53,9 @@ final class Model {
 		'prepend',
 		'append',
 		'mime_types',
+		'toolbar',
+		'tabs',
+		'media_upload',
 	);
 
 	/**

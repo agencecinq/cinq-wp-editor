@@ -22,7 +22,7 @@ html.wp-toolbar:has(.cinq-editor-screen) {
 .cinq-editor {
 	--cinq-border: #dcdcde;
 	--cinq-muted: #646970;
-	--cinq-accent: #2271b1;
+	--cinq-accent: var(--wp-admin-theme-color);
 	--cinq-danger: #d63638;
 
 	position: fixed;
@@ -210,7 +210,7 @@ html.wp-toolbar:has(.cinq-editor-screen) {
 }
 
 .cinq-blocks__item.is-selected {
-	background: #e9f0f8;
+	background: rgba(var(--wp-admin-theme-color--rgb), 0.08);
 	box-shadow: inset 2px 0 0 var(--cinq-accent);
 }
 
@@ -618,4 +618,27 @@ html.wp-toolbar:has(.cinq-editor-screen) {
 	.cinq-inspector.is-empty {
 		display: none;
 	}
+}
+
+/* Rich text: the classic editor's own markup and styles, sized to the panel. */
+
+.cinq-wysiwyg .wp-editor-wrap {
+	position: relative;
+}
+
+.cinq-wysiwyg .wp-editor-area {
+	width: 100%;
+	min-height: 200px;
+}
+
+/* Confirmations */
+
+.cinq-confirm__text {
+	margin: 0 0 24px;
+}
+
+.cinq-confirm__actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
 }

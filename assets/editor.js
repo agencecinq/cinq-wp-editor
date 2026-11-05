@@ -14,6 +14,7 @@
 
 	const { createElement: h, Fragment, useState, useEffect, useRef, useMemo, createRoot } = wp.element;
 	const {
+		BaseControl,
 		Button,
 		CheckboxControl,
 		Modal,
@@ -27,6 +28,8 @@
 		ToggleControl,
 	} = wp.components;
 	const apiFetch = wp.apiFetch;
+	// The classic editor's API: `wp.editor` until the block editor takes the name.
+	const classicEditor = wp.oldEditor || wp.editor;
 	const { addQueryArgs } = wp.url;
 
 	const SAVE_DELAY = 300;
@@ -271,13 +274,8 @@
 				break;
 
 			case "wysiwyg":
-				control = h(TextareaControl, {
-					...common,
-					help: [help, "Texte riche : le HTML est accepté (p, strong, em, ul, li, a)."].filter(Boolean).join(" "),
-					rows: 8,
-					value: value ?? "",
-					onChange,
-				});
+				// One editor per field and block: another block remounts it.
+				control = h(WysiwygField, { key: path, field, label, help, value, onChange });
 				break;
 
 			case "true_false":
@@ -355,6 +353,109 @@
 			{ className: `cinq-field cinq-field--${field.type}${own.length ? " has-error" : ""}` },
 			control,
 			own.map((message, index) => h("p", { key: index, className: "cinq-error" }, message))
+		);
+	}
+
+	let editorSeed = 0;
+
+	/**
+	 * TinyMCE, as ACF and the classic edit screen run it: same toolbars (ACF's,
+	 * with the theme's `acf/fields/wysiwyg/toolbars`), same Visual / Code tabs,
+	 * same « Ajouter un média » button. The textarea is created outside React,
+	 * which must not touch the markup TinyMCE builds around it.
+	 */
+	function WysiwygField({ field, label, help, value, onChange }) {
+		const id = useMemo(() => `cinq-wysiwyg-${++editorSeed}`, []);
+		const holder = useRef(null);
+		const content = useRef(value ?? "");
+		const latest = useRef(onChange);
+
+		latest.current = onChange;
+
+		useEffect(() => {
+			const node = holder.current;
+			const textarea = document.createElement("textarea");
+			const tabs = field.tabs || "all";
+			const toolbar = config.toolbars[field.toolbar] || config.toolbars.full || {};
+
+			textarea.id = id;
+			textarea.className = "wp-editor-area";
+			textarea.rows = 10;
+			textarea.value = content.current;
+			node.appendChild(textarea);
+
+			const emit = () => {
+				const next = classicEditor.getContent(id);
+
+				if (next !== content.current) {
+					content.current = next;
+					latest.current(next);
+				}
+			};
+
+			classicEditor.initialize(id, {
+				tinymce:
+					tabs === "text"
+						? false
+						: {
+								wpautop: true,
+								toolbar1: toolbar[1] || "",
+								toolbar2: toolbar[2] || "",
+								toolbar3: toolbar[3] || "",
+								toolbar4: toolbar[4] || "",
+								setup: (editor) => editor.on("input change undo redo ExecCommand", emit),
+							},
+				quicktags: tabs !== "visual",
+				mediaButtons: Number(field.media_upload) === 1,
+			});
+
+			// The Code tab, and the editor without TinyMCE, type in the textarea.
+			textarea.addEventListener("input", emit);
+
+			return () => {
+				textarea.removeEventListener("input", emit);
+				classicEditor.remove(id);
+				node.replaceChildren();
+			};
+		}, [id]);
+
+		// A value changed from outside, by « Abandonner » for instance.
+		useEffect(() => {
+			const next = value ?? "";
+
+			if (next === content.current) {
+				return;
+			}
+
+			content.current = next;
+
+			const editor = window.tinymce && window.tinymce.get(id);
+
+			if (editor && !editor.isHidden()) {
+				editor.setContent(classicEditor.autop ? classicEditor.autop(next) : next);
+			} else {
+				document.getElementById(id).value = next;
+			}
+		}, [value]);
+
+		return h(BaseControl, { id, label, help, __nextHasNoMarginBottom: true }, h("div", { ref: holder, className: "cinq-wysiwyg" }));
+	}
+
+	/**
+	 * A confirmation, as the block editor asks one: a small modal, the
+	 * destructive action in red, Escape or « Annuler » to back out.
+	 */
+	function Confirm({ title, text, label, onConfirm, onCancel }) {
+		return h(
+			Modal,
+			{ title, size: "small", onRequestClose: onCancel },
+			h("p", { className: "cinq-confirm__text" }, text),
+			h(
+				"div",
+				{ className: "cinq-confirm__actions" },
+				h(Button, { variant: "tertiary", onClick: onCancel }, "Annuler"),
+				h(Button, { variant: "primary", isDestructive: true, onClick: onConfirm }, label)
+			)
 		);
 	}
 
@@ -845,6 +946,7 @@
 		const [selected, setSelected] = useState(null);
 		const [hovered, setHovered] = useState(null);
 		const [errors, setErrors] = useState([]);
+		const [confirm, setConfirm] = useState(null);
 		const [status, setStatus] = useState("idle");
 		const [changed, setChanged] = useState(false);
 		const [picker, setPicker] = useState(false);
@@ -917,6 +1019,9 @@
 				}
 
 				if (data.type === "ready") {
+					// The preview has no admin color scheme: lend it the editor's.
+					toFrame({ type: "theme", rgb: getComputedStyle(document.body).getPropertyValue("--wp-admin-theme-color--rgb").trim() });
+
 					const index = itemsRef.current.findIndex((item) => item.uid === selected);
 					toFrame({ type: "order", uids: itemsRef.current.map((item) => item.uid) });
 					toFrame({ type: "select", index: index < 0 ? null : index });
@@ -1071,20 +1176,19 @@
 
 		const removeBlock = (index) => {
 			const item = itemsRef.current[index];
-			const label = labels[index];
 
-			if (!window.confirm(`Supprimer le bloc « ${label} » ? Vous pourrez encore abandonner le brouillon pour le retrouver.`)) {
-				return;
-			}
-
-			commit(
-				itemsRef.current.filter((other) => other !== item),
-				null
-			);
-
-			if (item.uid === selected) {
-				setSelected(null);
-			}
+			setConfirm({
+				title: "Supprimer le bloc ?",
+				text: `Le bloc « ${labels[index]} » sera retiré de la page. Vous pourrez encore abandonner le brouillon pour le retrouver.`,
+				label: "Supprimer",
+				action: () => {
+					commit(
+						itemsRef.current.filter((other) => other !== item),
+						null
+					);
+					setSelected((current) => (current === item.uid ? null : current));
+				},
+			});
 		};
 
 		const duplicateBlock = (index) => {
@@ -1141,11 +1245,16 @@
 			}
 		}
 
-		async function discard() {
-			if (!window.confirm("Abandonner le brouillon et revenir à la version publiée ?")) {
-				return;
-			}
+		function discard() {
+			setConfirm({
+				title: "Abandonner le brouillon ?",
+				text: "Vos modifications non publiées seront perdues : la page revient à sa version publiée.",
+				label: "Abandonner",
+				action: dropDraft,
+			});
+		}
 
+		async function dropDraft() {
 			clearTimeout(timer.current);
 			pending.current = false;
 			dirty.current.clear();
@@ -1246,7 +1355,16 @@
 				errors,
 				onChange: (block) => updateBlock(items[selectedIndex].uid, block),
 			}),
-			picker && h(BlockPicker, { layouts: state.layouts, onPick: addBlock, onClose: () => setPicker(false) })
+			picker && h(BlockPicker, { layouts: state.layouts, onPick: addBlock, onClose: () => setPicker(false) }),
+			confirm &&
+				h(Confirm, {
+					...confirm,
+					onConfirm: () => {
+						setConfirm(null);
+						confirm.action();
+					},
+					onCancel: () => setConfirm(null),
+				})
 		);
 	}
 

@@ -297,6 +297,12 @@
 				redraw();
 				break;
 
+			case "theme":
+				if (data.rgb) {
+					document.documentElement.style.setProperty("--cinq-editor-accent", data.rgb);
+				}
+				break;
+
 			case "order":
 				applyOrder(Array.isArray(data.uids) ? data.uids : []);
 				break;

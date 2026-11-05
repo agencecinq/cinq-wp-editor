@@ -77,6 +77,25 @@ final class Admin {
 			self::PAGE,
 			array( self::class, 'render' )
 		);
+
+		add_action( 'load-' . self::$hook, array( self::class, 'title' ) );
+	}
+
+	/**
+	 * Names the screen, as the block editor names its own after the post.
+	 *
+	 * A screen out of the menu gets no title from WordPress, and the admin
+	 * header would pass null to `strip_tags()`.
+	 *
+	 * @return void
+	 */
+	public static function title(): void {
+		global $title;
+
+		$post  = self::current_post();
+		$title = $post instanceof WP_Post // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- The admin header reads the screen title from it.
+			? sprintf( 'Éditeur visuel : « %s »', get_the_title( $post ) )
+			: 'Éditeur visuel';
 	}
 
 	/**
@@ -113,6 +132,7 @@ final class Admin {
 		}
 
 		wp_enqueue_media();
+		wp_enqueue_editor();
 		wp_enqueue_style( 'cinq-editor', CINQ_EDITOR_URL . 'assets/editor.css', array( 'wp-components' ), Plugin::asset_version( 'assets/editor.css' ) );
 		wp_enqueue_script(
 			'cinq-editor',
@@ -127,10 +147,39 @@ final class Admin {
 				array(
 					'postId'    => $post->ID,
 					'namespace' => Rest::NAMESPACE,
+					'toolbars'  => self::toolbars(),
 				)
 			) . ';',
 			'before'
 		);
+	}
+
+	/**
+	 * Returns ACF's WYSIWYG toolbars, keyed as a field's `toolbar` setting
+	 * names them: rows of comma-separated TinyMCE buttons.
+	 *
+	 * The theme's `acf/fields/wysiwyg/toolbars` filter applies, as in ACF.
+	 *
+	 * @return array<string, array<int, string>>
+	 */
+	private static function toolbars(): array {
+		$type     = acf_get_field_type( 'wysiwyg' );
+		$toolbars = array();
+
+		if ( ! $type || ! method_exists( $type, 'get_toolbars' ) ) {
+			return $toolbars;
+		}
+
+		foreach ( (array) $type->get_toolbars() as $label => $rows ) {
+			// The key ACF gives each toolbar in its own script.
+			$key = str_replace( '-', '_', sanitize_title( (string) $label ) );
+
+			foreach ( (array) $rows as $index => $buttons ) {
+				$toolbars[ $key ][ $index ] = implode( ',', (array) $buttons );
+			}
+		}
+
+		return $toolbars;
 	}
 
 	/**
