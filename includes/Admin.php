@@ -149,11 +149,15 @@ final class Admin {
 		wp_enqueue_media();
 		wp_enqueue_editor();
 		wp_enqueue_style( 'cinq-wp-editor', CINQ_WP_EDITOR_URL . 'assets/editor.css', array( 'wp-components', 'wp-block-editor' ), Plugin::asset_version( 'assets/editor.css' ) );
+		// The build lists the @wordpress packages the script imports.
+		$asset = require CINQ_WP_EDITOR_PATH . Plugin::SCRIPT_ASSET;
+
 		wp_enqueue_script(
 			'cinq-wp-editor',
-			CINQ_WP_EDITOR_URL . 'assets/editor.js',
-			array( 'wp-element', 'wp-components', 'wp-data', 'wp-notices', 'wp-date', 'wp-keyboard-shortcuts', 'wp-commands', 'wp-block-editor', 'wp-core-data', 'wp-api-fetch', 'wp-url', 'media-editor', 'heartbeat' ),
-			Plugin::asset_version( 'assets/editor.js' ),
+			CINQ_WP_EDITOR_URL . 'build/editor.js',
+			// WordPress scripts that are no packages: the media library and the heartbeat.
+			array_merge( $asset['dependencies'], array( 'media-editor', 'heartbeat' ) ),
+			$asset['version'],
 			true
 		);
 		wp_add_inline_script(

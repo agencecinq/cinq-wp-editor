@@ -70,8 +70,12 @@ TinyMCE through the classic editor API, the admin color scheme, `Modal` for conf
 | Lock | Opening the editor sets WordPress's post lock (`_edit_lock`), renewed by the edit screen's heartbeat (`wp-refresh-post-lock`) every ten seconds and given back on leaving (`wp-remove-post-lock`). The classic edit screen, the block editor and this one see each other's lock. |
 | Publishing | `POST …/publish` refuses while someone else holds the lock, validates everything, refuses as a whole if one field is invalid (never half a page), writes with ACF, then deletes the draft. |
 
-The interface uses `wp.element` and `wp.components`, already provided by WordPress: no build
-step, the files in `assets/` are served as they are.
+The interface is built as WordPress builds its own screens, with
+[`@wordpress/scripts`](https://www.npmjs.com/package/@wordpress/scripts): `src/editor.js` imports
+the `@wordpress/*` packages, which the build leaves to WordPress's scripts (`wp-components`,
+`wp-block-editor`…) and lists in `build/editor.asset.php`, the dependencies the plugin enqueues.
+Only `@wordpress/icons`, which WordPress does not ship as a script, is bundled. The preview script
+and the styles in `assets/` are served as they are.
 
 ```
 cinq-wp-editor.php       plugin header, class loading
@@ -90,7 +94,8 @@ includes/
   PluginUpdater.php      updates from GitHub releases
   Readme.php             README.txt as sections for the details modal
 views/                   Twig templates placed in front of the theme's
-assets/                  editor (editor.js/css) and preview script (preview.js/css)
+src/editor.js            the editor's interface, built into build/ (not in Git)
+assets/                  editor styles (editor.css) and preview script (preview.js/css)
 bin/sandbox.sh           throwaway test WordPress
 .github/workflows/       release on tag: zip and update.json
 ```
@@ -116,10 +121,15 @@ As for [CINQ Theme Updates](https://github.com/agencecinq/cinq-wp-theme-updates)
    names the release: `git tag -a v0.3.0 -m Name` publishes "v0.3.0 · Name".
 
 The `release.yml` workflow checks that the tag matches the version and the changelog, runs
-`composer lint`, builds the zip with `git archive` (`.gitattributes` leaves the development files
-out, this README included) and attaches it to the release with `update.json`.
+`composer lint`, builds the scripts (`pnpm build`), builds the zip with `git archive`
+(`.gitattributes` leaves the development files out, this README and `src/` included) plus `build/`,
+and attaches it to the release with `update.json`.
 
 ## Development
+
+`pnpm install`, then `pnpm build`, or `pnpm start` to rebuild on every change. A clone without
+`build/` stays off and says so in the admin. The release workflow builds it for the zip: nothing
+built is committed.
 
 `composer install`, then `composer lint` (phpcs, WordPress standards and PHP 8.4 compatibility)
 or `composer lint:fix`.
@@ -172,4 +182,3 @@ assigned to the footer. The sandbox creates those menus to work around it.
 1. Undo / redo.
 2. Options pages (header, footer) in the same screen.
 3. Measure and optimise on a real server.
-4. `@wordpress/icons` in place of Dashicons, built by the release workflow.

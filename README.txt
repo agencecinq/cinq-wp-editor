@@ -48,11 +48,13 @@ To publish a release:
 1. Bump `Version` in `cinq-wp-editor.php`, and add the version to the changelog below.
 2. Commit, push, then push a tag: `git tag v0.3.0 && git push origin v0.3.0`. An annotated tag names the release after its message: `git tag -a v0.3.0 -m Name` publishes "v0.3.0 · Name".
 
-The release workflow checks that the tag matches the version and has a changelog entry, builds `cinq-wp-editor.zip` with `git archive` (`.gitattributes` leaves the development files out) and attaches it to the release with `update.json`. An image at `.github/releases/v0.3.0.png` heads its notes, when there is one. The changelog entry becomes the release notes, and the plugin details show this file as it is in the release.
+The release workflow checks that the tag matches the version and has a changelog entry, builds the editor's scripts with `pnpm build`, builds `cinq-wp-editor.zip` with `git archive` (`.gitattributes` leaves the development files out) plus the built scripts and attaches it to the release with `update.json`. An image at `.github/releases/v0.3.0.png` heads its notes, when there is one. The changelog entry becomes the release notes, and the plugin details show this file as it is in the release.
 
 No update is offered when the plugin folder is a Git working copy, since updating replaces the whole folder.
 
 = Development =
+
+Run `pnpm install`, then `pnpm build` (or `pnpm start` to rebuild on every change): the interface is built with `@wordpress/scripts`, as WordPress's own screens are, and a working copy without `build/` stays off and says so. The release workflow builds it for the zip.
 
 Run `composer install`, then `composer lint` (phpcs) or `composer lint:fix` (phpcbf). Use `./vendor/bin/phpcs`, not the global `phpcs` binary: the global install does not register the WordPress standards. `composer lint` also checks the code against PHP 8.4 and later with PHPCompatibilityWP.
 
@@ -81,6 +83,7 @@ Run `composer install`, then `composer lint` (phpcs) or `composer lint:fix` (php
 * The list of blocks and the settings close from the top bar, and the preview takes their room.
 * Blocks and repeater rows have an **Options** menu (duplicate, move up, move down, delete) instead of a row of buttons.
 * The editor screen is titled after the post. The admin header no longer warns that `strip_tags()` was passed null.
+* The interface is built with `@wordpress/scripts`: it imports the `@wordpress` packages, which WordPress loads as its scripts, and uses `@wordpress/icons`, the icons of the block editor, instead of Dashicons.
 * The plugin updates from its GitHub releases, like any other plugin.
 
 = 0.1.0 =

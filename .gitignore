@@ -4,4 +4,6 @@
 .vscode/
 *.log
 /vendor/
+/node_modules/
+/build/
 /.sandbox/

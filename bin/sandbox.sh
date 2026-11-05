@@ -19,6 +19,11 @@ BOX="$HERE/.sandbox"
 
 mkdir -p "$BOX"
 
+if [ ! -f "$HERE/build/editor.asset.php" ]; then
+	echo "→ Scripts de l'éditeur (pnpm build)"
+	(cd "$HERE" && pnpm install --frozen-lockfile --silent && pnpm build >/dev/null)
+fi
+
 if [ ! -d "$BOX/agencecinq" ]; then
 	echo "→ Thème agencecinq (origin/main)"
 	git -C "$CINQ/wp-cinq" fetch -q origin

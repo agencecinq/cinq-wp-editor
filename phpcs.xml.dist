@@ -8,6 +8,7 @@
 	<exclude-pattern>*/node_modules/*</exclude-pattern>
 	<exclude-pattern>/.sandbox/*</exclude-pattern>
 	<exclude-pattern>/bin/*</exclude-pattern>
+	<exclude-pattern>/build/*</exclude-pattern>
 
 	<arg value="sp"/>
 	<arg name="basepath" value="."/>

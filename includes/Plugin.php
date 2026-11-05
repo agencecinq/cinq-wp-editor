@@ -19,6 +19,11 @@ defined( 'ABSPATH' ) || exit;
 final class Plugin {
 
 	/**
+	 * What the build writes next to the editor's script: its dependencies and version.
+	 */
+	public const SCRIPT_ASSET = 'build/editor.asset.php';
+
+	/**
 	 * Registers every hook of the plugin.
 	 *
 	 * @return void
@@ -37,6 +42,10 @@ final class Plugin {
 	 */
 	public static function missing(): array {
 		$missing = array();
+
+		if ( ! is_readable( CINQ_WP_EDITOR_PATH . self::SCRIPT_ASSET ) ) {
+			$missing[] = 'ses scripts ne sont pas construits : lancez « pnpm install && pnpm build » dans le dossier du plugin.';
+		}
 
 		if ( ! function_exists( 'acf_get_field_groups' ) ) {
 			$missing[] = 'il a besoin d’ACF Pro.';

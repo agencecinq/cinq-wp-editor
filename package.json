@@ -1,0 +1,17 @@
+{
+	"name": "cinq-wp-editor",
+	"private": true,
+	"description": "Edits the ACF blocks of a page on one screen, with a live preview of the real site.",
+	"license": "MIT",
+	"packageManager": "pnpm@12.8.1",
+	"scripts": {
+		"build": "wp-scripts build src/editor.js",
+		"start": "wp-scripts start src/editor.js"
+	},
+	"dependencies": {
+		"@wordpress/icons": "^20.0.0"
+	},
+	"devDependencies": {
+		"@wordpress/scripts": "^37.1.0"
+	}
+}

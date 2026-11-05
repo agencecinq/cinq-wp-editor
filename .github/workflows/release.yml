@@ -70,11 +70,22 @@ jobs:
 
       - run: composer install --no-interaction --no-progress && composer lint
 
+      # The editor's script is built with @wordpress/scripts; build/ is not in Git.
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile && pnpm build
+
       - name: Build the zip
         run: |
-          mkdir -p build
-          git archive --format=tar --prefix=cinq-wp-editor/ HEAD | tar -x -C build
-          (cd build && zip -qr ../cinq-wp-editor.zip cinq-wp-editor)
+          mkdir -p package
+          git archive --format=tar --prefix=cinq-wp-editor/ HEAD | tar -x -C package
+          cp -R build package/cinq-wp-editor/build
+          (cd package && zip -qr ../cinq-wp-editor.zip cinq-wp-editor)
           unzip -l cinq-wp-editor.zip | tail -n 5
 
       # Read by the plugin's updater: a plain download, not rate-limited like
