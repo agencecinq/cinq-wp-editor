@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       CINQ Éditeur
  * Plugin URI:        https://github.com/agencecinq/cinq-wp-editor
- * Description:       Édite les blocs ACF d'une page à la manière de l'éditeur de thème Shopify : la liste des blocs, l'aperçu en direct du vrai site et les réglages du bloc sélectionné.
+ * Description:       Édite les blocs ACF d'une page sur un seul écran : la liste des blocs, l'aperçu en direct du vrai site et les réglages du bloc sélectionné.
  * Version:           0.2.0
  * Requires at least: 6.9
  * Requires PHP:      8.4

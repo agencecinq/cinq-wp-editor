@@ -361,5 +361,6 @@
 	new ResizeObserver(redraw).observe(document.body);
 
 	decorate();
-	send({ type: "ready" });
+	// The editor warns when the template renders no block zone.
+	send({ type: "ready", blocks: Boolean(container()) });
 })();

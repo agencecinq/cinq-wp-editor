@@ -21,8 +21,7 @@ defined( 'ABSPATH' ) || exit;
  * Rendering the whole page to keep one block is what made the preview slow:
  * header, footer, menus and every other block, for one changed title. Here the
  * request is set up as the page's own (main query, global post, Timber
- * context) and only the asked blocks go through their template, as Shopify's
- * Section Rendering API does.
+ * context) and only the asked blocks go through their template.
  *
  * Whatever cannot be rendered this way comes back as null, and the editor
  * falls back to fetching the whole page.

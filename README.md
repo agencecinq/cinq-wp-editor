@@ -1,8 +1,8 @@
 # CINQ WP Editor (V0, prototype)
 
-A WordPress plugin that edits the ACF blocks of a page **the way Shopify's theme editor does**:
-the list of blocks on the left, the real page in the middle, the settings of the selected block
-on the right. Change a title and the page updates before your eyes.
+A WordPress plugin that edits the ACF blocks of a page **on one screen**: the list of blocks on
+the left, the real page in the middle, the settings of the selected block on the right. Change a
+title and the page updates before your eyes.
 
 > Status: prototype, open for discussion. It runs end to end on the agencecinq theme in a test
 > WordPress, and on a local copy of Eigrene, but has never been installed on a live site.
@@ -11,7 +11,7 @@ on the right. Change a title and the page updates before your eyes.
 
 Our sites are made of ACF blocks (a `blocks` flexible content field). In the classic admin, the
 client edits a stack of collapsed forms without seeing the result, then clicks « Aperçu » in
-another tab. Shopify solved this: you see the page, click a section, and set it up alongside.
+another tab. Here, you see the page, click a block, and set it up alongside.
 
 This plugin adds that layer **without changing anything in ACF or the theme**:
 
@@ -62,8 +62,8 @@ TinyMCE through the classic editor API, the admin color scheme, and `Modal` for 
 | Step | What happens |
 |---|---|
 | Opening | `GET /cinq-wp-editor/v1/posts/{id}` returns the layouts offered, the published blocks and the draft, if any. |
-| Editing | After 300 ms without typing, a single `PUT …/draft` call validates the blocks with ACF, writes them with ACF onto a hidden `cinq_wp_editor_draft` post (one per page and per user) and returns the HTML of the changed or added blocks only. This is the principle of Shopify's *Section Rendering API*. |
-| Preview | The iframe shows the real page with `?cinq-wp-editor={id}`. The `acf/pre_load_value` filter serves the draft's rows in place of the page's: ACF formats them as usual, and the theme renders them without knowing. A copy of `blocks/blocks.html.twig` placed in front of the theme's wraps each block in a `data-cinq-block` marker. |
+| Editing | After 300 ms without typing, a single `PUT …/draft` call validates the blocks with ACF, writes them with ACF onto a hidden `cinq_wp_editor_draft` post (one per page and per user) and returns the HTML of the changed or added blocks only, rendered alone rather than with the whole page. |
+| Preview | The iframe shows the real page with `?cinq-wp-editor={id}`. When the page's template does not render its blocks, the editor says so and points to the classic edit screen. The `acf/pre_load_value` filter serves the draft's rows in place of the page's: ACF formats them as usual, and the theme renders them without knowing. A copy of `blocks/blocks.html.twig` placed in front of the theme's wraps each block in a `data-cinq-block` marker. |
 | Update | The returned block replaces the old one in the preview. Moving or deleting a block happens directly in the preview, without waiting for the server; an added block shows « Chargement du bloc… » until it is rendered. If a block cannot be rendered alone, the preview reloads the whole page. |
 | Publishing | `POST …/publish` validates everything, refuses as a whole if one field is invalid (never half a page), writes with ACF, then deletes the draft. |
 

@@ -1,6 +1,6 @@
 {
 	"name": "agencecinq/cinq-wp-editor",
-	"description": "Edits the ACF blocks of a page with a live preview, as Shopify's theme editor does.",
+	"description": "Edits the ACF blocks of a page on one screen, with a live preview of the real site.",
 	"type": "wordpress-plugin",
 	"license": "MIT",
 	"require": {

@@ -1,10 +1,10 @@
 /**
  * CINQ Éditeur.
  *
- * Three columns, as in Shopify's theme editor: the blocks of the page on the
- * left, the real page in the middle, the fields of the selected block on the
- * right. Every change is saved as the user's draft after a short pause, then
- * the preview fetches the page again and swaps the changed block in.
+ * Three columns: the blocks of the page on the left, the real page in the
+ * middle, the fields of the selected block on the right. Every change is saved
+ * as the user's draft after a short pause, then the preview fetches the page
+ * again and swaps the changed block in.
  *
  * Written against the WordPress globals (wp.element, wp.components), without a
  * build step, so the prototype runs as soon as the plugin is activated.
@@ -952,6 +952,8 @@
 		const [picker, setPicker] = useState(false);
 		const [device, setDevice] = useState("desktop");
 		const [notice, setNotice] = useState(null);
+		// The template of the page renders no block zone: changes would show nowhere.
+		const [unrendered, setUnrendered] = useState(false);
 
 		const frame = useRef(null);
 		const itemsRef = useRef(items);
@@ -1019,6 +1021,8 @@
 				}
 
 				if (data.type === "ready") {
+					setUnrendered(data.blocks === false);
+
 					// The preview has no admin color scheme: lend it the editor's.
 					toFrame({ type: "theme", rgb: getComputedStyle(document.body).getPropertyValue("--wp-admin-theme-color--rgb").trim() });
 
@@ -1324,11 +1328,18 @@
 					)
 				)
 			),
-			notice &&
+			(notice || unrendered) &&
 				h(
 					"div",
 					{ className: "cinq-notice" },
-					h(Notice, { status: notice.status, onRemove: () => setNotice(null) }, notice.text, errors.length && notice.status === "error" ? ` (${errors.length} champ${errors.length > 1 ? "s" : ""} à corriger)` : "")
+					unrendered &&
+						h(
+							Notice,
+							{ status: "warning", isDismissible: false, actions: [{ label: "Modifier dans l’éditeur classique", url: state.post.editUrl }] },
+							"Le gabarit de cette page n’affiche pas ses blocs : vos modifications ne s’y verront pas."
+						),
+					notice &&
+						h(Notice, { status: notice.status, onRemove: () => setNotice(null) }, notice.text, errors.length && notice.status === "error" ? ` (${errors.length} champ${errors.length > 1 ? "s" : ""} à corriger)` : "")
 				),
 			h(BlockList, {
 				items,

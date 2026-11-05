@@ -4,7 +4,7 @@ Tested up to: 7.1
 License: MIT
 License URI: https://opensource.org/licenses/MIT
 
-Edits the ACF blocks of a page as Shopify's theme editor does: the blocks, a live preview of the real site, and the settings of the selected block.
+Edits the ACF blocks of a page on one screen: the blocks, a live preview of the real site, and the settings of the selected block.
 
 == Description ==
 
@@ -66,6 +66,7 @@ Run `composer install`, then `composer lint` (phpcs) or `composer lint:fix` (php
 * Fields are validated by ACF, with the rules and the messages of the edit screen. A block the theme no longer has, or no longer offers on the post, is reported on the block.
 * Backslashes typed in a field are kept. HTML is filtered as ACF filters it for users without `unfiltered_html`.
 * The editor stays off, and says why in the admin, when ACF Pro, Timber or `views/blocks/blocks.html.twig` is missing.
+* When the template of a page does not render its blocks, the editor says so above the preview, with a link to the classic edit screen.
 * Rich text fields use TinyMCE, with ACF's toolbars, tabs and media button, instead of a field of raw HTML.
 * The editor and the preview follow the admin color scheme.
 * Removing a block and discarding the draft ask for confirmation in a dialog, as the block editor does.
