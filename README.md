@@ -55,7 +55,9 @@ It opens from the list of pages (**Éditeur visuel** when hovering a row), from 
 of a page (**Ouvrir l’éditeur visuel**) or from the admin bar on the site (**Éditer en visuel**).
 
 The interface is drawn with WordPress's own pieces: `wp.components`, the media library,
-TinyMCE through the classic editor API, the admin color scheme, and `Modal` for confirmations.
+TinyMCE through the classic editor API, the admin color scheme, `Modal` for confirmations, the
+`core/notices` store with snackbars and banners, WordPress's date and colour pickers, and an
+**Options** menu on each block and repeater row.
 
 ## How it works
 
@@ -163,4 +165,5 @@ assigned to the footer. The sandbox creates those menus to work around it.
 1. Undo / redo.
 2. Options pages (header, footer) in the same screen.
 3. Measure and optimise on a real server.
-4. Notices as the block editor shows them: snackbars for confirmations, a banner for errors.
+4. `LinkControl` from the block editor for link fields.
+5. `@wordpress/icons` in place of Dashicons, built by the release workflow.
