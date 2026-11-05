@@ -1,127 +1,235 @@
 # CINQ WP Editor (V0, prototype)
 
-Un plugin WordPress qui édite les blocs ACF d'une page **à la manière de l'éditeur de thème
-Shopify** : la liste des blocs à gauche, la vraie page au centre, les réglages du bloc
-sélectionné à droite. On modifie un titre, la page se met à jour sous les yeux.
+A WordPress plugin that edits the ACF blocks of a page **on one screen**: the list of blocks on
+the left, the real page in the middle, the settings of the selected block on the right. Change a
+title and the page updates before your eyes.
 
-> Statut : prototype à discuter. Il tourne de bout en bout sur le thème agencecinq dans un
-> WordPress de test, mais il n'a jamais été installé sur un vrai site.
+> Status: prototype, open for discussion. It runs end to end on the agencecinq theme in a test
+> WordPress, and on a local copy of Eigrene, but has never been installed on a live site.
 
-## Le principe
+## The idea
 
-Nos sites sont faits de blocs ACF (un champ flexible content `blocks`). Dans l'admin classique,
-le client édite une pile de formulaires repliés, sans voir le résultat, puis clique sur
-« Aperçu » dans un autre onglet. Shopify a résolu ça : on voit la page, on clique sur une
-section, on la règle à côté.
+Our sites are made of ACF blocks (a `blocks` flexible content field). In the classic admin, the
+client edits a stack of collapsed forms without seeing the result, then clicks « Preview » in
+another tab. Here, you see the page, click a block, and set it up alongside.
 
-Ce plugin ajoute cette surcouche **sans rien changer à ACF ni au thème** :
+This plugin adds that layer **without changing anything in ACF or the theme**:
 
-- **Les mêmes données.** Les blocs restent des lignes ACF, écrites au même endroit. On peut
-  repasser par l'éditeur classique à tout moment, et désactiver le plugin ne casse rien.
-- **Le vrai rendu.** L'aperçu au centre est la vraie page servie par le thème (Timber, Twig,
-  CSS et JS du site), pas une imitation.
-- **Un brouillon par personne.** Tant qu'on ne clique pas sur « Publier », le public voit la
-  page d'avant. « Abandonner » revient à la version publiée.
-- **Rien à configurer.** Les blocs, leurs champs et leurs contraintes sont lus dans ACF. Les
-  descriptions et consignes de `mcp.json` (celles que lit Claude) servent aussi au catalogue de
-  blocs. Un layout ajouté au thème apparaît dans l'éditeur sans toucher au plugin.
+- **The same data.** Blocks remain ACF rows, written in the same place. The classic edit screen
+  stays available at any time, and deactivating the plugin breaks nothing.
+- **The real rendering.** The preview in the middle is the real page served by the theme
+  (Timber, Twig, the site's CSS and JS), not an imitation.
+- **One draft per person.** Until **Publish** is clicked, visitors see the previous page.
+  **Discard** goes back to the published version.
+- **Nothing to configure.** Blocks, their fields and their constraints are read from ACF. The
+  descriptions and guidance of `mcp.json` (the ones Claude reads) also feed the block catalogue.
+  A layout added to the theme shows up in the editor without touching the plugin.
 
-Il s'appuie sur [CINQ WP MCP](https://github.com/agencecinq/cinq-wp-mcp), qui sait déjà lire
-les zones de blocs, valider des valeurs et les écrire proprement pour Claude : l'éditeur
-réutilise ces briques plutôt que de les refaire.
+It depends on ACF Pro and the theme alone. On start, it checks that the theme has the right
+architecture: ACF Pro active, Timber, and a `views/blocks/block.html.twig` template. Otherwise it
+stays off and says so in the admin. For each post, it asks ACF which field groups apply to it
+(post type, page template…) and looks there for the `blocks` flexible content: a page without a
+block zone has no link to the editor.
 
-## Ce que voit la personne qui édite
-
-| Colonne | Contenu |
+| What the editor does | With what |
 |---|---|
-| Gauche | Les blocs de la page, dans l'ordre. Glisser-déposer ou flèches pour déplacer, dupliquer, supprimer, « Ajouter un bloc » ouvre le catalogue (nom, description, consignes du thème). |
-| Centre | La page en direct, en vue bureau ou mobile. Survoler un bloc l'encadre, cliquer dessus le sélectionne. Les liens ne mènent nulle part, pour ne pas quitter l'éditeur. |
-| Droite | Les champs du bloc sélectionné : textes, images et galeries (médiathèque WordPress), liens, contenus liés (recherche), répéteurs, cases, listes. Un champ refusé par la validation (requis vide, valeur hors liste…) est signalé sous le champ. |
-| En haut | État du brouillon (« Enregistrement du brouillon… », « Brouillon enregistré », « À jour »), **Abandonner**, **Publier** (**Enregistrer** pour une page pas encore publiée). |
+| Find the block zone of a post | `acf_get_field_groups()`, which applies the theme's location rules |
+| Know which blocks to offer | `acf_prepare_field()`, as the edit screen does, less the blocks marked `hidden` in `mcp.json` |
+| Validate | `acf_validate_value()`: the same rules and the same messages as the edit screen |
+| Save | `acf_update_value()`, with ACF's HTML filtering for users without `unfiltered_html` |
+| Describe the blocks | the `blocks` of `mcp.json`, read from the parent theme then the child theme |
 
-On l'ouvre depuis la liste des pages (**Éditeur visuel** au survol d'une ligne), depuis l'écran
-d'édition d'une page (**Ouvrir l'éditeur visuel**) ou depuis la barre d'admin sur le site
-(**Éditer en visuel**).
+[CINQ WP MCP](https://github.com/agencecinq/cinq-wp-mcp) reads the same ACF fields and the same
+`mcp.json`: Claude and the editor offer the same blocks without sharing code.
 
-## Comment ça marche
+## What the person editing sees
 
-| Étape | Ce qui se passe |
+| Column | Content |
 |---|---|
-| Ouverture | `GET /cinq-editor/v1/posts/{id}` renvoie les layouts proposés, les blocs publiés et le brouillon éventuel. |
-| Modification | Après 300 ms sans frappe, un seul appel `PUT …/draft` valide les blocs avec le `ValueMapper` du MCP, les écrit avec ACF sur un post caché `cinq_editor_draft` (un par page et par utilisateur) et renvoie le HTML des seuls blocs modifiés ou ajoutés. C'est le principe de la *Section Rendering API* de Shopify. |
-| Aperçu | L'iframe affiche la vraie page avec `?cinq-editor={id}`. Le filtre `acf/pre_load_value` sert les lignes du brouillon à la place de celles de la page : ACF les formate comme d'habitude, le thème les affiche sans rien savoir. Une copie de `blocks/blocks.html.twig` placée devant celle du thème entoure chaque bloc d'un repère `data-cinq-block`. |
-| Mise à jour | Le bloc renvoyé remplace l'ancien dans l'aperçu. Déplacer ou supprimer un bloc se fait directement dans l'aperçu, sans attendre le serveur ; un bloc ajouté affiche « Chargement du bloc… » jusqu'à son rendu. Si un bloc ne peut pas être rendu seul, l'aperçu recharge la page entière. |
-| Publication | `POST …/publish` valide tout, refuse en bloc si un champ est invalide (jamais une demi-page), écrit avec le `ZoneStore` du MCP puis supprime le brouillon. |
+| Left | The blocks of the page, in order. Drag and drop or arrows to move, duplicate, delete; **Add a block** opens the catalogue (name, description, theme guidance). |
+| Middle | The live page, in desktop or mobile view. Hovering a block outlines it, clicking it selects it. Links lead nowhere, so as not to leave the editor. |
+| Right | The fields of the selected block: text, rich text (TinyMCE, with ACF's toolbars), images and galleries (WordPress media library), links (the block editor's LinkControl), related content and page links with their archives (search), users (search among the roles the field allows), icons (Dashicons, media library or URL), places (address and coordinates), dates and colours (WordPress's pickers), repeaters, checkboxes, lists. A field refused by validation (required and empty, value out of the list…) is flagged under the field. |
+| Top | Buttons to close the list of blocks and the settings, the **Preview** menu (desktop, tablet, mobile), draft status (« Saving the draft… », « Draft saved », « Up to date »), **Discard**, **Publish** (**Save** for a page not yet published, ⌘S / Ctrl+S). The command palette (⌘K) offers the same actions. |
 
-L'interface utilise `wp.element` et `wp.components`, déjà fournis par WordPress : pas d'étape de
-build, les fichiers de `assets/` sont servis tels quels.
+It opens from the list of pages (**Visual editor** when hovering a row), from the edit screen
+of a page (**Open the visual editor**) or from the admin bar on the site (**Edit visually**).
+
+The interface is drawn with WordPress's own pieces: `wp.components`, the media library,
+TinyMCE through the classic editor API, the admin color scheme, `Modal` for confirmations, the
+`core/notices` store with snackbars and banners, toggle groups for button groups (the theme's
+schemes and colours as swatches, from `cinq_schemes()` and `cinq_palette()`), WordPress's date and
+colour pickers, and an
+**Options** menu on each block and repeater row.
+
+## How it works
+
+| Step | What happens |
+|---|---|
+| Opening | `GET /cinq-wp-editor/v1/posts/{id}` returns the layouts offered, the published blocks and the draft, if any. |
+| Editing | After 300 ms without typing, a single `PUT …/draft` call validates the blocks with ACF, writes them with ACF onto a hidden `cinq_wp_editor_draft` post (one per page and per user) and returns the HTML of the changed or added blocks only, rendered alone rather than with the whole page. |
+| Preview | The iframe shows the real page with `?cinq-wp-editor={id}`. When the page's template does not render its blocks, the editor says so and points to the classic edit screen. The `acf/pre_load_value` filter serves the draft's rows in place of the page's: ACF formats them as usual, and the theme renders them without knowing. The theme wraps each block in a `data-cinq-block` marker, as long as the `cinq_wp_editor` Twig global is set: see the theme convention below. |
+| Update | The returned block replaces the old one in the preview. Moving or deleting a block happens directly in the preview, without waiting for the server; an added block shows « Loading the block… » until it is rendered. If a block cannot be rendered alone, the preview reloads the whole page. |
+| Lock | Opening the editor sets WordPress's post lock (`_edit_lock`), renewed by the edit screen's heartbeat (`wp-refresh-post-lock`) every ten seconds and given back on leaving (`wp-remove-post-lock`). The classic edit screen, the block editor and this one see each other's lock. |
+| Publishing | `POST …/publish` refuses while someone else holds the lock, validates everything, refuses as a whole if one field is invalid (never half a page), writes with ACF, then deletes the draft. |
+
+The interface is built as WordPress builds its own screens, with
+[`@wordpress/scripts`](https://www.npmjs.com/package/@wordpress/scripts): `src/editor.js` imports
+the `@wordpress/*` packages, which the build leaves to WordPress's scripts (`wp-components`,
+`wp-block-editor`…) and lists in `build/editor.asset.php`, the dependencies the plugin enqueues.
+Only `@wordpress/icons`, which WordPress does not ship as a script, is bundled. The preview script
+and the styles in `assets/` are served as they are.
 
 ```
-cinq-editor.php          en-tête du plugin, chargement des classes
+cinq-wp-editor.php       plugin header, class loading
+uninstall.php            deletes the drafts when the plugin is deleted
+README.txt               WordPress readme: "View details" modal and changelog
 includes/
-  Admin.php              écran plein page, liens d'accès, scripts
-  Rest.php               les quatre routes (état, brouillon, abandon, publication)
-  Model.php              zones, layouts et validation, via CINQ WP MCP
-  Drafts.php             brouillons (post caché par page et par utilisateur)
-  Preview.php            la vraie page, servie avec le brouillon et les repères
-  Renderer.php           rendu d'un bloc seul pour la mise à jour rapide
-views/                   gabarits Twig placés devant ceux du thème
-assets/                  éditeur (editor.js/css) et script de l'aperçu (preview.js/css)
-bin/sandbox.sh           WordPress de test jetable
+  Admin.php              full-screen screen, entry links, scripts
+  Rest.php               the four routes (state, draft, discard, publish)
+  Model.php              what the editor knows about a post: zone, blocks offered, fields
+  Zone.php               the flexible content of a post, read and written with ACF
+  Blocks.php             editor blocks ↔ ACF rows, validated by ACF
+  Annotations.php        block descriptions, read from the theme's mcp.json
+  Drafts.php             drafts (one hidden post per page and per user)
+  Preview.php            the real page, served with the draft and the markers
+  Renderer.php           rendering of a single block for the quick update
+  PluginUpdater.php      updates from GitHub releases
+  Readme.php             README.txt as sections for the details modal
+src/editor.js            the editor's interface, built into build/ (not in Git)
+assets/                  editor styles (editor.css) and preview script (preview.js/css)
+bin/sandbox.sh           throwaway test WordPress
+.github/workflows/       release on tag: zip and update.json
 ```
 
-## Prérequis
+## Theme convention
 
-- WordPress 6.9+, PHP 8.1+ (le thème agencecinq demande PHP 8.4)
-- ACF Pro ou Secure Custom Fields
-- [CINQ WP MCP](https://github.com/agencecinq/cinq-wp-mcp) 1.x, activé
-- Un thème Timber qui affiche ses blocs via `blocks/blocks.html.twig` (convention des thèmes CINQ)
+The theme renders each block through `views/blocks/block.html.twig`, the only place that knows
+how a layout is included. The stack of `views/blocks/blocks.html.twig` goes through it, and so
+does the editor when it renders a block alone: the editor carries no copy of the theme's
+templates. In the editor's preview, and there only, the `cinq_wp_editor` Twig global is set:
 
-Pour l'installer sur un site : cloner ce dépôt dans `wp-content/plugins/`, puis activer
-**CINQ Éditeur**.
+```twig
+{# views/blocks/block.html.twig #}
+{%- set html -%}
+	{{- include( 'blocks/' ~ ( block.acf_fc_layout | lower | replace( { '_': '-' } ) ) ~ '.html.twig', { block: block, loop: loop }, ignore_missing: true ) -}}
+{%- endset -%}
 
-## L'essayer en local
+{%- if cinq_wp_editor | default( false ) -%}
+	<div data-cinq-block="{{ loop }}" style="display: contents">{{- html -}}</div>
+{%- else -%}
+	{{- html -}}
+{%- endif -%}
+```
+
+`views/blocks/blocks.html.twig` includes it for each block with `loop: loop.index0`, renders its
+stack even with no block when `cinq_wp_editor` is set, so a first one can be added, and puts
+`data-cinq-blocks` on the stack's container (a `display: contents` one if it has none). The
+public page is unchanged.
+
+## Requirements
+
+- WordPress 7.1+, the latest release only, PHP 8.4+
+- ACF Pro 6.8+ and Timber 2.5+, their latest releases
+- A Timber theme rendering each block through `views/blocks/block.html.twig` (the convention of CINQ themes, see below)
+- Optional: a `mcp.json` at the theme root, for the catalogue descriptions
+
+To install it on a site: upload `cinq-wp-editor.zip` from the
+[latest release](https://github.com/agencecinq/cinq-wp-editor/releases/latest), then activate
+**CINQ Editor**. The plugin then updates from its GitHub releases, like the other plugins of the
+CINQ suite; a Git clone is never updated, so as not to overwrite the repository.
+
+## Publishing a version
+
+As for [CINQ Theme Updates](https://github.com/agencecinq/cinq-wp-theme-updates):
+
+1. Bump `Version` in `cinq-wp-editor.php` and add the version to the changelog of `README.txt`.
+2. Commit, push, then push a tag: `git tag v0.3.0 && git push origin v0.3.0`. An annotated tag
+   names the release: `git tag -a v0.3.0 -m Name` publishes "v0.3.0 · Name".
+
+The `release.yml` workflow checks that the tag matches the version and the changelog, runs
+`composer lint`, builds the scripts (`pnpm build`), builds the zip with `git archive`
+(`.gitattributes` leaves the development files out, this README and `src/` included) plus `build/`,
+and attaches it to the release with `update.json`.
+
+## Development
+
+`pnpm install`, then `pnpm build`, or `pnpm start` to rebuild on every change. `pnpm lint:js` checks
+the script against WordPress's JavaScript standards, and `pnpm format` formats it. A clone without
+`build/` stays off and says so in the admin. The release workflow builds it for the zip: nothing
+built is committed.
+
+`composer install`, then `composer lint` (phpcs, WordPress standards and PHP 8.4 compatibility)
+or `composer lint:fix`.
+
+`pnpm test:e2e` runs the end-to-end tests of `tests/e2e/` in Chromium, with Playwright and
+`@wordpress/e2e-test-utils-playwright`, as Gutenberg tests its editor. They run against a site that
+is already up, with ACF Pro, a CINQ theme and `bin/mu-plugins/test-block.php` linked into its
+mu-plugins; each test creates its own draft page and deletes it. Name the site and an
+administrator in a `.env.e2e` file, kept out of Git:
+
+```
+WP_BASE_URL=https://eigrene.local
+WP_USERNAME=cinq-e2e
+WP_PASSWORD=…
+NODE_EXTRA_CA_CERTS=/Users/…/Local/run/router/nginx/certs/eigrene.local.crt
+```
+
+`NODE_EXTRA_CA_CERTS` makes Node trust a Local site's self-signed certificate. On a theme that
+keeps its blocks to one page template, name it with `E2E_PAGE_TEMPLATE`, such as
+`page-templates/blocks-page.php` on Agence CINQ. Give the
+administrator the `en_US` locale: the tests read the interface in its source language.
+
+The interface is in English, translated into French in `languages/`: `__()` in PHP,
+`@wordpress/i18n` in the scripts. After changing a string, run `composer i18n` (WP-CLI 2.7 or
+later): it extracts the strings to the POT file and merges them into the PO file. Translate the
+new or changed ones in the PO file, then run `composer i18n` again: it compiles the MO file for
+PHP and the JSON files WordPress gives the scripts, `build/editor.js` and `assets/preview.js`.
+
+## Trying it locally
 
 ```bash
 bash bin/sandbox.sh
 ```
 
-Lance un WordPress jetable ([WP Playground](https://github.com/WordPress/wordpress-playground),
-PHP 8.4, SQLite) sur http://127.0.0.1:9400, déjà connecté en admin, avec :
+Starts a throwaway WordPress ([WP Playground](https://github.com/WordPress/wordpress-playground),
+PHP 8.4, SQLite) on http://127.0.0.1:9400, already logged in as admin, with:
 
-- le thème agencecinq et CINQ WP MCP tels que sur GitHub (`origin/main`, construits) ;
-- Secure Custom Fields et MCP Adapter ;
-- ce plugin monté en direct : une modification se voit au rechargement ;
-- une page **Test éditeur visuel** remplie de vrais blocs (`bin/mu-plugins/seed.json`).
+- the agencecinq theme as on GitHub (`origin/main`, built);
+- Secure Custom Fields, in place of ACF Pro, which needs a licence;
+- this plugin mounted live: a change shows on reload;
+- a **Test éditeur visuel** page filled with real blocks (`bin/mu-plugins/seed.json`).
 
-Le script attend les dépôts `wp-cinq` et `cinq-wp-mcp` à côté de celui-ci, et demande Node,
-Composer et pnpm. La base vit en mémoire : elle repart de zéro à chaque lancement. L'éditeur est
-sur http://127.0.0.1:9400/wp-admin/admin.php?page=cinq-editor&post=4.
+The sandbox also loads `bin/mu-plugins/test-block.php`: a « Test de l’éditeur (tous les champs) »
+block with every ACF Pro field type, added to the theme's `blocks` field without touching the
+theme, and rendered as ACF formats each value. To try it on a local site, link it into
+`wp-content/mu-plugins/` and add the block to a draft page.
 
-## Limites de la V0
+The script expects the `wp-cinq` repository next to this one, and needs Node, Composer and pnpm.
+The database lives in memory: it starts from scratch on each run. The editor is at
+http://127.0.0.1:9400/wp-admin/admin.php?page=cinq-wp-editor&post=4.
 
-- Fluidité : dans le WordPress de test, le bloc modifié s'affiche environ 1,5 s après la
-  dernière frappe, dont 1,2 s de démarrage de WordPress à chaque requête. Pas encore mesuré sur
-  un vrai serveur.
-- Seule la zone principale (`blocks`) d'un type de contenu est éditée : pas les pages d'options
-  ni les termes.
-- Le WYSIWYG est un champ texte HTML, pas un vrai éditeur de texte riche.
-- Les flexible content imbriqués dans un bloc restent à modifier dans l'éditeur classique.
-- La logique conditionnelle ACF n'est évaluée qu'entre champs voisins.
-- Un composant JS du thème absent au chargement (bloc d'un type jamais vu sur la page) peut ne
-  pas s'initialiser avant un rechargement de l'aperçu.
-- Pas d'annulation pas à pas : « Abandonner » revient à la version publiée.
-- Deux personnes sur la même page ont chacune leur brouillon : la dernière qui publie l'emporte.
-- L'aperçu masque le bandeau cookies du thème (`cinq-consent`) : à généraliser pour d'autres thèmes.
-- Le glisser-déposer de la liste n'a pas pu être testé automatiquement (les flèches, qui font
-  le même déplacement, l'ont été).
+## Limits of the V0
 
-Repéré en passant, côté thème : `footer.html.twig` plante (erreur 500) quand aucun menu n'est
-assigné au pied de page. Le bac à sable crée ces menus pour contourner.
+- Responsiveness: in the test WordPress, the changed block shows about 1.5 s after the last
+  keystroke, 1.2 s of which is WordPress booting on each request. Not yet measured on a real
+  server.
+- Only the main zone (`blocks`) of a post type is edited: not options pages or terms.
+- Flexible content nested in a block is still edited in the classic edit screen.
+- ACF conditional logic is only evaluated between sibling fields.
+- A theme JS component missing at load time (a block of a type never seen on the page) may not
+  initialise before the preview is reloaded.
+- No step-by-step undo: **Discard** goes back to the published version.
+- Two people on the same page: WordPress's post lock keeps it to one at a time, as on the classic
+  edit screen. The one who takes over does not see the other's draft, which stays theirs.
+- The preview hides the theme's cookie banner (`cinq-consent`): to be generalised to other themes.
+- Drag and drop in the list could not be tested automatically (the arrows, which make the same
+  move, were).
 
-## Pistes pour la suite
+Spotted along the way, on the theme side: `footer.html.twig` fails (error 500) when no menu is
+assigned to the footer. The sandbox creates those menus to work around it.
 
-1. Un vrai éditeur de texte riche pour les champs WYSIWYG.
-2. Annuler / rétablir.
-3. Les pages d'options (en-tête, pied de page) dans le même écran.
-4. Mesurer et optimiser sur un vrai serveur.
+## Next steps
+
+1. Undo / redo.
+2. Options pages (header, footer) in the same screen.
+3. Measure and optimise on a real server.

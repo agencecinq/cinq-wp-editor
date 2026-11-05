@@ -1,0 +1,39 @@
+{
+	"name": "cinq-wp-editor",
+	"private": true,
+	"description": "Edits the ACF blocks of a page on one screen, with a live preview of the real site.",
+	"license": "MIT",
+	"packageManager": "pnpm@12.8.1",
+	"scripts": {
+		"build": "wp-scripts build src/editor.js",
+		"start": "wp-scripts start src/editor.js",
+		"format": "wp-scripts format src",
+		"lint:js": "wp-scripts lint-js src tests playwright.config.js",
+		"lint:css": "wp-scripts lint-style 'assets/*.css'",
+		"test:e2e": "node --env-file-if-exists=.env.e2e node_modules/@wordpress/scripts/bin/wp-scripts.js test-playwright"
+	},
+	"dependencies": {
+		"@wordpress/api-fetch": "^8.1.0",
+		"@wordpress/block-editor": "^20.0.0",
+		"@wordpress/commands": "^2.1.0",
+		"@wordpress/components": "^44.0.0",
+		"@wordpress/compose": "^9.1.0",
+		"@wordpress/core-data": "^9.1.0",
+		"@wordpress/data": "^11.1.0",
+		"@wordpress/date": "^6.1.0",
+		"@wordpress/element": "^10.1.0",
+		"@wordpress/html-entities": "^5.1.0",
+		"@wordpress/i18n": "^7.1.0",
+		"@wordpress/icons": "^20.0.0",
+		"@wordpress/keyboard-shortcuts": "^6.1.0",
+		"@wordpress/media-utils": "^6.1.0",
+		"@wordpress/notices": "^6.1.0",
+		"@wordpress/preferences": "^5.1.0",
+		"@wordpress/url": "^5.1.0"
+	},
+	"devDependencies": {
+		"@playwright/test": "1.64.1",
+		"@wordpress/e2e-test-utils-playwright": "^3.2.0",
+		"@wordpress/scripts": "^37.1.0"
+	}
+}

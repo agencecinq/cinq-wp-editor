@@ -1,0 +1,31 @@
+{#
+ # « Test de l'éditeur » block (development only)
+ #
+ # Shows every value of the block as ACF formats it for the theme: rich text
+ # as HTML, arrays as JSON, the rest as text. A change in the editor shows here.
+ #}
+
+<section style="max-width: 960px; margin: 40px auto; padding: 32px; font: 14px/1.5 ui-monospace, monospace; color: #1e1e1e; background: #fff; border: 2px dashed #949494;">
+	<h2 style="margin: 0 0 24px; font: 600 20px/1.3 system-ui, sans-serif;">Test de l’éditeur : {{ block.text | default( '(texte vide)' ) }}</h2>
+
+	<dl style="display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 8px 16px; margin: 0;">
+		{%- for name, value in block -%}
+			{%- if name == 'acf_fc_layout' -%}
+				{# The layout name is the block's type, not one of its values. #}
+			{%- else -%}
+			<dt style="font-weight: 600;">{{ name }}</dt>
+			<dd style="margin: 0; overflow-wrap: anywhere;">
+				{%- if name starts with 'wysiwyg' -%}
+					{{ value | raw }}
+				{%- elseif value is iterable -%}
+					<pre style="margin: 0; white-space: pre-wrap;">{{ value | json_encode( constant( 'JSON_PRETTY_PRINT' ) b-or constant( 'JSON_UNESCAPED_UNICODE' ) b-or constant( 'JSON_UNESCAPED_SLASHES' ) ) }}</pre>
+				{%- elseif value is same as( true ) or value is same as( false ) -%}
+					{{ value ? 'true' : 'false' }}
+				{%- else -%}
+					{{ value is empty ? '—' : value }}
+				{%- endif -%}
+			</dd>
+			{%- endif -%}
+		{%- endfor -%}
+	</dl>
+</section>

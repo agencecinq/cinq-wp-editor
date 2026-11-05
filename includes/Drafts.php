@@ -2,14 +2,13 @@
 /**
  * Draft storage.
  *
- * @package CinqEditor
+ * @package CinqWpEditor
  */
 
 declare( strict_types = 1 );
 
-namespace CinqEditor;
+namespace CinqWpEditor;
 
-use CinqWpMcp\Acf\Zone;
 use WP_Post;
 
 defined( 'ABSPATH' ) || exit;
@@ -23,19 +22,19 @@ defined( 'ABSPATH' ) || exit;
  * ACF's storage is reimplemented here.
  *
  * The blocks as the editor sent them are kept next to the rows, so that a block
- * the mapper refused (a required field still empty) is not lost on reload.
+ * ACF refused (a required field still empty) is not lost on reload.
  */
 final class Drafts {
 
 	/**
 	 * Hidden post type holding the drafts.
 	 */
-	public const POST_TYPE = 'cinq_editor_draft';
+	public const POST_TYPE = 'cinq_wp_editor_draft';
 
 	/**
 	 * Meta key of the editor state.
 	 */
-	private const STATE_META = '_cinq_editor_blocks';
+	private const STATE_META = '_cinq_wp_editor_blocks';
 
 	/**
 	 * Registers the post type.
@@ -49,7 +48,7 @@ final class Drafts {
 				register_post_type(
 					self::POST_TYPE,
 					array(
-						'label'               => 'Brouillons de l’éditeur',
+						'label'               => __( 'Editor drafts', 'cinq-wp-editor' ),
 						'public'              => false,
 						'show_ui'             => false,
 						'show_in_rest'        => false,
@@ -104,7 +103,7 @@ final class Drafts {
 	 * @param WP_Post                          $post   Post being edited.
 	 * @param int                              $user_id User.
 	 * @param array<int, array<string, mixed>> $blocks Blocks as the editor sent them.
-	 * @param array<int, array<string, mixed>> $rows   The same blocks, mapped for ACF.
+	 * @param array<int, array<string, mixed>> $rows   The same blocks, as ACF rows.
 	 * @return int Draft post ID, or 0 on failure.
 	 */
 	public static function save( Zone $zone, WP_Post $post, int $user_id, array $blocks, array $rows ): int {
@@ -117,7 +116,8 @@ final class Drafts {
 					'post_status' => 'draft',
 					'post_parent' => $post->ID,
 					'post_author' => $user_id,
-					'post_title'  => sprintf( 'Brouillon de « %s »', $post->post_title ),
+					/* translators: %s: Post title. */
+					'post_title'  => sprintf( __( 'Draft of “%s”', 'cinq-wp-editor' ), $post->post_title ),
 				)
 			);
 
@@ -126,8 +126,9 @@ final class Drafts {
 			}
 		}
 
-		acf_update_value( $rows, $draft_id, $zone->storage_field() );
-		acf_flush_value_cache( $draft_id, $zone->meta_name() );
+		if ( is_wp_error( $zone->write( $draft_id, $rows ) ) ) {
+			return 0;
+		}
 
 		update_post_meta( $draft_id, self::STATE_META, wp_slash( (string) wp_json_encode( $blocks ) ) );
 

@@ -1,2 +1,11 @@
-.sandbox/
-bin/mu-plugins/*.log
+.DS_Store
+._*
+.idea/
+.vscode/
+*.log
+/vendor/
+/node_modules/
+/build/
+/.sandbox/
+/.env.e2e
+/artifacts/

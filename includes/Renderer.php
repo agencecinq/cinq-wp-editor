@@ -2,14 +2,13 @@
 /**
  * Single-block rendering.
  *
- * @package CinqEditor
+ * @package CinqWpEditor
  */
 
 declare( strict_types = 1 );
 
-namespace CinqEditor;
+namespace CinqWpEditor;
 
-use CinqWpMcp\Acf\Zone;
 use Timber\Timber;
 use WP_Post;
 use WP_Query;
@@ -22,8 +21,7 @@ defined( 'ABSPATH' ) || exit;
  * Rendering the whole page to keep one block is what made the preview slow:
  * header, footer, menus and every other block, for one changed title. Here the
  * request is set up as the page's own (main query, global post, Timber
- * context) and only the asked blocks go through their template, as Shopify's
- * Section Rendering API does.
+ * context) and only the asked blocks go through their template.
  *
  * Whatever cannot be rendered this way comes back as null, and the editor
  * falls back to fetching the whole page.
@@ -42,7 +40,7 @@ final class Renderer {
 	public static function blocks( WP_Post $post, Zone $zone, int $draft_id, array $indexes ): array {
 		$html = array_fill_keys( $indexes, null );
 
-		if ( empty( $indexes ) || ! class_exists( Timber::class ) || ! $zone->is_top_level() ) {
+		if ( empty( $indexes ) ) {
 			return $html;
 		}
 
@@ -69,7 +67,7 @@ final class Renderer {
 		}
 
 		try {
-			$blocks  = get_field( $zone->meta_name(), $post->ID );
+			$blocks  = get_field( $zone->name(), $post->ID );
 			$blocks  = is_array( $blocks ) ? array_values( $blocks ) : array();
 			$context = Timber::context();
 
@@ -78,13 +76,14 @@ final class Renderer {
 					continue;
 				}
 
+				// The theme's own template for one block, marker included.
 				$rendered = Timber::compile(
-					'cinq-editor/block.html.twig',
+					'blocks/block.html.twig',
 					array_merge(
 						$context,
 						array(
 							'block' => $blocks[ $index ],
-							'index' => $index,
+							'loop'  => $index,
 						)
 					)
 				);

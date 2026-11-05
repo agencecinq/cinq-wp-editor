@@ -1,0 +1,9 @@
+packages:
+  - '.'
+
+# Install scripts the build does not need: core-js only prints a message,
+# @parcel/watcher watches Sass, which the editor has none of.
+allowBuilds:
+  '@parcel/watcher': false
+  core-js: false
+  core-js-pure: false

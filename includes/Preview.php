@@ -2,14 +2,12 @@
 /**
  * Live preview.
  *
- * @package CinqEditor
+ * @package CinqWpEditor
  */
 
 declare( strict_types = 1 );
 
-namespace CinqEditor;
-
-use CinqWpMcp\Acf\Zone;
+namespace CinqWpEditor;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -21,16 +19,23 @@ defined( 'ABSPATH' ) || exit;
  * is wrapped in a marker so the editor can find it, and a small script lets
  * the visitor select a block instead of following its links.
  *
- * The marker comes from a copy of the theme's `blocks/blocks.html.twig` put in
- * front of the theme's views. Every CINQ theme renders its blocks through that
- * template, so no theme has to change for the editor to work.
+ * The markers are the theme's: its `blocks/blocks.html.twig` and
+ * `blocks/block.html.twig` put them in when the `cinq_wp_editor` Twig global
+ * says the page is the editor's preview. A theme with those two templates is
+ * one the editor works with; the public page stays as it was.
  */
 final class Preview {
 
 	/**
 	 * Query argument carrying the ID of the post being previewed.
 	 */
-	public const QUERY_ARG = 'cinq-editor';
+	public const QUERY_ARG = 'cinq-wp-editor';
+
+	/**
+	 * Theme template every block goes through, in its preview marker when
+	 * the editor asks for it: what makes a theme one the editor works with.
+	 */
+	public const TEMPLATE = 'views/blocks/block.html.twig';
 
 	/**
 	 * Post being previewed, once the request is known to be a preview.
@@ -124,7 +129,8 @@ final class Preview {
 
 		if ( ! has_filter( 'acf/pre_load_value', array( self::class, 'load_draft' ) ) ) {
 			add_filter( 'acf/pre_load_value', array( self::class, 'load_draft' ), 10, 3 );
-			add_filter( 'timber/locations', array( self::class, 'locations' ) );
+			add_filter( 'acf/pre_load_reference', array( self::class, 'reference' ), 10, 3 );
+			add_filter( 'timber/twig', array( self::class, 'twig' ) );
 		}
 	}
 
@@ -145,7 +151,7 @@ final class Preview {
 			return $value;
 		}
 
-		$is_zone = ( $field['key'] ?? '' ) === self::$zone->key() || ( $field['name'] ?? '' ) === self::$zone->meta_name();
+		$is_zone = ( $field['key'] ?? '' ) === self::$zone->key() || ( $field['name'] ?? '' ) === self::$zone->name();
 
 		if ( ! $is_zone ) {
 			return $value;
@@ -156,22 +162,39 @@ final class Preview {
 	}
 
 	/**
-	 * Puts the editor's views in front of the theme's.
+	 * Names the zone's field for the post being previewed.
 	 *
-	 * @param array<int|string, mixed> $locations Twig locations, keyed by namespace.
-	 * @return array<int|string, mixed>
+	 * ACF finds a field from its name through the post's `_blocks` meta, which
+	 * it writes on the first save. A post never saved yet has none, and ACF
+	 * falls back on the first field of that name it knows, maybe another
+	 * zone's: the draft's rows would then be read with the wrong layouts.
+	 *
+	 * @param string|null $reference  Field key found so far.
+	 * @param string      $field_name Field name.
+	 * @param int|string  $post_id    ACF post ID.
+	 * @return string|null
 	 */
-	public static function locations( array $locations ): array {
-		$views = CINQ_EDITOR_PATH . 'views/';
-
-		if ( isset( $locations['__main__'] ) && is_array( $locations['__main__'] ) ) {
-			array_unshift( $locations['__main__'], $views );
-			return $locations;
+	public static function reference( $reference, $field_name, $post_id ) {
+		if ( null !== $reference || null === self::$zone || $field_name !== self::$zone->name() ) {
+			return $reference;
 		}
 
-		array_unshift( $locations, $views );
+		return is_numeric( $post_id ) && (int) $post_id === self::$post_id ? self::$zone->key() : $reference;
+	}
 
-		return $locations;
+	/**
+	 * Tells the theme's templates they render the editor's preview.
+	 *
+	 * A global rather than a context variable: an include made without the
+	 * context still sees it.
+	 *
+	 * @param \Twig\Environment $twig Twig environment.
+	 * @return \Twig\Environment
+	 */
+	public static function twig( $twig ) {
+		$twig->addGlobal( 'cinq_wp_editor', true );
+
+		return $twig;
 	}
 
 	/**
@@ -180,7 +203,8 @@ final class Preview {
 	 * @return void
 	 */
 	public static function enqueue(): void {
-		wp_enqueue_style( 'cinq-editor-preview', CINQ_EDITOR_URL . 'assets/preview.css', array(), Plugin::asset_version( 'assets/preview.css' ) );
-		wp_enqueue_script( 'cinq-editor-preview', CINQ_EDITOR_URL . 'assets/preview.js', array(), Plugin::asset_version( 'assets/preview.js' ), true );
+		wp_enqueue_style( 'cinq-wp-editor-preview', CINQ_WP_EDITOR_URL . 'assets/preview.css', array(), Plugin::asset_version( 'assets/preview.css' ) );
+		wp_enqueue_script( 'cinq-wp-editor-preview', CINQ_WP_EDITOR_URL . 'assets/preview.js', array( 'wp-i18n' ), Plugin::asset_version( 'assets/preview.js' ), true );
+		wp_set_script_translations( 'cinq-wp-editor-preview', 'cinq-wp-editor', CINQ_WP_EDITOR_PATH . 'languages' );
 	}
 }

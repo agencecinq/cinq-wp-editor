@@ -2,12 +2,12 @@
 /**
  * REST routes of the editor.
  *
- * @package CinqEditor
+ * @package CinqWpEditor
  */
 
 declare( strict_types = 1 );
 
-namespace CinqEditor;
+namespace CinqWpEditor;
 
 use WP_Error;
 use WP_Post;
@@ -25,7 +25,7 @@ final class Rest {
 	/**
 	 * Route namespace.
 	 */
-	public const NAMESPACE = 'cinq-editor/v1';
+	public const NAMESPACE = 'cinq-wp-editor/v1';
 
 	/**
 	 * Registers the routes.
@@ -98,6 +98,31 @@ final class Rest {
 
 		register_rest_route(
 			self::NAMESPACE,
+			'/posts/(?P<id>\d+)/users',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( self::class, 'users' ),
+				'permission_callback' => array( self::class, 'can_edit' ),
+				'args'                => $id + array(
+					'field'   => array(
+						'type'     => 'string',
+						'required' => true,
+					),
+					'search'  => array(
+						'type'    => 'string',
+						'default' => '',
+					),
+					'include' => array(
+						'type'    => 'array',
+						'items'   => array( 'type' => 'integer' ),
+						'default' => array(),
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
 			'/posts/(?P<id>\d+)/publish',
 			array(
 				'methods'             => WP_REST_Server::CREATABLE,
@@ -153,7 +178,7 @@ final class Rest {
 					'viewUrl'    => (string) get_permalink( $post ),
 					'previewUrl' => Preview::url( $post ),
 				),
-				'zone'      => $zone->id,
+				'zone'      => $zone->name(),
 				'layouts'   => Model::layouts( $zone, $post ),
 				'published' => Model::read_blocks( $zone, $post->ID ),
 				'draft'     => $draft_blocks,
@@ -165,7 +190,7 @@ final class Rest {
 	/**
 	 * Saves the editor's blocks as the user's draft, and renders the changed ones.
 	 *
-	 * Rows the mapper could not take are left out of what the preview shows,
+	 * Blocks ACF could not take are left out of what the preview shows,
 	 * and reported; the blocks themselves are kept whole in the draft. The
 	 * blocks listed in `render` come back as HTML, so the preview swaps them in
 	 * without fetching the page: one round trip per change.
@@ -191,7 +216,7 @@ final class Rest {
 		$draft_id = Drafts::save( $zone, $post, get_current_user_id(), $blocks, $mapped['rows'] );
 
 		if ( 0 === $draft_id ) {
-			return new WP_Error( 'cinq_editor_draft_failed', 'Le brouillon n’a pas pu être enregistré.', array( 'status' => 500 ) );
+			return new WP_Error( 'cinq_wp_editor_draft_failed', __( 'The draft could not be saved.', 'cinq-wp-editor' ), array( 'status' => 500 ) );
 		}
 
 		$render = array_values( array_unique( array_map( 'intval', (array) $request->get_param( 'render' ) ) ) );
@@ -245,12 +270,24 @@ final class Rest {
 			return $zone;
 		}
 
+		$holder = Lock::holder( $post );
+
+		// Someone took the page over: their changes are the ones to publish.
+		if ( null !== $holder ) {
+			return new WP_Error(
+				'cinq_wp_editor_locked',
+				/* translators: %s: Name of the user holding the lock. */
+				sprintf( __( '%s is editing this content: nothing was published. Your changes stay in your draft.', 'cinq-wp-editor' ), $holder->display_name ),
+				array( 'status' => 409 )
+			);
+		}
+
 		$mapped = Model::map( $zone, $post, self::blocks( $request ) );
 
 		if ( ! empty( $mapped['errors'] ) ) {
 			return new WP_Error(
-				'cinq_editor_invalid',
-				'Certains champs ne sont pas valides : rien n’a été publié.',
+				'cinq_wp_editor_invalid',
+				__( 'Some fields are not valid: nothing was published.', 'cinq-wp-editor' ),
 				array(
 					'status' => 422,
 					'errors' => $mapped['errors'],
@@ -275,6 +312,75 @@ final class Rest {
 	}
 
 	/**
+	 * Finds users for a user field of the post's zone, as ACF's own search
+	 * does on the edit screen: among the roles the field allows, by name or
+	 * login, and by e-mail for whoever may edit users.
+	 *
+	 * The core route only lists authors of published posts to whoever cannot
+	 * `list_users`, and does not filter them by role for them: an editor could
+	 * not pick a user there that ACF lets them pick.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function users( WP_REST_Request $request ) {
+		$post = self::post( $request );
+
+		if ( is_wp_error( $post ) ) {
+			return $post;
+		}
+
+		$zone = Model::zone( $post );
+
+		if ( is_wp_error( $zone ) ) {
+			return $zone;
+		}
+
+		// Only a user field the editor shows on this post: its roles always
+		// bound the search, as they do in the editor.
+		$field = $zone->field( (string) $request['field'] );
+
+		if ( null === $field || 'user' !== ( $field['type'] ?? '' ) ) {
+			return new WP_Error( 'cinq_wp_editor_not_user_field', __( 'This field is not a user field.', 'cinq-wp-editor' ), array( 'status' => 400 ) );
+		}
+
+		$include = array_filter( array_map( 'absint', (array) $request['include'] ) );
+		$search  = trim( (string) $request['search'] );
+		$args    = array(
+			'fields'  => array( 'ID', 'display_name' ),
+			'number'  => 20,
+			'orderby' => 'display_name',
+		);
+
+		if ( ! empty( $field['role'] ) ) {
+			$args['role__in'] = (array) $field['role'];
+		}
+
+		if ( ! empty( $include ) ) {
+			$args['include'] = $include;
+		} elseif ( '' !== $search ) {
+			$args['search'] = '*' . $search . '*';
+
+			// E-mail addresses are searched only by whoever may see them, as ACF
+			// and the core users route do: otherwise a search for « a@ », then
+			// « ad@ »… would spell anyone's address out.
+			$args['search_columns'] = current_user_can( 'edit_users' )
+				? array( 'user_login', 'user_nicename', 'user_email', 'display_name' )
+				: array( 'user_login', 'user_nicename', 'display_name' );
+		}
+
+		$users = array_map(
+			static fn( $user ): array => array(
+				'id'    => (int) $user->ID,
+				'title' => (string) $user->display_name,
+			),
+			get_users( $args )
+		);
+
+		return new WP_REST_Response( $users );
+	}
+
+	/**
 	 * Returns the post a request targets.
 	 *
 	 * @param WP_REST_Request $request Request.
@@ -284,7 +390,7 @@ final class Rest {
 		$post = get_post( (int) $request['id'] );
 
 		if ( ! $post instanceof WP_Post || Drafts::POST_TYPE === $post->post_type ) {
-			return new WP_Error( 'cinq_editor_not_found', 'Contenu introuvable.', array( 'status' => 404 ) );
+			return new WP_Error( 'cinq_wp_editor_not_found', 'Contenu introuvable.', array( 'status' => 404 ) );
 		}
 
 		return $post;

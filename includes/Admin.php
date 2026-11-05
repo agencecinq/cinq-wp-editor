@@ -2,12 +2,12 @@
 /**
  * Admin screen and entry points.
  *
- * @package CinqEditor
+ * @package CinqWpEditor
  */
 
 declare( strict_types = 1 );
 
-namespace CinqEditor;
+namespace CinqWpEditor;
 
 use WP_Admin_Bar;
 use WP_Post;
@@ -23,7 +23,7 @@ final class Admin {
 	/**
 	 * Slug of the editor screen.
 	 */
-	public const PAGE = 'cinq-editor';
+	public const PAGE = 'cinq-wp-editor';
 
 	/**
 	 * Hook suffix of the editor screen.
@@ -71,12 +71,47 @@ final class Admin {
 	public static function menu(): void {
 		self::$hook = (string) add_submenu_page(
 			'',
-			'Éditeur visuel',
-			'Éditeur visuel',
+			__( 'Visual editor', 'cinq-wp-editor' ),
+			__( 'Visual editor', 'cinq-wp-editor' ),
 			'edit_pages',
 			self::PAGE,
 			array( self::class, 'render' )
 		);
+
+		add_action( 'load-' . self::$hook, array( self::class, 'load' ) );
+	}
+
+	/**
+	 * Prepares the screen: takes the lock over when asked, then names it.
+	 *
+	 * @return void
+	 */
+	public static function load(): void {
+		$post = self::current_post();
+
+		if ( $post instanceof WP_Post ) {
+			Lock::take_over( $post );
+		}
+
+		self::title();
+	}
+
+	/**
+	 * Names the screen, as the block editor names its own after the post.
+	 *
+	 * A screen out of the menu gets no title from WordPress, and the admin
+	 * header would pass null to `strip_tags()`.
+	 *
+	 * @return void
+	 */
+	private static function title(): void {
+		global $title;
+
+		$post  = self::current_post();
+		$title = $post instanceof WP_Post // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- The admin header reads the screen title from it.
+			/* translators: %s: Post title. */
+			? sprintf( __( 'Visual editor: “%s”', 'cinq-wp-editor' ), get_the_title( $post ) )
+			: __( 'Visual editor', 'cinq-wp-editor' );
 	}
 
 	/**
@@ -88,11 +123,11 @@ final class Admin {
 		$post = self::current_post();
 
 		if ( ! $post instanceof WP_Post ) {
-			echo '<div class="wrap"><h1>Éditeur visuel</h1><p>Ouvrez l’éditeur depuis la liste des pages.</p></div>';
+			echo '<div class="wrap"><h1>' . esc_html__( 'Visual editor', 'cinq-wp-editor' ) . '</h1><p>' . esc_html__( 'Open the editor from the list of pages.', 'cinq-wp-editor' ) . '</p></div>';
 			return;
 		}
 
-		echo '<div id="cinq-editor" class="cinq-editor"></div>';
+		echo '<div id="cinq-wp-editor" class="cinq-wp-editor"></div>';
 	}
 
 	/**
@@ -113,24 +148,97 @@ final class Admin {
 		}
 
 		wp_enqueue_media();
-		wp_enqueue_style( 'cinq-editor', CINQ_EDITOR_URL . 'assets/editor.css', array( 'wp-components' ), Plugin::asset_version( 'assets/editor.css' ) );
+		wp_enqueue_editor();
+		wp_enqueue_style( 'cinq-wp-editor', CINQ_WP_EDITOR_URL . 'assets/editor.css', array( 'wp-components', 'wp-block-editor' ), Plugin::asset_version( 'assets/editor.css' ) );
+		// The build lists the @wordpress packages the script imports.
+		$asset = require CINQ_WP_EDITOR_PATH . Plugin::SCRIPT_ASSET;
+
 		wp_enqueue_script(
-			'cinq-editor',
-			CINQ_EDITOR_URL . 'assets/editor.js',
-			array( 'wp-element', 'wp-components', 'wp-api-fetch', 'wp-url', 'media-editor' ),
-			Plugin::asset_version( 'assets/editor.js' ),
+			'cinq-wp-editor',
+			CINQ_WP_EDITOR_URL . 'build/editor.js',
+			// WordPress scripts that are no packages: the media library and the heartbeat.
+			array_merge( $asset['dependencies'], array( 'media-editor', 'heartbeat' ) ),
+			$asset['version'],
 			true
 		);
+		wp_set_script_translations( 'cinq-wp-editor', 'cinq-wp-editor', CINQ_WP_EDITOR_PATH . 'languages' );
 		wp_add_inline_script(
-			'cinq-editor',
-			'window.cinqEditor = ' . wp_json_encode(
+			'cinq-wp-editor',
+			'window.cinqWpEditor = ' . wp_json_encode(
 				array(
 					'postId'    => $post->ID,
 					'namespace' => Rest::NAMESPACE,
+					'toolbars'  => self::toolbars(),
+					'swatches'  => self::swatches(),
+					'dashicons' => self::dashicons(),
+					'lock'      => Lock::open( $post ),
 				)
 			) . ';',
 			'before'
 		);
+	}
+
+	/**
+	 * Returns ACF's WYSIWYG toolbars, keyed as a field's `toolbar` setting
+	 * names them: rows of comma-separated TinyMCE buttons.
+	 *
+	 * The theme's `acf/fields/wysiwyg/toolbars` filter applies, as in ACF.
+	 *
+	 * @return array<string, array<int, string>>
+	 */
+	private static function toolbars(): array {
+		$toolbars = array();
+
+		foreach ( acf_get_field_type( 'wysiwyg' )->get_toolbars() as $label => $rows ) {
+			// The key ACF gives each toolbar in its own script.
+			$key = str_replace( '-', '_', sanitize_title( (string) $label ) );
+
+			foreach ( (array) $rows as $index => $buttons ) {
+				$toolbars[ $key ][ $index ] = implode( ',', (array) $buttons );
+			}
+		}
+
+		return $toolbars;
+	}
+
+	/**
+	 * Returns the colours the theme draws its scheme and colour choices with,
+	 * from the helpers of CINQ themes: `cinq_schemes()` and `cinq_palette()`,
+	 * the ones its admin styles use too.
+	 *
+	 * @return array{schemes: array<string, array{background: string, foreground: string}>, palette: array<string, array{background: string}>}
+	 */
+	private static function swatches(): array {
+		$swatches = array(
+			'schemes' => array(),
+			'palette' => array(),
+		);
+
+		if ( function_exists( 'cinq_schemes' ) && function_exists( 'cinq_scheme_color' ) ) {
+			foreach ( array_keys( cinq_schemes() ) as $slug ) {
+				$swatches['schemes'][ (string) $slug ] = array(
+					'background' => cinq_scheme_color( (string) $slug, 'background' ),
+					'foreground' => cinq_scheme_color( (string) $slug, 'foreground' ),
+				);
+			}
+		}
+
+		if ( function_exists( 'cinq_palette' ) ) {
+			foreach ( cinq_palette() as $slug => $color ) {
+				$swatches['palette'][ (string) $slug ] = array( 'background' => (string) ( $color['value'] ?? '' ) );
+			}
+		}
+
+		return $swatches;
+	}
+
+	/**
+	 * Returns the Dashicons ACF's icon picker offers, with its labels.
+	 *
+	 * @return array<string, string> Labels keyed by class, such as `dashicons-admin-home`.
+	 */
+	private static function dashicons(): array {
+		return acf_get_field_type( 'icon_picker' )->get_dashicons();
 	}
 
 	/**
@@ -140,10 +248,10 @@ final class Admin {
 	 * @return string
 	 */
 	public static function body_class( string $classes ): string {
-		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		$screen = get_current_screen();
 
 		if ( null !== $screen && '' !== self::$hook && $screen->id === self::$hook ) {
-			$classes .= ' cinq-editor-screen';
+			$classes .= ' cinq-wp-editor-screen';
 		}
 
 		return $classes;
@@ -161,10 +269,10 @@ final class Admin {
 			return $actions;
 		}
 
-		$actions['cinq_editor'] = sprintf(
+		$actions['cinq_wp_editor'] = sprintf(
 			'<a href="%s">%s</a>',
 			esc_url( self::url( $post->ID ) ),
-			esc_html__( 'Éditeur visuel', 'cinq-editor' )
+			esc_html__( 'Visual editor', 'cinq-wp-editor' )
 		);
 
 		return $actions;
@@ -184,7 +292,7 @@ final class Admin {
 		printf(
 			'<div class="misc-pub-section"><a class="button" href="%s">%s</a></div>',
 			esc_url( self::url( $post->ID ) ),
-			esc_html__( 'Ouvrir l’éditeur visuel', 'cinq-editor' )
+			esc_html__( 'Open the visual editor', 'cinq-wp-editor' )
 		);
 	}
 
@@ -207,8 +315,8 @@ final class Admin {
 
 		$bar->add_node(
 			array(
-				'id'    => 'cinq-editor',
-				'title' => esc_html__( 'Éditer en visuel', 'cinq-editor' ),
+				'id'    => 'cinq-wp-editor',
+				'title' => esc_html__( 'Edit visually', 'cinq-wp-editor' ),
 				'href'  => self::url( $post->ID ),
 			)
 		);

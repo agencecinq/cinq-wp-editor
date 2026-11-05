@@ -2,30 +2,23 @@
 /**
  * What the editor knows about a post.
  *
- * @package CinqEditor
+ * @package CinqWpEditor
  */
 
 declare( strict_types = 1 );
 
-namespace CinqEditor;
+namespace CinqWpEditor;
 
-use CinqWpMcp\Abilities\Discovery;
-use CinqWpMcp\Acf\BlockNormalizer;
-use CinqWpMcp\Acf\ValueMapper;
-use CinqWpMcp\Acf\Zone;
-use CinqWpMcp\Acf\ZoneRegistry;
-use CinqWpMcp\Content\Target;
-use CinqWpMcp\Content\ZoneStore;
 use WP_Error;
 use WP_Post;
 
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Reads the zone, the layouts and the blocks of a post through CINQ WP MCP.
+ * Reads the zone, the layouts and the blocks of a post out of ACF.
  *
- * The editor only edits the primary zone of a post type: the `blocks` field of
- * a page or a case study. Options pages and term zones are out of scope here.
+ * The editor only edits the zone of a post: the `blocks` field of a page or a
+ * case study. Options pages and terms are out of scope here.
  */
 final class Model {
 
@@ -60,21 +53,32 @@ final class Model {
 		'prepend',
 		'append',
 		'mime_types',
+		'toolbar',
+		'tabs',
+		'media_upload',
+		'display_format',
+		'first_day',
+		'enable_opacity',
+		'role',
+		'center_lat',
+		'center_lng',
+		'zoom',
 	);
 
 	/**
-	 * Returns the primary zone of a post, or an error when it has none.
+	 * Returns the zone of a post, or an error when it has none.
 	 *
 	 * @param WP_Post $post Post.
 	 * @return Zone|WP_Error
 	 */
 	public static function zone( WP_Post $post ) {
-		$zone = ZoneRegistry::primary_for_post_type( $post->post_type );
+		$zone = Zone::for_post( $post );
 
 		if ( null === $zone ) {
 			return new WP_Error(
-				'cinq_editor_no_zone',
-				sprintf( 'Le type de contenu « %s » n’a pas de zone de blocs.', $post->post_type ),
+				'cinq_wp_editor_no_zone',
+				/* translators: %s: Post title. */
+				sprintf( __( '“%s” has no block zone.', 'cinq-wp-editor' ), get_the_title( $post ) ),
 				array( 'status' => 400 )
 			);
 		}
@@ -89,29 +93,60 @@ final class Model {
 	 * @return bool
 	 */
 	public static function supports( WP_Post $post ): bool {
-		return null !== ZoneRegistry::primary_for_post_type( $post->post_type );
+		return null !== Zone::for_post( $post );
 	}
 
 	/**
-	 * Returns the layouts offered on a post, ready for the client.
+	 * Returns the layouts offered on a post.
+	 *
+	 * The theme may narrow the layouts of the field for a post with an
+	 * `acf/prepare_field` filter, as the classic edit screen applies it; a
+	 * block marked `hidden` in `mcp.json` is offered to no client.
+	 *
+	 * @param Zone    $zone Zone.
+	 * @param WP_Post $post Post.
+	 * @return array<string, true>
+	 */
+	public static function offered( Zone $zone, WP_Post $post ): array {
+		// The theme reads the post being edited out of ACF's form data, the way
+		// the edit screen sets it. Put it back afterwards: this runs mid-request.
+		$previous = acf_get_form_data( 'post_id' );
+
+		acf_set_form_data( 'post_id', $post->ID );
+		$prepared = acf_prepare_field( $zone->field );
+		acf_set_form_data( 'post_id', $previous );
+
+		$offered = array();
+
+		foreach ( is_array( $prepared ) ? Zone::index_layouts( $prepared ) : array() as $name => $layout ) {
+			if ( isset( $zone->layouts()[ $name ] ) && ! Annotations::get( $name )['hidden'] ) {
+				$offered[ $name ] = true;
+			}
+		}
+
+		return $offered;
+	}
+
+	/**
+	 * Returns the layouts of a zone, ready for the client.
 	 *
 	 * @param Zone    $zone Zone.
 	 * @param WP_Post $post Post.
 	 * @return array<int, array<string, mixed>>
 	 */
 	public static function layouts( Zone $zone, WP_Post $post ): array {
-		$offered = ZoneRegistry::layouts_for_post_type( $zone, $post->post_type, $post->ID );
+		$offered = self::offered( $zone, $post );
 		$out     = array();
 
 		// Layouts already on the page but no longer offered stay editable.
 		foreach ( $zone->layouts() as $name => $layout ) {
-			$annotation = Discovery::annotation( (string) $name );
+			$annotation = Annotations::get( (string) $name );
 
 			$out[] = array(
 				'name'        => (string) $name,
 				'label'       => (string) ( $layout['label'] ?? $name ),
-				'description' => $annotation['description'] ?? '',
-				'guidance'    => $annotation['guidance'] ?? '',
+				'description' => $annotation['description'],
+				'guidance'    => $annotation['guidance'],
 				'offered'     => isset( $offered[ $name ] ),
 				'fields'      => self::fields( $layout['sub_fields'] ?? array() ),
 			);
@@ -121,20 +156,18 @@ final class Model {
 	}
 
 	/**
-	 * Returns the blocks stored on a post, in the shape the mapper accepts back.
+	 * Returns the blocks stored on a post, keyed by field name.
 	 *
-	 * @param Zone $zone    Zone.
-	 * @param int  $acf_id  Post ID the values are stored against.
+	 * @param Zone $zone   Zone.
+	 * @param int  $acf_id Post ID the values are stored against.
 	 * @return array<int, array<string, mixed>>
 	 */
 	public static function read_blocks( Zone $zone, int $acf_id ): array {
-		$rows = acf_get_value( $acf_id, $zone->storage_field() );
-
-		return BlockNormalizer::normalize_blocks( is_array( $rows ) ? array_values( $rows ) : array(), $zone->layouts() );
+		return Blocks::read( $zone, $acf_id );
 	}
 
 	/**
-	 * Maps blocks sent by the editor onto ACF rows.
+	 * Turns blocks sent by the editor into ACF rows, validated by ACF.
 	 *
 	 * @param Zone                             $zone   Zone.
 	 * @param WP_Post                          $post   Post being edited.
@@ -142,31 +175,72 @@ final class Model {
 	 * @return array{rows: array<int, array<string, mixed>>, errors: array<int, array{path: string, message: string}>}
 	 */
 	public static function map( Zone $zone, WP_Post $post, array $blocks ): array {
-		$mapper = ( new ValueMapper( false ) )->scope_to_zone( $zone, $post->post_type, $post->ID );
-		$rows   = $mapper->map_blocks( $blocks );
-
-		return array(
-			'rows'   => $rows,
-			'errors' => $mapper->get_errors(),
-		);
+		return Blocks::prepare( $zone, $blocks, self::offered( $zone, $post ) );
 	}
 
 	/**
-	 * Writes mapped rows onto the post itself.
+	 * Writes rows onto the post itself.
 	 *
 	 * @param Zone                             $zone Zone.
 	 * @param WP_Post                          $post Post.
-	 * @param array<int, array<string, mixed>> $rows Mapped rows.
+	 * @param array<int, array<string, mixed>> $rows Rows, keyed by field key.
 	 * @return true|WP_Error
 	 */
 	public static function publish( Zone $zone, WP_Post $post, array $rows ) {
-		$target = Target::post( $post->ID );
+		return $zone->write( $post->ID, $rows );
+	}
 
-		if ( is_wp_error( $target ) ) {
-			return $target;
+	/**
+	 * Returns the tabs of an icon picker the editor can draw, as ACF offers
+	 * them: its own list, filtered by the user's capabilities and by
+	 * `acf/fields/icon_picker/tabs`, then by the field's setting.
+	 *
+	 * @param array<string, mixed> $field Icon picker field.
+	 * @return array<int, array{name: string, label: string}>
+	 */
+	private static function icon_tabs( array $field ): array {
+		$tabs    = acf_get_field_type( 'icon_picker' )->get_tabs();
+		$allowed = is_array( $field['tabs'] ?? null ) ? $field['tabs'] : array_keys( $tabs );
+		$out     = array();
+
+		foreach ( $tabs as $name => $label ) {
+			// Custom icon lists from other plugins are left to the edit screen.
+			if ( in_array( $name, $allowed, true ) && in_array( $name, array( 'dashicons', 'media_library', 'url' ), true ) ) {
+				$out[] = array(
+					'name'  => (string) $name,
+					'label' => wp_strip_all_tags( (string) $label ),
+				);
+			}
 		}
 
-		return ZoneStore::write( $zone, $target, $rows );
+		return $out;
+	}
+
+	/**
+	 * Returns the archives a page link may point to, as ACF lists them: those
+	 * of the field's post types, or of every public post type.
+	 *
+	 * @param array<string, mixed> $field Page link field.
+	 * @return array<int, array{id: string, title: string}>
+	 */
+	private static function archives( array $field ): array {
+		$post_types = empty( $field['post_type'] ) ? get_post_types( array( 'public' => true ) ) : (array) $field['post_type'];
+		$out        = array();
+
+		foreach ( $post_types as $post_type ) {
+			$link   = get_post_type_archive_link( (string) $post_type );
+			$object = get_post_type_object( (string) $post_type );
+
+			if ( $link && $object ) {
+				$out[] = array(
+					'id'    => $link,
+					/* translators: %s: Post type name. */
+					'title' => sprintf( __( 'Archive: %s', 'cinq-wp-editor' ), $object->labels->name ),
+				);
+			}
+		}
+
+		return $out;
 	}
 
 	/**
@@ -185,8 +259,21 @@ final class Model {
 
 			$kept = array_intersect_key( $field, array_flip( self::FIELD_KEYS ) );
 
+			// A clone shown as a group holds its fields as a group does.
+			if ( 'clone' === ( $kept['type'] ?? '' ) ) {
+				$kept['type'] = 'group';
+			}
+
 			if ( isset( $kept['instructions'] ) ) {
 				$kept['instructions'] = wp_strip_all_tags( (string) $kept['instructions'] );
+			}
+
+			if ( 'icon_picker' === ( $kept['type'] ?? '' ) ) {
+				$kept['icon_tabs'] = self::icon_tabs( $field );
+			}
+
+			if ( 'page_link' === ( $kept['type'] ?? '' ) && ! empty( $field['allow_archives'] ) ) {
+				$kept['archives'] = self::archives( $field );
 			}
 
 			if ( ! empty( $field['sub_fields'] ) && is_array( $field['sub_fields'] ) ) {

@@ -1,0 +1,112 @@
+name: Release
+
+# Push a tag such as v0.3.0: the plugin zip and its update.json manifest are
+# built and attached to a GitHub release, whose notes are the changelog entry
+# of README.txt. An annotated tag names the release after its message:
+# `git tag -a v0.3.0 -m Name` publishes "v0.3.0 · Name". Sites
+# running the plugin see the update within twelve hours, and install it on
+# their own where auto-updates are on.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Checkout turns an annotated tag into a lightweight one: fetch it again to read its message.
+      - name: Name the release
+        id: release
+        run: |
+          git fetch --force origin "refs/tags/$GITHUB_REF_NAME:refs/tags/$GITHUB_REF_NAME"
+          NAME="$GITHUB_REF_NAME"
+          if [ "$(git cat-file -t "$GITHUB_REF_NAME")" = "tag" ]; then
+            SUBJECT="$(git tag -l --format='%(contents:subject)' "$GITHUB_REF_NAME")"
+            if [ -n "$SUBJECT" ]; then
+              NAME="$GITHUB_REF_NAME · $SUBJECT"
+            fi
+          fi
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+
+      - name: Check the version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          header="$(sed -n 's/^ \* Version: *//p' cinq-wp-editor.php)"
+          if [ "$tag" != "$header" ]; then
+            echo "Tag $tag, header $header: bump Version in cinq-wp-editor.php." >&2
+            exit 1
+          fi
+
+      - name: Read the changelog entry
+        run: |
+          awk -v heading="= ${GITHUB_REF_NAME#v} =" '$0 == heading { found = 1; next } found && /^=/ { exit } found' README.txt > notes.md
+          if ! grep -q . notes.md; then
+            echo "No changelog entry for ${GITHUB_REF_NAME#v} in README.txt." >&2
+            exit 1
+          fi
+          cat notes.md
+
+      # An image at .github/releases/<tag>.png heads the release notes.
+      - name: Add the release image
+        env:
+          NAME: ${{ steps.release.outputs.name }}
+        run: |
+          image=".github/releases/$GITHUB_REF_NAME.png"
+          if [ -f "$image" ]; then
+            { printf '![%s](https://raw.githubusercontent.com/%s/%s/%s)\n\n' "$NAME" "$GITHUB_REPOSITORY" "$GITHUB_REF_NAME" "$image"; cat notes.md; } > notes.tmp
+            mv notes.tmp notes.md
+          fi
+
+      - run: composer install --no-interaction --no-progress && composer lint
+
+      # The editor's script is built with @wordpress/scripts; build/ is not in Git.
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile && pnpm lint:js && pnpm lint:css && pnpm build
+
+      - name: Build the zip
+        run: |
+          mkdir -p package
+          git archive --format=tar --prefix=cinq-wp-editor/ HEAD | tar -x -C package
+          cp -R build package/cinq-wp-editor/build
+          (cd package && zip -qr ../cinq-wp-editor.zip cinq-wp-editor)
+          unzip -l cinq-wp-editor.zip | tail -n 5
+
+      # Read by the plugin's updater: a plain download, not rate-limited like
+      # GitHub's API. The readme fills the "View details" modal.
+      - name: Write the update manifest
+        run: |
+          jq -n \
+            --arg version "${GITHUB_REF_NAME#v}" \
+            --arg url "https://github.com/${GITHUB_REPOSITORY}/releases/tag/${GITHUB_REF_NAME}" \
+            --arg package "https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/cinq-wp-editor.zip" \
+            --arg requires "$(sed -n 's/^ \* Requires at least: *//p' cinq-wp-editor.php)" \
+            --arg requires_php "$(sed -n 's/^ \* Requires PHP: *//p' cinq-wp-editor.php)" \
+            --arg last_updated "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --rawfile readme README.txt \
+            '{version: $version, url: $url, package: $package, requires: $requires, requires_php: $requires_php, last_updated: $last_updated, readme: $readme}' > update.json
+          jq 'del(.readme)' update.json
+
+      - uses: softprops/action-gh-release@v3
+        with:
+          name: ${{ steps.release.outputs.name }}
+          files: |
+            cinq-wp-editor.zip
+            update.json
+          body_path: notes.md
