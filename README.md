@@ -49,7 +49,7 @@ block zone has no link to the editor.
 | Left | The blocks of the page, in order. Drag and drop or arrows to move, duplicate, delete; « Ajouter un bloc » opens the catalogue (name, description, theme guidance). |
 | Middle | The live page, in desktop or mobile view. Hovering a block outlines it, clicking it selects it. Links lead nowhere, so as not to leave the editor. |
 | Right | The fields of the selected block: text, rich text (TinyMCE, with ACF's toolbars), images and galleries (WordPress media library), links, related content and page links with their archives (search), users (search among the roles the field allows), icons (Dashicons, media library or URL), places (address and coordinates), dates and colours (WordPress's pickers), repeaters, checkboxes, lists. A field refused by validation (required and empty, value out of the list…) is flagged under the field. |
-| Top | Draft status (« Enregistrement du brouillon… », « Brouillon enregistré », « À jour »), **Abandonner**, **Publier** (**Enregistrer** for a page not yet published). |
+| Top | Buttons to close the list of blocks and the settings, the **Aperçu** menu (desktop, tablet, mobile), draft status (« Enregistrement du brouillon… », « Brouillon enregistré », « À jour »), **Abandonner**, **Publier** (**Enregistrer** for a page not yet published, ⌘S / Ctrl+S). The command palette (⌘K) offers the same actions. |
 
 It opens from the list of pages (**Éditeur visuel** when hovering a row), from the edit screen
 of a page (**Ouvrir l’éditeur visuel**) or from the admin bar on the site (**Éditer en visuel**).

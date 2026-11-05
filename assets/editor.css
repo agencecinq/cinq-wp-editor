@@ -25,11 +25,14 @@ html.wp-toolbar:has(.cinq-wp-editor-screen) {
 	--cinq-accent: var(--wp-admin-theme-color);
 	--cinq-danger: #d63638;
 
+	--cinq-blocks-width: 300px;
+	--cinq-inspector-width: 360px;
+
 	position: fixed;
 	inset: 0;
 	z-index: 1000;
 	display: grid;
-	grid-template-columns: 300px minmax(0, 1fr) 360px;
+	grid-template-columns: var(--cinq-blocks-width) minmax(0, 1fr) var(--cinq-inspector-width);
 	grid-template-rows: 56px auto minmax(0, 1fr);
 	grid-template-areas:
 		"top top top"
@@ -324,8 +327,27 @@ html.wp-toolbar:has(.cinq-wp-editor-screen) {
 	transition: width 0.2s ease;
 }
 
+.cinq-stage.is-tablet .cinq-stage__frame {
+	width: 780px;
+}
+
 .cinq-stage.is-mobile .cinq-stage__frame {
 	width: 390px;
+}
+
+/* Panels closed from the top bar: the preview takes their room. */
+
+.cinq-wp-editor.is-blocks-hidden {
+	--cinq-blocks-width: 0px;
+}
+
+.cinq-wp-editor.is-inspector-hidden {
+	--cinq-inspector-width: 0px;
+}
+
+.cinq-wp-editor.is-blocks-hidden .cinq-blocks,
+.cinq-wp-editor.is-inspector-hidden .cinq-inspector {
+	display: none;
 }
 
 /* Inspector */
@@ -600,7 +622,9 @@ html.wp-toolbar:has(.cinq-wp-editor-screen) {
 
 @media (max-width: 1180px) {
 	.cinq-wp-editor {
-		grid-template-columns: 260px minmax(0, 1fr);
+		--cinq-blocks-width: 260px;
+
+		grid-template-columns: var(--cinq-blocks-width) minmax(0, 1fr);
 		grid-template-areas:
 			"top top"
 			"notice notice"

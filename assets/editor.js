@@ -25,6 +25,7 @@
 		DropdownMenu,
 		MenuGroup,
 		MenuItem,
+		MenuItemsChoice,
 		Modal,
 		Notice,
 		NoticeList,
@@ -40,6 +41,8 @@
 		ToggleControl,
 	} = wp.components;
 	const { useSelect, useDispatch } = wp.data;
+	const { useShortcut } = wp.keyboardShortcuts;
+	const { useCommand } = wp.commands;
 	const { gmdateI18n, getSettings: getDateSettings } = wp.date;
 	const apiFetch = wp.apiFetch;
 	// The classic editor's API: `wp.editor` until the block editor takes the name.
@@ -52,6 +55,24 @@
 
 	// The editor's notices, apart from any other screen's, in WordPress's own store.
 	const NOTICES = "cinq-wp-editor";
+
+	// Preview widths, as the block editor offers them.
+	const DEVICES = [
+		{ value: "desktop", label: "Ordinateur", icon: "desktop" },
+		{ value: "tablet", label: "Tablette", icon: "tablet" },
+		{ value: "mobile", label: "Mobile", icon: "smartphone" },
+	];
+
+	/**
+	 * Hands ⌘S / Ctrl+S typed in a frame (TinyMCE, the preview) to the
+	 * document, where the editor's shortcut listens.
+	 */
+	const forwardSave = (event) => {
+		if ((event.metaKey || event.ctrlKey) && !event.altKey && event.key.toLowerCase() === "s") {
+			event.preventDefault();
+			document.dispatchEvent(new KeyboardEvent("keydown", { key: "s", metaKey: event.metaKey, ctrlKey: event.ctrlKey, bubbles: true }));
+		}
+	};
 
 	let uidSeed = 0;
 	const uid = () => `block-${++uidSeed}`;
@@ -606,7 +627,10 @@
 								toolbar2: toolbar[2] || "",
 								toolbar3: toolbar[3] || "",
 								toolbar4: toolbar[4] || "",
-								setup: (editor) => editor.on("input change undo redo ExecCommand", emit),
+								setup: (editor) => {
+									editor.on("input change undo redo ExecCommand", emit);
+									editor.on("keydown", forwardSave);
+								},
 							},
 				quicktags: tabs !== "visual",
 				mediaButtons: Number(field.media_upload) === 1,
@@ -1152,7 +1176,7 @@
 
 		return h(
 			"aside",
-			{ className: "cinq-panel cinq-blocks", "aria-label": "Blocs de la page" },
+			{ id: "cinq-wp-editor-blocks", className: "cinq-panel cinq-blocks", "aria-label": "Blocs de la page" },
 			h("h2", { className: "cinq-panel__title" }, "Blocs", h("span", { className: "cinq-count" }, items.length)),
 			h(
 				"ol",
@@ -1227,7 +1251,7 @@
 		if (!item) {
 			return h(
 				"aside",
-				{ className: "cinq-panel cinq-inspector is-empty", "aria-label": "Réglages du bloc" },
+				{ id: "cinq-wp-editor-inspector", className: "cinq-panel cinq-inspector is-empty", "aria-label": "Réglages du bloc" },
 				h("p", null, "Sélectionnez un bloc, dans la liste ou directement sur la page, pour modifier son contenu.")
 			);
 		}
@@ -1238,7 +1262,7 @@
 		if (!layout) {
 			return h(
 				"aside",
-				{ className: "cinq-panel cinq-inspector" },
+				{ id: "cinq-wp-editor-inspector", className: "cinq-panel cinq-inspector" },
 				h(Notice, { status: "warning", isDismissible: false }, `Le type de bloc « ${item.block.acf_fc_layout} » n’existe plus dans le thème.`)
 			);
 		}
@@ -1248,7 +1272,7 @@
 
 		return h(
 			"aside",
-			{ className: "cinq-panel cinq-inspector", "aria-label": `Réglages du bloc ${layout.label}` },
+			{ id: "cinq-wp-editor-inspector", className: "cinq-panel cinq-inspector", "aria-label": `Réglages du bloc ${layout.label}` },
 			h(
 				"header",
 				{ className: "cinq-inspector__head" },
@@ -1343,6 +1367,9 @@
 		const [status, setStatus] = useState("idle");
 		const [changed, setChanged] = useState(false);
 		const [picker, setPicker] = useState(false);
+		// The side panels, as the block editor lets one close its list view and settings.
+		const [blocksOpen, setBlocksOpen] = useState(true);
+		const [inspectorOpen, setInspectorOpen] = useState(true);
 		const [device, setDevice] = useState("desktop");
 		// Notices as the block editor shows them: a banner for what needs
 		// attention, a snackbar for what went well. A fixed id per kind makes a
@@ -1356,6 +1383,7 @@
 		const itemsRef = useRef(items);
 		const timer = useRef(0);
 		const inFlight = useRef(false);
+		const publishAfterSave = useRef(false);
 		const again = useRef(false);
 		const pending = useRef(false);
 		const dirty = useRef(new Set());
@@ -1446,6 +1474,10 @@
 				if (data.type === "hover") {
 					setHovered(data.index);
 				}
+
+				if (data.type === "save") {
+					requestPublish();
+				}
 			};
 
 			window.addEventListener("message", listen);
@@ -1527,6 +1559,14 @@
 			}
 
 			inFlight.current = false;
+
+			// ⌘S during a save: publish once it is done, with what is there now.
+			if (publishAfterSave.current) {
+				publishAfterSave.current = false;
+				again.current = false;
+				publish();
+				return;
+			}
 
 			if (again.current) {
 				again.current = false;
@@ -1634,7 +1674,27 @@
 
 		/* Publish and discard */
 
+		/**
+		 * Publishes, or waits for the draft being saved: publishing alongside
+		 * it could see the draft written again once published.
+		 */
+		function requestPublish() {
+			if (!changed || status === "publishing") {
+				return;
+			}
+
+			if (inFlight.current) {
+				publishAfterSave.current = true;
+				return;
+			}
+
+			publish();
+		}
+
 		async function publish() {
+			// Changes not saved yet were not rendered either: the page, after.
+			const stale = dirty.current.size > 0;
+
 			clearTimeout(timer.current);
 			setStatus("publishing");
 			forget("publish");
@@ -1648,6 +1708,10 @@
 				setChanged(false);
 				setStatus("idle");
 				setState((current) => ({ ...current, published: response.blocks, draft: null }));
+
+				if (stale) {
+					toFrame({ type: "refresh" });
+				}
 				const live = state.post.status === "publish";
 
 				forget("draft");
@@ -1700,6 +1764,47 @@
 			}
 		}
 
+		/* Shortcuts and commands */
+
+		useEffect(() => {
+			wp.data.dispatch("core/keyboard-shortcuts").registerShortcut({
+				name: "cinq-wp-editor/save",
+				category: "global",
+				description: "Publier les modifications.",
+				keyCombination: { modifier: "primary", character: "s" },
+			});
+		}, []);
+
+		useShortcut("cinq-wp-editor/save", (event) => {
+			event.preventDefault();
+			requestPublish();
+		});
+
+		// The panels' visibility is the root's, which holds the grid.
+		useEffect(() => {
+			const root = document.getElementById("cinq-wp-editor");
+
+			root.classList.toggle("is-blocks-hidden", !blocksOpen);
+			root.classList.toggle("is-inspector-hidden", !inspectorOpen);
+		}, [blocksOpen, inspectorOpen]);
+
+		const live = Boolean(state && state.post.status === "publish");
+		const run = (action) => ({ close }) => {
+			close();
+			action();
+		};
+
+		useCommand({ name: "cinq-wp-editor/add-block", label: "Ajouter un bloc", icon: "plus", callback: run(() => setPicker(true)), disabled: !state });
+		useCommand({ name: "cinq-wp-editor/publish", label: live ? "Publier les modifications" : "Enregistrer la page", icon: "upload", callback: run(requestPublish), disabled: !changed });
+		useCommand({ name: "cinq-wp-editor/discard", label: "Abandonner le brouillon", icon: "undo", callback: run(discard), disabled: !changed });
+		useCommand({ name: "cinq-wp-editor/blocks", label: blocksOpen ? "Masquer la liste des blocs" : "Afficher la liste des blocs", icon: "list-view", callback: run(() => setBlocksOpen((open) => !open)) });
+		useCommand({ name: "cinq-wp-editor/inspector", label: inspectorOpen ? "Masquer les réglages" : "Afficher les réglages", icon: "admin-generic", callback: run(() => setInspectorOpen((open) => !open)) });
+		useCommand({ name: "cinq-wp-editor/device-desktop", label: "Aperçu : ordinateur", icon: "desktop", callback: run(() => setDevice("desktop")), disabled: device === "desktop" });
+		useCommand({ name: "cinq-wp-editor/device-tablet", label: "Aperçu : tablette", icon: "tablet", callback: run(() => setDevice("tablet")), disabled: device === "tablet" });
+		useCommand({ name: "cinq-wp-editor/device-mobile", label: "Aperçu : mobile", icon: "smartphone", callback: run(() => setDevice("mobile")), disabled: device === "mobile" });
+		useCommand({ name: "cinq-wp-editor/classic", label: "Modifier dans l’éditeur classique", icon: "edit", callback: run(() => window.location.assign(state.post.editUrl)), disabled: !state });
+		useCommand({ name: "cinq-wp-editor/view", label: "Voir la page", icon: "external", callback: run(() => window.open(state.post.viewUrl, "_blank")), disabled: !live });
+
 		/* Render */
 
 		if (loadError) {
@@ -1730,13 +1835,29 @@
 					"div",
 					{ className: "cinq-topbar__start" },
 					h(Button, { icon: "arrow-left-alt2", label: "Retour à la liste", href: state.post.listUrl }),
+					h(Button, { icon: "list-view", label: "Liste des blocs", isPressed: blocksOpen, "aria-controls": "cinq-wp-editor-blocks", onClick: () => setBlocksOpen((open) => !open) }),
 					h("div", null, h("strong", { className: "cinq-topbar__title" }, state.post.title || "(sans titre)"), h("span", { className: "cinq-topbar__type" }, state.post.typeLabel))
 				),
 				h(
 					"div",
-					{ className: "cinq-topbar__devices", role: "group", "aria-label": "Largeur de l’aperçu" },
-					h(Button, { icon: "desktop", label: "Ordinateur", isPressed: device === "desktop", onClick: () => setDevice("desktop") }),
-					h(Button, { icon: "smartphone", label: "Mobile", isPressed: device === "mobile", onClick: () => setDevice("mobile") })
+					{ className: "cinq-topbar__devices" },
+					h(
+						DropdownMenu,
+						{ icon: DEVICES.find((choice) => choice.value === device).icon, label: "Aperçu", popoverProps: { placement: "bottom" } },
+						({ onClose }) =>
+							h(
+								MenuGroup,
+								{ label: "Aperçu" },
+								h(MenuItemsChoice, {
+									choices: DEVICES.map((choice) => ({ value: choice.value, label: choice.label })),
+									value: device,
+									onSelect: (next) => {
+										setDevice(next);
+										onClose();
+									},
+								})
+							)
+					)
 				),
 				h(
 					"div",
@@ -1746,9 +1867,10 @@
 					changed && h(Button, { variant: "tertiary", isDestructive: true, onClick: discard, disabled: status === "publishing" }, "Abandonner"),
 					h(
 						Button,
-						{ variant: "primary", onClick: publish, disabled: !changed || status === "publishing" || status === "saving", isBusy: status === "publishing" },
+						{ variant: "primary", onClick: requestPublish, disabled: !changed || status === "publishing", isBusy: status === "publishing" },
 						isPublished ? "Publier" : "Enregistrer"
-					)
+					),
+					h(Button, { icon: "admin-generic", label: "Réglages", isPressed: inspectorOpen, "aria-controls": "cinq-wp-editor-inspector", onClick: () => setInspectorOpen((open) => !open) })
 				)
 			),
 			h("div", { className: "cinq-notice" }, h(NoticeList, { notices: notices.filter((item) => item.type !== "snackbar"), onRemove: forget })),

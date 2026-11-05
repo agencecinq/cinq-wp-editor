@@ -73,6 +73,10 @@ Run `composer install`, then `composer lint` (phpcs) or `composer lint:fix` (php
 * Notices go through WordPress's notices store, as in the block editor: a snackbar for a publication or a discarded draft, a banner for an error, which a new one replaces. A refused publication links to the first block to fix.
 * Date, time and colour fields open WordPress's pickers, and show dates in the field's display format.
 * User, icon, Google Map and page link fields are edited in the editor too. Users are found as ACF finds them, among the roles the field allows; page links offer the archives the field allows; a place is an address and its coordinates, as ACF stores it, with or without a Google Maps key.
+* ⌘S / Ctrl+S publishes, from the editor, the preview or a rich text field, as it saves in the block editor. Pressed while the draft is being saved, it publishes once the save is done; the **Publier** button no longer waits for it either.
+* The command palette (⌘K / Ctrl+K) adds a block, publishes, discards the draft, changes the preview width, shows or hides the panels, opens the classic edit screen or the page.
+* The preview width is chosen in an **Aperçu** menu, as in the block editor: desktop, tablet or mobile.
+* The list of blocks and the settings close from the top bar, and the preview takes their room.
 * Blocks and repeater rows have an **Options** menu (duplicate, move up, move down, delete) instead of a row of buttons.
 * The editor screen is titled after the post. The admin header no longer warns that `strip_tags()` was passed null.
 * The plugin updates from its GitHub releases, like any other plugin.

@@ -361,6 +361,14 @@
 	new ResizeObserver(redraw).observe(document.body);
 
 	decorate();
+	// ⌘S / Ctrl+S in the preview publishes, as it does in the editor.
+	document.addEventListener("keydown", (event) => {
+		if ((event.metaKey || event.ctrlKey) && !event.altKey && event.key.toLowerCase() === "s") {
+			event.preventDefault();
+			send({ type: "save" });
+		}
+	});
+
 	// The editor warns when the template renders no block zone.
 	send({ type: "ready", blocks: Boolean(container()) });
 })();

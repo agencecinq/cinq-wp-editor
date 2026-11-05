@@ -137,7 +137,7 @@ final class Admin {
 		wp_enqueue_script(
 			'cinq-wp-editor',
 			CINQ_WP_EDITOR_URL . 'assets/editor.js',
-			array( 'wp-element', 'wp-components', 'wp-data', 'wp-notices', 'wp-date', 'wp-api-fetch', 'wp-url', 'media-editor' ),
+			array( 'wp-element', 'wp-components', 'wp-data', 'wp-notices', 'wp-date', 'wp-keyboard-shortcuts', 'wp-commands', 'wp-api-fetch', 'wp-url', 'media-editor' ),
 			Plugin::asset_version( 'assets/editor.js' ),
 			true
 		);
