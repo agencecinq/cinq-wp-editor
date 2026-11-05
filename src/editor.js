@@ -43,9 +43,11 @@ import {
 	TextareaControl,
 	TimePicker,
 	ToggleControl,
+	__experimentalToggleGroupControl as ToggleGroupControl,
+	__experimentalToggleGroupControlOption as ToggleGroupControlOption,
+	__experimentalToggleGroupControlOptionIcon as ToggleGroupControlOptionIcon,
 } from '@wordpress/components';
 // The post editor gives LinkControl this search: the editor does the same.
-// eslint-disable-next-line @wordpress/no-unsafe-wp-apis
 import { __experimentalFetchLinkSuggestions as fetchLinkSuggestions } from '@wordpress/core-data';
 import { dispatch, useDispatch, useSelect } from '@wordpress/data';
 import { getSettings as getDateSettings, gmdateI18n } from '@wordpress/date';
@@ -520,9 +522,20 @@ function Field( { field, value, onChange, path, errors } ) {
 			);
 			break;
 
+		case 'button_group':
+			control = (
+				<ButtonGroupField
+					field={ field }
+					label={ label }
+					help={ help }
+					value={ value }
+					onChange={ onChange }
+				/>
+			);
+			break;
+
 		case 'select':
 		case 'radio':
-		case 'button_group':
 			if ( field.multiple ) {
 				control = (
 					<ChoiceList
@@ -716,6 +729,90 @@ function Field( { field, value, onChange, path, errors } ) {
 				</p>
 			) ) }
 		</div>
+	);
+}
+
+/**
+ * Fields whose choices the theme draws as swatches, as its admin styles do:
+ * `color_scheme` shows an « A » in the scheme's text colour on its
+ * background, `color` the colour itself.
+ */
+const SWATCH_FIELDS = { color_scheme: 'schemes', color: 'palette' };
+
+// ToggleGroupControl takes an empty value for no selection: ACF's empty
+// choice, such as the default scheme, goes by another name in between.
+const EMPTY_CHOICE = '__cinq-wp-editor-empty';
+
+/**
+ * A choice among a few, as ACF's button group and the block editor's own
+ * settings show it: ToggleGroupControl. Schemes and colours of the theme
+ * show as swatches, their label in the tooltip.
+ *
+ * @param {FieldProps} props Field props.
+ */
+function ButtonGroupField( { field, label, help, value, onChange } ) {
+	const choices = Object.entries( field.choices || {} );
+	const kind = SWATCH_FIELDS[ field.name ];
+	const swatches = ( kind && config.swatches[ kind ] ) || {};
+	const drawn =
+		choices.length > 0 &&
+		choices.every( ( [ choice ] ) => choice in swatches );
+	const current =
+		value === '' || value === null || value === undefined
+			? EMPTY_CHOICE
+			: String( value );
+
+	return (
+		<ToggleGroupControl
+			label={ label }
+			help={ help }
+			value={ current }
+			isBlock={ ! drawn }
+			isDeselectable={ Boolean( Number( field.allow_null ) ) }
+			onChange={ ( next ) =>
+				onChange(
+					next === EMPTY_CHOICE || next === undefined ? '' : next
+				)
+			}
+			__next40pxDefaultSize
+			__nextHasNoMarginBottom
+		>
+			{ choices.map( ( [ choice, text ] ) => {
+				const optionValue = choice === '' ? EMPTY_CHOICE : choice;
+
+				if ( ! drawn ) {
+					return (
+						<ToggleGroupControlOption
+							key={ optionValue }
+							value={ optionValue }
+							label={ String( text ) }
+						/>
+					);
+				}
+
+				const colors = swatches[ choice ];
+
+				return (
+					<ToggleGroupControlOptionIcon
+						key={ optionValue }
+						value={ optionValue }
+						label={ String( text ) }
+						icon={
+							<span
+								className="cinq-swatch"
+								style={ {
+									background: colors.background,
+									color: colors.foreground,
+								} }
+								aria-hidden="true"
+							>
+								{ 'schemes' === kind ? 'A' : null }
+							</span>
+						}
+					/>
+				);
+			} ) }
+		</ToggleGroupControl>
 	);
 }
 

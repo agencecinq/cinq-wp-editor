@@ -169,6 +169,7 @@ final class Admin {
 					'postId'    => $post->ID,
 					'namespace' => Rest::NAMESPACE,
 					'toolbars'  => self::toolbars(),
+					'swatches'  => self::swatches(),
 					'dashicons' => self::dashicons(),
 					'lock'      => Lock::open( $post ),
 				)
@@ -203,6 +204,37 @@ final class Admin {
 		}
 
 		return $toolbars;
+	}
+
+	/**
+	 * Returns the colours the theme draws its scheme and colour choices with,
+	 * from the helpers of CINQ themes: `cinq_schemes()` and `cinq_palette()`,
+	 * the ones its admin styles use too.
+	 *
+	 * @return array{schemes: array<string, array{background: string, foreground: string}>, palette: array<string, array{background: string}>}
+	 */
+	private static function swatches(): array {
+		$swatches = array(
+			'schemes' => array(),
+			'palette' => array(),
+		);
+
+		if ( function_exists( 'cinq_schemes' ) && function_exists( 'cinq_scheme_color' ) ) {
+			foreach ( array_keys( cinq_schemes() ) as $slug ) {
+				$swatches['schemes'][ (string) $slug ] = array(
+					'background' => cinq_scheme_color( (string) $slug, 'background' ),
+					'foreground' => cinq_scheme_color( (string) $slug, 'foreground' ),
+				);
+			}
+		}
+
+		if ( function_exists( 'cinq_palette' ) ) {
+			foreach ( cinq_palette() as $slug => $color ) {
+				$swatches['palette'][ (string) $slug ] = array( 'background' => (string) ( $color['value'] ?? '' ) );
+			}
+		}
+
+		return $swatches;
 	}
 
 	/**

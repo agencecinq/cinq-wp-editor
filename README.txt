@@ -75,6 +75,7 @@ Run `composer install`, then `composer lint` (phpcs) or `composer lint:fix` (php
 * The editor and the preview follow the admin color scheme.
 * Removing a block and discarding the draft ask for confirmation in a dialog, as the block editor does.
 * Notices go through WordPress's notices store, as in the block editor: a snackbar for a publication or a discarded draft, a banner for an error, which a new one replaces. A refused publication links to the first block to fix.
+* Button groups show as the block editor's toggle groups. The choices of a `color_scheme` or `color` field show as swatches of the theme's colours, taken from `cinq_schemes()` and `cinq_palette()` as the theme's admin styles take them: an « A » in the scheme's text colour on its background, or the colour itself, the label in the tooltip.
 * Date, time and colour fields open WordPress's pickers, and show dates in the field's display format.
 * Link fields use the block editor's LinkControl, in a popover: search over contents and terms, direct entry, the link text and « Open in new tab », as the block editor links a button. It loads the block editor's scripts, which the browser usually has from the post editor already.
 * User, icon, Google Map and page link fields are edited in the editor too. Users are found as ACF finds them, among the roles the field allows; page links offer the archives the field allows; a place is an address and its coordinates, as ACF stores it, with or without a Google Maps key.

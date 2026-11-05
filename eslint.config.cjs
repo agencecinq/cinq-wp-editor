@@ -12,6 +12,21 @@ module.exports = [
 				'error',
 				{ allowedTextDomain: 'cinq-wp-editor' },
 			],
+			// Experimental APIs on their way into WordPress, as its own
+			// screens use them.
+			'@wordpress/no-unsafe-wp-apis': [
+				'error',
+				{
+					'@wordpress/components': [
+						'__experimentalToggleGroupControl',
+						'__experimentalToggleGroupControlOption',
+						'__experimentalToggleGroupControlOptionIcon',
+					],
+					'@wordpress/core-data': [
+						'__experimentalFetchLinkSuggestions',
+					],
+				},
+			],
 		},
 	},
 ];

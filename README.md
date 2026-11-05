@@ -56,7 +56,9 @@ of a page (**Open the visual editor**) or from the admin bar on the site (**Edit
 
 The interface is drawn with WordPress's own pieces: `wp.components`, the media library,
 TinyMCE through the classic editor API, the admin color scheme, `Modal` for confirmations, the
-`core/notices` store with snackbars and banners, WordPress's date and colour pickers, and an
+`core/notices` store with snackbars and banners, toggle groups for button groups (the theme's
+schemes and colours as swatches, from `cinq_schemes()` and `cinq_palette()`), WordPress's date and
+colour pickers, and an
 **Options** menu on each block and repeater row.
 
 ## How it works
