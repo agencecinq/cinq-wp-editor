@@ -5,7 +5,7 @@ the left, the real page in the middle, the settings of the selected block on the
 title and the page updates before your eyes.
 
 > Status: 0.2.0, in production on [agencecinq.com](https://www.agencecinq.com) since November 2026.
-> It runs end to end on the Agence CINQ and Eigrene themes.
+> It runs end to end on the Agence CINQ theme.
 
 ## Built for CINQ's way of making WordPress sites
 
@@ -184,10 +184,11 @@ mu-plugins; each test creates its own draft page and deletes it. Name the site a
 administrator in a `.env.e2e` file, kept out of Git:
 
 ```
-WP_BASE_URL=https://eigrene.local
+WP_BASE_URL=https://agencecinq.local
 WP_USERNAME=cinq-e2e
 WP_PASSWORD=…
-NODE_EXTRA_CA_CERTS=/Users/…/Local/run/router/nginx/certs/eigrene.local.crt
+NODE_EXTRA_CA_CERTS=/Users/…/Local/run/router/nginx/certs/agencecinq.local.crt
+E2E_PAGE_TEMPLATE=page-templates/blocks-page.php
 ```
 
 `NODE_EXTRA_CA_CERTS` makes Node trust a Local site's self-signed certificate. On a theme that
