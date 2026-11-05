@@ -71,8 +71,8 @@ final class Admin {
 	public static function menu(): void {
 		self::$hook = (string) add_submenu_page(
 			'',
-			'Éditeur visuel',
-			'Éditeur visuel',
+			__( 'Visual editor', 'cinq-wp-editor' ),
+			__( 'Visual editor', 'cinq-wp-editor' ),
 			'edit_pages',
 			self::PAGE,
 			array( self::class, 'render' )
@@ -109,8 +109,9 @@ final class Admin {
 
 		$post  = self::current_post();
 		$title = $post instanceof WP_Post // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- The admin header reads the screen title from it.
-			? sprintf( 'Éditeur visuel : « %s »', get_the_title( $post ) )
-			: 'Éditeur visuel';
+			/* translators: %s: Post title. */
+			? sprintf( __( 'Visual editor: “%s”', 'cinq-wp-editor' ), get_the_title( $post ) )
+			: __( 'Visual editor', 'cinq-wp-editor' );
 	}
 
 	/**
@@ -122,7 +123,7 @@ final class Admin {
 		$post = self::current_post();
 
 		if ( ! $post instanceof WP_Post ) {
-			echo '<div class="wrap"><h1>Éditeur visuel</h1><p>Ouvrez l’éditeur depuis la liste des pages.</p></div>';
+			echo '<div class="wrap"><h1>' . esc_html__( 'Visual editor', 'cinq-wp-editor' ) . '</h1><p>' . esc_html__( 'Open the editor from the list of pages.', 'cinq-wp-editor' ) . '</p></div>';
 			return;
 		}
 
@@ -160,6 +161,7 @@ final class Admin {
 			$asset['version'],
 			true
 		);
+		wp_set_script_translations( 'cinq-wp-editor', 'cinq-wp-editor', CINQ_WP_EDITOR_PATH . 'languages' );
 		wp_add_inline_script(
 			'cinq-wp-editor',
 			'window.cinqWpEditor = ' . wp_json_encode(
@@ -245,7 +247,7 @@ final class Admin {
 		$actions['cinq_wp_editor'] = sprintf(
 			'<a href="%s">%s</a>',
 			esc_url( self::url( $post->ID ) ),
-			esc_html__( 'Éditeur visuel', 'cinq-wp-editor' )
+			esc_html__( 'Visual editor', 'cinq-wp-editor' )
 		);
 
 		return $actions;
@@ -265,7 +267,7 @@ final class Admin {
 		printf(
 			'<div class="misc-pub-section"><a class="button" href="%s">%s</a></div>',
 			esc_url( self::url( $post->ID ) ),
-			esc_html__( 'Ouvrir l’éditeur visuel', 'cinq-wp-editor' )
+			esc_html__( 'Open the visual editor', 'cinq-wp-editor' )
 		);
 	}
 
@@ -289,7 +291,7 @@ final class Admin {
 		$bar->add_node(
 			array(
 				'id'    => 'cinq-wp-editor',
-				'title' => esc_html__( 'Éditer en visuel', 'cinq-wp-editor' ),
+				'title' => esc_html__( 'Edit visually', 'cinq-wp-editor' ),
 				'href'  => self::url( $post->ID ),
 			)
 		);

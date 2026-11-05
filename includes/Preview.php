@@ -184,6 +184,7 @@ final class Preview {
 	 */
 	public static function enqueue(): void {
 		wp_enqueue_style( 'cinq-wp-editor-preview', CINQ_WP_EDITOR_URL . 'assets/preview.css', array(), Plugin::asset_version( 'assets/preview.css' ) );
-		wp_enqueue_script( 'cinq-wp-editor-preview', CINQ_WP_EDITOR_URL . 'assets/preview.js', array(), Plugin::asset_version( 'assets/preview.js' ), true );
+		wp_enqueue_script( 'cinq-wp-editor-preview', CINQ_WP_EDITOR_URL . 'assets/preview.js', array( 'wp-i18n' ), Plugin::asset_version( 'assets/preview.js' ), true );
+		wp_set_script_translations( 'cinq-wp-editor-preview', 'cinq-wp-editor', CINQ_WP_EDITOR_PATH . 'languages' );
 	}
 }

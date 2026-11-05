@@ -64,7 +64,12 @@ final class Lock {
 
 		if ( null !== $holder ) {
 			$state['holder'] = array(
-				'text'        => sprintf( '%1$s modifie actuellement « %2$s ». Si vous prenez le contrôle, un message préviendra %1$s, et ses modifications ne pourront plus être publiées.', $holder->display_name, get_the_title( $post ) ),
+				'text'        => sprintf(
+					/* translators: 1: Name of the user holding the lock. 2: Post title. */
+					__( '%1$s is editing “%2$s”. If you take over, a message will let %1$s know, and their changes can no longer be published.', 'cinq-wp-editor' ),
+					$holder->display_name,
+					get_the_title( $post )
+				),
 				'avatar'      => get_option( 'show_avatars' ) ? get_avatar_url( $holder->ID, array( 'size' => 128 ) ) : '',
 				/** This filter is documented in wp-admin/includes/post.php */
 				'canTakeOver' => (bool) apply_filters( 'override_post_lock', true, $post, $holder ), // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core's filter, applied as the edit screen applies it.

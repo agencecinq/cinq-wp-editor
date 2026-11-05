@@ -77,7 +77,8 @@ final class Model {
 		if ( null === $zone ) {
 			return new WP_Error(
 				'cinq_wp_editor_no_zone',
-				sprintf( 'Le contenu « %s » n’a pas de zone de blocs.', get_the_title( $post ) ),
+				/* translators: %s: Post title. */
+				sprintf( __( '“%s” has no block zone.', 'cinq-wp-editor' ), get_the_title( $post ) ),
 				array( 'status' => 400 )
 			);
 		}
@@ -234,7 +235,8 @@ final class Model {
 			if ( $link && $object ) {
 				$out[] = array(
 					'id'    => $link,
-					'title' => sprintf( 'Archive : %s', $object->labels->name ),
+					/* translators: %s: Post type name. */
+					'title' => sprintf( __( 'Archive: %s', 'cinq-wp-editor' ), $object->labels->name ),
 				);
 			}
 		}

@@ -48,7 +48,7 @@ final class Drafts {
 				register_post_type(
 					self::POST_TYPE,
 					array(
-						'label'               => 'Brouillons de l’éditeur',
+						'label'               => __( 'Editor drafts', 'cinq-wp-editor' ),
 						'public'              => false,
 						'show_ui'             => false,
 						'show_in_rest'        => false,
@@ -116,7 +116,8 @@ final class Drafts {
 					'post_status' => 'draft',
 					'post_parent' => $post->ID,
 					'post_author' => $user_id,
-					'post_title'  => sprintf( 'Brouillon de « %s »', $post->post_title ),
+					/* translators: %s: Post title. */
+					'post_title'  => sprintf( __( 'Draft of “%s”', 'cinq-wp-editor' ), $post->post_title ),
 				)
 			);
 

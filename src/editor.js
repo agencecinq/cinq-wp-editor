@@ -57,6 +57,7 @@ import {
 	useRef,
 	useState,
 } from '@wordpress/element';
+import { __, _n, sprintf } from '@wordpress/i18n';
 import {
 	Icon,
 	arrowLeft,
@@ -105,9 +106,13 @@ const NOTICES = 'cinq-wp-editor';
 
 // Preview widths, as the block editor offers them.
 const DEVICES = [
-	{ value: 'desktop', label: 'Ordinateur', icon: desktop },
-	{ value: 'tablet', label: 'Tablette', icon: tablet },
-	{ value: 'mobile', label: 'Mobile', icon: mobile },
+	{
+		value: 'desktop',
+		label: __( 'Desktop', 'cinq-wp-editor' ),
+		icon: desktop,
+	},
+	{ value: 'tablet', label: __( 'Tablet', 'cinq-wp-editor' ), icon: tablet },
+	{ value: 'mobile', label: __( 'Mobile', 'cinq-wp-editor' ), icon: mobile },
 ];
 
 /**
@@ -662,7 +667,10 @@ function Field( { field, value, onChange, path, errors } ) {
 					{ ...common }
 					help={ [
 						help,
-						'Identifiants des termes, séparés par des virgules.',
+						__(
+							'Term IDs, separated by commas.',
+							'cinq-wp-editor'
+						),
 					]
 						.filter( Boolean )
 						.join( ' ' ) }
@@ -683,7 +691,16 @@ function Field( { field, value, onChange, path, errors } ) {
 			control = (
 				<div className="cinq-unsupported">
 					<strong>{ field.label }</strong>
-					<p>{ `Champ « ${ field.type } » : à modifier dans l’éditeur classique pour l’instant.` }</p>
+					<p>
+						{ sprintf(
+							/* translators: %s: ACF field type. */
+							__(
+								'“%s” field: edit it in the classic editor for now.',
+								'cinq-wp-editor'
+							),
+							field.type
+						) }
+					</p>
 				</div>
 			);
 	}
@@ -797,9 +814,14 @@ function DateField( { field, label, help, value, onChange } ) {
 						variant="secondary"
 						onClick={ onToggle }
 						aria-expanded={ isOpen }
-						aria-label={ `${ field.label } : ${ shown || 'aucune valeur' }` }
+						aria-label={ sprintf(
+							/* translators: 1: Field label. 2: Its value. */
+							__( '%1$s: %2$s', 'cinq-wp-editor' ),
+							field.label,
+							shown || __( 'no value', 'cinq-wp-editor' )
+						) }
 					>
-						{ shown || 'Choisir…' }
+						{ shown || __( 'Choose…', 'cinq-wp-editor' ) }
 					</Button>
 				) }
 				renderContent={ ( { onClose } ) => (
@@ -819,7 +841,7 @@ function DateField( { field, label, help, value, onChange } ) {
 									onClose();
 								} }
 							>
-								Effacer
+								{ __( 'Clear', 'cinq-wp-editor' ) }
 							</Button>
 						) }
 					</div>
@@ -870,10 +892,15 @@ function ColorField( { field, label, help, value, onChange } ) {
 						className="cinq-color__toggle"
 						onClick={ onToggle }
 						aria-expanded={ isOpen }
-						aria-label={ `${ field.label } : ${ color || 'aucune couleur' }` }
+						aria-label={ sprintf(
+							/* translators: 1: Field label. 2: Its value. */
+							__( '%1$s: %2$s', 'cinq-wp-editor' ),
+							field.label,
+							color || __( 'no color', 'cinq-wp-editor' )
+						) }
 					>
 						<ColorIndicator colorValue={ color || 'transparent' } />
-						{ color || 'Choisir…' }
+						{ color || __( 'Choose…', 'cinq-wp-editor' ) }
 					</Button>
 				) }
 				renderContent={ ( { onClose } ) => (
@@ -898,7 +925,7 @@ function ColorField( { field, label, help, value, onChange } ) {
 									onClose();
 								} }
 							>
-								Effacer
+								{ __( 'Clear', 'cinq-wp-editor' ) }
 							</Button>
 						) }
 					</div>
@@ -926,8 +953,11 @@ function LockedModal( { lock, post } ) {
 		<Modal
 			title={
 				lock.takenOver
-					? 'Quelqu’un d’autre a pris le contrôle'
-					: 'Ce contenu est déjà en cours de modification'
+					? __( 'Someone else has taken over', 'cinq-wp-editor' )
+					: __(
+							'This content is already being edited',
+							'cinq-wp-editor'
+						)
 			}
 			className="cinq-lock"
 			isDismissible={ false }
@@ -949,9 +979,10 @@ function LockedModal( { lock, post } ) {
 					<p>{ lock.text }</p>
 					{ lock.takenOver && (
 						<p>
-							Vos modifications non publiées restent dans votre
-							brouillon : vous les retrouverez en rouvrant la
-							page.
+							{ __(
+								'Your unpublished changes stay in your draft: you will find them again when you reopen the page.',
+								'cinq-wp-editor'
+							) }
 						</p>
 					) }
 				</div>
@@ -961,11 +992,11 @@ function LockedModal( { lock, post } ) {
 					variant={ takeOver ? 'secondary' : 'primary' }
 					href={ post.listUrl }
 				>
-					Revenir à la liste
+					{ __( 'Back to the list', 'cinq-wp-editor' ) }
 				</Button>
 				{ takeOver && (
 					<Button variant="primary" href={ lock.takeOverUrl }>
-						Prendre le contrôle
+						{ __( 'Take over', 'cinq-wp-editor' ) }
 					</Button>
 				) }
 			</div>
@@ -1000,7 +1031,11 @@ function RowMenu( { label, onDuplicate, onUp, onDown, onRemove } ) {
 	return (
 		<DropdownMenu
 			icon={ moreVertical }
-			label={ `Options : ${ label }` }
+			label={ sprintf(
+				/* translators: %s: Name of the block or row. */
+				__( 'Options: %s', 'cinq-wp-editor' ),
+				label
+			) }
 			toggleProps={ {
 				size: 'small',
 			} }
@@ -1019,14 +1054,27 @@ function RowMenu( { label, onDuplicate, onUp, onDown, onRemove } ) {
 				return (
 					<>
 						<MenuGroup>
-							{ item( 'Dupliquer', then( onDuplicate ) ) }
-							{ item( 'Monter', then( onUp ) ) }
-							{ item( 'Descendre', then( onDown ) ) }
+							{ item(
+								__( 'Duplicate', 'cinq-wp-editor' ),
+								then( onDuplicate )
+							) }
+							{ item(
+								__( 'Move up', 'cinq-wp-editor' ),
+								then( onUp )
+							) }
+							{ item(
+								__( 'Move down', 'cinq-wp-editor' ),
+								then( onDown )
+							) }
 						</MenuGroup>
 						<MenuGroup>
-							{ item( 'Supprimer', then( onRemove ), {
-								isDestructive: true,
-							} ) }
+							{ item(
+								__( 'Delete', 'cinq-wp-editor' ),
+								then( onRemove ),
+								{
+									isDestructive: true,
+								}
+							) }
 						</MenuGroup>
 					</>
 				);
@@ -1158,7 +1206,7 @@ function Confirm( { title, text, label, onConfirm, onCancel } ) {
 			<p className="cinq-confirm__text">{ text }</p>
 			<div className="cinq-confirm__actions">
 				<Button variant="tertiary" onClick={ onCancel }>
-					Annuler
+					{ __( 'Cancel', 'cinq-wp-editor' ) }
 				</Button>
 				<Button variant="primary" isDestructive onClick={ onConfirm }>
 					{ label }
@@ -1237,9 +1285,14 @@ function LinkField( { field, label, help, value, onChange } ) {
 						icon={ linkIcon }
 						onClick={ onToggle }
 						aria-expanded={ isOpen }
-						aria-label={ `${ field.label } : ${ shown || 'aucun lien' }` }
+						aria-label={ sprintf(
+							/* translators: 1: Field label. 2: Its value. */
+							__( '%1$s: %2$s', 'cinq-wp-editor' ),
+							field.label,
+							shown || __( 'no link', 'cinq-wp-editor' )
+						) }
 					>
-						{ shown || 'Ajouter un lien' }
+						{ shown || __( 'Add a link', 'cinq-wp-editor' ) }
 					</Button>
 				) }
 				renderContent={ ( { onClose } ) => (
@@ -1322,7 +1375,7 @@ function openMediaFrame( field, multiple, onSelect ) {
 			field.type === 'image' || field.type === 'gallery'
 				? { type: 'image' }
 				: {},
-		button: { text: 'Utiliser' },
+		button: { text: __( 'Use', 'cinq-wp-editor' ) },
 	} );
 
 	frame.on( 'select', () => {
@@ -1352,7 +1405,9 @@ function MediaField( { field, label, help, value, onChange } ) {
 						)
 					}
 				>
-					{ id ? 'Remplacer' : 'Choisir' }
+					{ id
+						? __( 'Replace', 'cinq-wp-editor' )
+						: __( 'Choose', 'cinq-wp-editor' ) }
 				</Button>
 				{ id ? (
 					<Button
@@ -1361,7 +1416,7 @@ function MediaField( { field, label, help, value, onChange } ) {
 						isDestructive
 						onClick={ () => onChange( '' ) }
 					>
-						Retirer
+						{ __( 'Remove', 'cinq-wp-editor' ) }
 					</Button>
 				) : null }
 			</div>
@@ -1386,7 +1441,7 @@ function GalleryField( { field, label, help, value, onChange } ) {
 						<Button
 							icon={ closeSmall }
 							size="small"
-							label="Retirer"
+							label={ __( 'Remove', 'cinq-wp-editor' ) }
 							onClick={ () =>
 								onChange(
 									ids.filter( ( item ) => item !== id )
@@ -1408,10 +1463,21 @@ function GalleryField( { field, label, help, value, onChange } ) {
 					)
 				}
 			>
-				Ajouter des images
+				{ __( 'Add images', 'cinq-wp-editor' ) }
 			</Button>
 			{ full && (
-				<p className="cinq-help">{ `${ max } image${ max > 1 ? 's' : '' } au plus.` }</p>
+				<p className="cinq-help">
+					{ sprintf(
+						/* translators: %d: Most images the gallery takes. */
+						_n(
+							'%d image at most.',
+							'%d images at most.',
+							max,
+							'cinq-wp-editor'
+						),
+						max
+					) }
+				</p>
 			) }
 			{ help && <p className="cinq-help">{ help }</p> }
 		</div>
@@ -1538,7 +1604,7 @@ function ReferenceField( {
 							<Button
 								icon={ closeSmall }
 								size="small"
-								label="Retirer"
+								label={ __( 'Remove', 'cinq-wp-editor' ) }
 								onClick={ () =>
 									set( ids.filter( ( item ) => item !== id ) )
 								}
@@ -1624,8 +1690,8 @@ function PostField( { field, label, help, value, onChange } ) {
 				} )
 			}
 			extra={ field.archives || [] }
-			placeholder="Rechercher un contenu…"
-			empty="Aucun contenu choisi."
+			placeholder={ __( 'Search content…', 'cinq-wp-editor' ) }
+			empty={ __( 'No content chosen.', 'cinq-wp-editor' ) }
 		/>
 	);
 }
@@ -1662,8 +1728,8 @@ function UserField( { field, label, help, value, onChange } ) {
 					search: query,
 				} )
 			}
-			placeholder="Rechercher un utilisateur…"
-			empty="Aucun utilisateur choisi."
+			placeholder={ __( 'Search users…', 'cinq-wp-editor' ) }
+			empty={ __( 'No user chosen.', 'cinq-wp-editor' ) }
 		/>
 	);
 }
@@ -1684,7 +1750,16 @@ function IconField( { field, label, help, value, onChange } ) {
 
 	if ( ! tabs.length ) {
 		return (
-			<p className="cinq-help">{ `${ field.label } : aucun onglet de ce champ n’est disponible ici.` }</p>
+			<p className="cinq-help">
+				{ sprintf(
+					/* translators: %s: Field label. */
+					__(
+						'%s: none of the tabs of this field is available here.',
+						'cinq-wp-editor'
+					),
+					field.label
+				) }
+			</p>
 		);
 	}
 
@@ -1702,7 +1777,7 @@ function IconField( { field, label, help, value, onChange } ) {
 				<SearchControl
 					value={ query }
 					onChange={ setQuery }
-					placeholder="Rechercher une icône…"
+					placeholder={ __( 'Search icons…', 'cinq-wp-editor' ) }
 					__nextHasNoMarginBottom
 				/>
 				<div className="cinq-icons" role="list">
@@ -1729,7 +1804,7 @@ function IconField( { field, label, help, value, onChange } ) {
 					...field,
 					type: 'image',
 				} }
-				label="Image"
+				label={ __( 'Image', 'cinq-wp-editor' ) }
 				value={
 					icon && icon.type === 'media_library' ? icon.value : ''
 				}
@@ -1738,7 +1813,7 @@ function IconField( { field, label, help, value, onChange } ) {
 		),
 		url: () => (
 			<TextControl
-				label="Adresse de l’image"
+				label={ __( 'Image address', 'cinq-wp-editor' ) }
 				type="url"
 				value={ icon && icon.type === 'url' ? icon.value : '' }
 				onChange={ ( url ) => set( 'url', url ) }
@@ -1775,7 +1850,7 @@ function IconField( { field, label, help, value, onChange } ) {
 					size="compact"
 					onClick={ () => onChange( '' ) }
 				>
-					Retirer l’icône
+					{ __( 'Remove the icon', 'cinq-wp-editor' ) }
 				</Button>
 			) }
 			{ help && (
@@ -1826,20 +1901,20 @@ function MapField( { field, label, help, value, onChange } ) {
 			<legend>{ label }</legend>
 			{ help && <p className="cinq-help">{ help }</p> }
 			<TextControl
-				label="Adresse"
+				label={ __( 'Address', 'cinq-wp-editor' ) }
 				value={ place.address ?? '' }
 				onChange={ ( next ) => set( 'address', next ) }
 				__nextHasNoMarginBottom
 			/>
 			<div className="cinq-map__coords">
-				{ number( 'lat', 'Latitude', {
+				{ number( 'lat', __( 'Latitude', 'cinq-wp-editor' ), {
 					placeholder: field.center_lat || undefined,
 				} ) }
-				{ number( 'lng', 'Longitude', {
+				{ number( 'lng', __( 'Longitude', 'cinq-wp-editor' ), {
 					placeholder: field.center_lng || undefined,
 				} ) }
 			</div>
-			{ number( 'zoom', 'Zoom', {
+			{ number( 'zoom', __( 'Zoom', 'cinq-wp-editor' ), {
 				min: 1,
 				max: 21,
 				step: 1,
@@ -1851,7 +1926,7 @@ function MapField( { field, label, help, value, onChange } ) {
 					href={ `https://www.google.com/maps/search/?api=1&query=${ lat },${ lng }` }
 					target="_blank"
 				>
-					Voir sur Google Maps
+					{ __( 'View on Google Maps', 'cinq-wp-editor' ) }
 				</Button>
 			) }
 		</fieldset>
@@ -1926,11 +2001,19 @@ function RepeaterField( { field, value, onChange, path, errors } ) {
 										) }
 									</span>
 									<span className="cinq-repeater__summary">
-										{ summaryOf( row ) || 'Élément vide' }
+										{ summaryOf( row ) ||
+											__(
+												'Empty item',
+												'cinq-wp-editor'
+											) }
 									</span>
 								</button>
 								<RowMenu
-									label={ `élément ${ index + 1 }` }
+									label={ sprintf(
+										/* translators: %d: Position of the row. */
+										__( 'item %d', 'cinq-wp-editor' ),
+										index + 1
+									) }
 									onDuplicate={
 										max > 0 && rows.length >= max
 											? null
@@ -1977,7 +2060,7 @@ function RepeaterField( { field, value, onChange, path, errors } ) {
 				disabled={ max > 0 && rows.length >= max }
 				onClick={ add }
 			>
-				{ field.button_label || 'Ajouter un élément' }
+				{ field.button_label || __( 'Add an item', 'cinq-wp-editor' ) }
 			</Button>
 			{ errorsAt( errors, path ).map( ( message, index ) => (
 				<p key={ index } className="cinq-error">
@@ -2012,10 +2095,11 @@ function BlockList( {
 		<aside
 			id="cinq-wp-editor-blocks"
 			className="cinq-panel cinq-blocks"
-			aria-label="Blocs de la page"
+			aria-label={ __( 'Blocks of the page', 'cinq-wp-editor' ) }
 		>
 			<h2 className="cinq-panel__title">
-				Blocs<span className="cinq-count">{ items.length }</span>
+				{ __( 'Blocks', 'cinq-wp-editor' ) }
+				<span className="cinq-count">{ items.length }</span>
 			</h2>
 			<ol className="cinq-blocks__list">
 				{ items.map( ( item, index ) => {
@@ -2125,7 +2209,7 @@ function BlockList( {
 			</ol>
 			<div className="cinq-blocks__add">
 				<Button variant="secondary" icon={ plus } onClick={ onAdd }>
-					Ajouter un bloc
+					{ __( 'Add a block', 'cinq-wp-editor' ) }
 				</Button>
 			</div>
 		</aside>
@@ -2138,11 +2222,13 @@ function Inspector( { item, index, layout, errors, onChange } ) {
 			<aside
 				id="cinq-wp-editor-inspector"
 				className="cinq-panel cinq-inspector is-empty"
-				aria-label="Réglages du bloc"
+				aria-label={ __( 'Block settings', 'cinq-wp-editor' ) }
 			>
 				<p>
-					Sélectionnez un bloc, dans la liste ou directement sur la
-					page, pour modifier son contenu.
+					{ __(
+						'Select a block, in the list or right on the page, to edit its content.',
+						'cinq-wp-editor'
+					) }
 				</p>
 			</aside>
 		);
@@ -2157,10 +2243,16 @@ function Inspector( { item, index, layout, errors, onChange } ) {
 				id="cinq-wp-editor-inspector"
 				className="cinq-panel cinq-inspector"
 			>
-				<Notice
-					status="warning"
-					isDismissible={ false }
-				>{ `Le type de bloc « ${ item.block.acf_fc_layout } » n’existe plus dans le thème.` }</Notice>
+				<Notice status="warning" isDismissible={ false }>
+					{ sprintf(
+						/* translators: %s: Block type. */
+						__(
+							'The theme no longer has a “%s” block type.',
+							'cinq-wp-editor'
+						),
+						item.block.acf_fc_layout
+					) }
+				</Notice>
 			</aside>
 		);
 	}
@@ -2173,7 +2265,11 @@ function Inspector( { item, index, layout, errors, onChange } ) {
 		<aside
 			id="cinq-wp-editor-inspector"
 			className="cinq-panel cinq-inspector"
-			aria-label={ `Réglages du bloc ${ layout.label }` }
+			aria-label={ sprintf(
+				/* translators: %s: Block name. */
+				__( 'Settings of the %s block', 'cinq-wp-editor' ),
+				layout.label
+			) }
 		>
 			<header className="cinq-inspector__head">
 				<h2 className="cinq-panel__title">{ layout.label }</h2>
@@ -2208,7 +2304,10 @@ function Inspector( { item, index, layout, errors, onChange } ) {
 									).length ? (
 										<span
 											className="cinq-dot"
-											aria-label="Erreur"
+											aria-label={ __(
+												'Error',
+												'cinq-wp-editor'
+											) }
 										/>
 									) : null }
 								</>
@@ -2266,7 +2365,7 @@ function BlockPicker( { layouts, onPick, onClose } ) {
 
 	return (
 		<Modal
-			title="Ajouter un bloc"
+			title={ __( 'Add a block', 'cinq-wp-editor' ) }
 			onRequestClose={ onClose }
 			className="cinq-picker"
 			size="large"
@@ -2274,7 +2373,7 @@ function BlockPicker( { layouts, onPick, onClose } ) {
 			<SearchControl
 				value={ query }
 				onChange={ setQuery }
-				placeholder="Rechercher un bloc…"
+				placeholder={ __( 'Search blocks…', 'cinq-wp-editor' ) }
 				__nextHasNoMarginBottom
 			/>
 			<ul className="cinq-picker__list">
@@ -2293,7 +2392,9 @@ function BlockPicker( { layouts, onPick, onClose } ) {
 					</li>
 				) ) }
 			</ul>
-			{ ! offered.length && <p>Aucun bloc ne correspond.</p> }
+			{ ! offered.length && (
+				<p>{ __( 'No block matches.', 'cinq-wp-editor' ) }</p>
+			) }
 		</Modal>
 	);
 }
@@ -2407,14 +2508,21 @@ function App() {
 				if ( data.draft ) {
 					say(
 						'info',
-						'Vous reprenez votre brouillon : il n’est pas encore publié.',
+						__(
+							'You are back on your draft: it is not published yet.',
+							'cinq-wp-editor'
+						),
 						{ id: 'draft' }
 					);
 				}
 			} )
 			.catch( ( error ) =>
 				setLoadError(
-					error.message || 'Impossible d’ouvrir ce contenu.'
+					error.message ||
+						__(
+							'This content could not be opened.',
+							'cinq-wp-editor'
+						)
 				)
 			);
 	}, [ say ] );
@@ -2438,13 +2546,19 @@ function App() {
 				if ( data.blocks === false ) {
 					say(
 						'warning',
-						'Le gabarit de cette page n’affiche pas ses blocs : vos modifications ne s’y verront pas.',
+						__(
+							'The template of this page does not render its blocks: your changes will not show there.',
+							'cinq-wp-editor'
+						),
 						{
 							id: 'unrendered',
 							isDismissible: false,
 							actions: [
 								{
-									label: 'Modifier dans l’éditeur classique',
+									label: __(
+										'Edit in the classic editor',
+										'cinq-wp-editor'
+									),
 									url: state.post.editUrl,
 								},
 							],
@@ -2587,7 +2701,8 @@ function App() {
 			setStatus( 'error' );
 			say(
 				'error',
-				error.message || 'Le brouillon n’a pas pu être enregistré.',
+				error.message ||
+					__( 'The draft could not be saved.', 'cinq-wp-editor' ),
 				{ id: 'save' }
 			);
 		}
@@ -2668,9 +2783,16 @@ function App() {
 		const item = itemsRef.current[ index ];
 
 		setConfirm( {
-			title: 'Supprimer le bloc ?',
-			text: `Le bloc « ${ labels[ index ] } » sera retiré de la page. Vous pourrez encore abandonner le brouillon pour le retrouver.`,
-			label: 'Supprimer',
+			title: __( 'Delete the block?', 'cinq-wp-editor' ),
+			text: sprintf(
+				/* translators: %s: Block name. */
+				__(
+					'The “%s” block will be removed from the page. You can still discard the draft to get it back.',
+					'cinq-wp-editor'
+				),
+				labels[ index ]
+			),
+			label: __( 'Delete', 'cinq-wp-editor' ),
 			action: () => {
 				commit(
 					itemsRef.current.filter( ( other ) => other !== item ),
@@ -2775,13 +2897,24 @@ function App() {
 			say(
 				'success',
 				live
-					? 'Page publiée : la page en ligne est à jour.'
-					: 'Page enregistrée.',
+					? __(
+							'Page published: the live page is up to date.',
+							'cinq-wp-editor'
+						)
+					: __( 'Page saved.', 'cinq-wp-editor' ),
 				{
 					id: 'publish',
 					type: 'snackbar',
 					actions: live
-						? [ { label: 'Voir la page', url: state.post.viewUrl } ]
+						? [
+								{
+									label: __(
+										'View the page',
+										'cinq-wp-editor'
+									),
+									url: state.post.viewUrl,
+								},
+							]
 						: [],
 				}
 			);
@@ -2794,20 +2927,34 @@ function App() {
 				? itemsRef.current[ Number( first[ 1 ] ) ]
 				: null;
 			const count = invalid.length
-				? ` (${ invalid.length } champ${ invalid.length > 1 ? 's' : '' } à corriger)`
+				? ' ' +
+					sprintf(
+						/* translators: %d: Number of invalid fields. */
+						_n(
+							'(%d field to fix)',
+							'(%d fields to fix)',
+							invalid.length,
+							'cinq-wp-editor'
+						),
+						invalid.length
+					)
 				: '';
 
 			setStatus( 'error' );
 			setErrors( invalid );
 			say(
 				'error',
-				( error.message || 'La publication a échoué.' ) + count,
+				( error.message ||
+					__( 'Publishing failed.', 'cinq-wp-editor' ) ) + count,
 				{
 					id: 'publish',
 					actions: item
 						? [
 								{
-									label: 'Voir le premier',
+									label: __(
+										'Show the first one',
+										'cinq-wp-editor'
+									),
 									onClick: () => selectFromList( item.uid ),
 								},
 							]
@@ -2819,9 +2966,12 @@ function App() {
 
 	function discard() {
 		setConfirm( {
-			title: 'Abandonner le brouillon ?',
-			text: 'Vos modifications non publiées seront perdues : la page revient à sa version publiée.',
-			label: 'Abandonner',
+			title: __( 'Discard the draft?', 'cinq-wp-editor' ),
+			text: __(
+				'Your unpublished changes will be lost: the page goes back to its published version.',
+				'cinq-wp-editor'
+			),
+			label: __( 'Discard', 'cinq-wp-editor' ),
 			action: dropDraft,
 		} );
 	}
@@ -2843,14 +2993,18 @@ function App() {
 			[ 'draft', 'save', 'publish' ].forEach( forget );
 			say(
 				'info',
-				'Brouillon abandonné : la page est revenue à sa version publiée.',
+				__(
+					'Draft discarded: the page is back to its published version.',
+					'cinq-wp-editor'
+				),
 				{ id: 'discard', type: 'snackbar' }
 			);
 			frame.current.contentWindow.location.reload();
 		} catch ( error ) {
 			say(
 				'error',
-				error.message || 'Le brouillon n’a pas pu être abandonné.',
+				error.message ||
+					__( 'The draft could not be discarded.', 'cinq-wp-editor' ),
 				{ id: 'discard' }
 			);
 		}
@@ -2934,7 +3088,7 @@ function App() {
 		dispatch( keyboardShortcutsStore ).registerShortcut( {
 			name: 'cinq-wp-editor/save',
 			category: 'global',
-			description: 'Publier les modifications.',
+			description: __( 'Publish the changes.', 'cinq-wp-editor' ),
 			keyCombination: { modifier: 'primary', character: 's' },
 		} );
 	}, [] );
@@ -2962,21 +3116,23 @@ function App() {
 
 	useCommand( {
 		name: 'cinq-wp-editor/add-block',
-		label: 'Ajouter un bloc',
+		label: __( 'Add a block', 'cinq-wp-editor' ),
 		icon: plus,
 		callback: run( () => setPicker( true ) ),
 		disabled: ! state,
 	} );
 	useCommand( {
 		name: 'cinq-wp-editor/publish',
-		label: live ? 'Publier les modifications' : 'Enregistrer la page',
+		label: live
+			? __( 'Publish the changes', 'cinq-wp-editor' )
+			: __( 'Save the page', 'cinq-wp-editor' ),
 		icon: upload,
 		callback: run( requestPublish ),
 		disabled: ! changed || Boolean( locked ),
 	} );
 	useCommand( {
 		name: 'cinq-wp-editor/discard',
-		label: 'Abandonner le brouillon',
+		label: __( 'Discard the draft', 'cinq-wp-editor' ),
 		icon: undo,
 		callback: run( discard ),
 		disabled: ! changed,
@@ -2984,48 +3140,50 @@ function App() {
 	useCommand( {
 		name: 'cinq-wp-editor/blocks',
 		label: blocksOpen
-			? 'Masquer la liste des blocs'
-			: 'Afficher la liste des blocs',
+			? __( 'Hide the list of blocks', 'cinq-wp-editor' )
+			: __( 'Show the list of blocks', 'cinq-wp-editor' ),
 		icon: listView,
 		callback: run( () => setBlocksOpen( ( open ) => ! open ) ),
 	} );
 	useCommand( {
 		name: 'cinq-wp-editor/inspector',
-		label: inspectorOpen ? 'Masquer les réglages' : 'Afficher les réglages',
+		label: inspectorOpen
+			? __( 'Hide the settings', 'cinq-wp-editor' )
+			: __( 'Show the settings', 'cinq-wp-editor' ),
 		icon: drawerRight,
 		callback: run( () => setInspectorOpen( ( open ) => ! open ) ),
 	} );
 	useCommand( {
 		name: 'cinq-wp-editor/device-desktop',
-		label: 'Aperçu : ordinateur',
+		label: __( 'Preview: desktop', 'cinq-wp-editor' ),
 		icon: desktop,
 		callback: run( () => setDevice( 'desktop' ) ),
 		disabled: device === 'desktop',
 	} );
 	useCommand( {
 		name: 'cinq-wp-editor/device-tablet',
-		label: 'Aperçu : tablette',
+		label: __( 'Preview: tablet', 'cinq-wp-editor' ),
 		icon: tablet,
 		callback: run( () => setDevice( 'tablet' ) ),
 		disabled: device === 'tablet',
 	} );
 	useCommand( {
 		name: 'cinq-wp-editor/device-mobile',
-		label: 'Aperçu : mobile',
+		label: __( 'Preview: mobile', 'cinq-wp-editor' ),
 		icon: mobile,
 		callback: run( () => setDevice( 'mobile' ) ),
 		disabled: device === 'mobile',
 	} );
 	useCommand( {
 		name: 'cinq-wp-editor/classic',
-		label: 'Modifier dans l’éditeur classique',
+		label: __( 'Edit in the classic editor', 'cinq-wp-editor' ),
 		icon: pencil,
 		callback: run( () => window.location.assign( state.post.editUrl ) ),
 		disabled: ! state,
 	} );
 	useCommand( {
 		name: 'cinq-wp-editor/view',
-		label: 'Voir la page',
+		label: __( 'View the page', 'cinq-wp-editor' ),
 		icon: external,
 		callback: run( () => window.open( state.post.viewUrl, '_blank' ) ),
 		disabled: ! live,
@@ -3052,11 +3210,15 @@ function App() {
 	}
 
 	const statusText = {
-		idle: changed ? 'Modifications non publiées' : 'À jour',
-		saving: 'Enregistrement du brouillon…',
-		saved: changed ? 'Brouillon enregistré' : 'À jour',
-		publishing: 'Publication…',
-		error: 'Erreur',
+		idle: changed
+			? __( 'Unpublished changes', 'cinq-wp-editor' )
+			: __( 'Up to date', 'cinq-wp-editor' ),
+		saving: __( 'Saving the draft…', 'cinq-wp-editor' ),
+		saved: changed
+			? __( 'Draft saved', 'cinq-wp-editor' )
+			: __( 'Up to date', 'cinq-wp-editor' ),
+		publishing: __( 'Publishing…', 'cinq-wp-editor' ),
+		error: __( 'Error', 'cinq-wp-editor' ),
 	}[ status ];
 
 	const isPublished = state.post.status === 'publish';
@@ -3067,19 +3229,20 @@ function App() {
 				<div className="cinq-topbar__start">
 					<Button
 						icon={ arrowLeft }
-						label="Retour à la liste"
+						label={ __( 'Back to the list', 'cinq-wp-editor' ) }
 						href={ state.post.listUrl }
 					/>
 					<Button
 						icon={ listView }
-						label="Liste des blocs"
+						label={ __( 'List of blocks', 'cinq-wp-editor' ) }
 						isPressed={ blocksOpen }
 						aria-controls="cinq-wp-editor-blocks"
 						onClick={ () => setBlocksOpen( ( open ) => ! open ) }
 					/>
 					<div>
 						<strong className="cinq-topbar__title">
-							{ state.post.title || '(sans titre)' }
+							{ state.post.title ||
+								__( '(no title)', 'cinq-wp-editor' ) }
 						</strong>
 						<span className="cinq-topbar__type">
 							{ state.post.typeLabel }
@@ -3093,13 +3256,15 @@ function App() {
 								( choice ) => choice.value === device
 							).icon
 						}
-						label="Aperçu"
+						label={ __( 'Preview', 'cinq-wp-editor' ) }
 						popoverProps={ {
 							placement: 'bottom',
 						} }
 					>
 						{ ( { onClose } ) => (
-							<MenuGroup label="Aperçu">
+							<MenuGroup
+								label={ __( 'Preview', 'cinq-wp-editor' ) }
+							>
 								<MenuItemsChoice
 									choices={ DEVICES.map( ( choice ) => ( {
 										value: choice.value,
@@ -3123,7 +3288,7 @@ function App() {
 						{ statusText }
 					</span>
 					<Button variant="tertiary" href={ state.post.editUrl }>
-						Éditeur classique
+						{ __( 'Classic editor', 'cinq-wp-editor' ) }
 					</Button>
 					{ changed && (
 						<Button
@@ -3132,7 +3297,7 @@ function App() {
 							onClick={ discard }
 							disabled={ status === 'publishing' }
 						>
-							Abandonner
+							{ __( 'Discard', 'cinq-wp-editor' ) }
 						</Button>
 					) }
 					<Button
@@ -3145,11 +3310,13 @@ function App() {
 						}
 						isBusy={ status === 'publishing' }
 					>
-						{ isPublished ? 'Publier' : 'Enregistrer' }
+						{ isPublished
+							? __( 'Publish', 'cinq-wp-editor' )
+							: __( 'Save', 'cinq-wp-editor' ) }
 					</Button>
 					<Button
 						icon={ drawerRight }
-						label="Réglages"
+						label={ __( 'Settings', 'cinq-wp-editor' ) }
 						isPressed={ inspectorOpen }
 						aria-controls="cinq-wp-editor-inspector"
 						onClick={ () => setInspectorOpen( ( open ) => ! open ) }
@@ -3195,7 +3362,7 @@ function App() {
 					ref={ frame }
 					className="cinq-stage__frame"
 					src={ state.post.previewUrl }
-					title="Aperçu de la page"
+					title={ __( 'Page preview', 'cinq-wp-editor' ) }
 				/>
 			</main>
 			<Inspector

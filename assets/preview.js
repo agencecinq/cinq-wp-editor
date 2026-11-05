@@ -14,6 +14,7 @@
 
 	const ORIGIN = window.location.origin;
 	const SOURCE = "cinq-wp-editor-preview";
+	const { __, sprintf } = window.wp.i18n;
 
 	let labels = [];
 	let selected = null;
@@ -138,7 +139,11 @@
 			const placeholder = document.createElement("div");
 
 			placeholder.className = "cinq-wp-editor-empty";
-			placeholder.textContent = `${labels[index] || "Bloc"} : ce bloc n’affiche rien ici. Un champ requis est peut-être vide, ou son contenu vient d’ailleurs (Yoast, Central, GitHub…).`;
+			placeholder.textContent = sprintf(
+				/* translators: %s: Block name. */
+				__("%s: this block shows nothing here. A required field may be empty, or its content comes from elsewhere (Yoast, Central, GitHub…).", "cinq-wp-editor"),
+				labels[index] || __("Block", "cinq-wp-editor")
+			);
 			wrapper.appendChild(placeholder);
 		});
 
@@ -146,7 +151,7 @@
 			const placeholder = document.createElement("div");
 
 			placeholder.className = "cinq-wp-editor-empty is-page";
-			placeholder.textContent = "Cette page n’a pas encore de bloc. Ajoutez-en un depuis le panneau de gauche.";
+			placeholder.textContent = __("This page has no block yet. Add one from the panel on the left.", "cinq-wp-editor");
 			root.appendChild(placeholder);
 		}
 	}
@@ -199,7 +204,11 @@
 				wrapper = document.createElement("div");
 				wrapper.style.display = "contents";
 				wrapper.dataset.cinqUid = uid;
-				wrapper.innerHTML = '<div class="cinq-wp-editor-loading">Chargement du bloc…</div>';
+				const loading = document.createElement("div");
+
+				loading.className = "cinq-wp-editor-loading";
+				loading.textContent = __("Loading the block…", "cinq-wp-editor");
+				wrapper.appendChild(loading);
 			}
 
 			wrapper.dataset.cinqBlock = String(position);

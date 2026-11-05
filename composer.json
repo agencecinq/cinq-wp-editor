@@ -20,6 +20,12 @@
 	},
 	"scripts": {
 		"lint": "phpcs",
-		"lint:fix": "phpcbf"
+		"lint:fix": "phpcbf",
+		"i18n": [
+			"wp i18n make-pot . languages/cinq-wp-editor.pot --exclude=build,bin,node_modules,vendor,.sandbox --headers='{\"Report-Msgid-Bugs-To\":\"https://github.com/agencecinq/cinq-wp-editor/issues\"}'",
+			"wp i18n update-po languages/cinq-wp-editor.pot",
+			"wp i18n make-mo languages",
+			"wp i18n make-json languages --no-purge --use-map='{\"src/editor.js\":\"build/editor.js\",\"assets/preview.js\":\"assets/preview.js\"}'"
+		]
 	}
 }

@@ -1,0 +1,597 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: CINQ Editor 0.2.0\n"
+"Report-Msgid-Bugs-To: https://github.com/agencecinq/cinq-wp-editor/issues\n"
+"Last-Translator: CINQ\n"
+"Language-Team: French\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-11-05T17:03:44+00:00\n"
+"PO-Revision-Date: 2026-11-05 18:00+0100\n"
+"Language: fr_FR\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: cinq-wp-editor\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#. Plugin Name of the plugin
+#: cinq-wp-editor.php
+msgid "CINQ Editor"
+msgstr "CINQ Éditeur"
+
+#. Plugin URI of the plugin
+#: cinq-wp-editor.php
+msgid "https://github.com/agencecinq/cinq-wp-editor"
+msgstr ""
+
+#. Description of the plugin
+#: cinq-wp-editor.php
+msgid "Edits the ACF blocks of a page on one screen: the list of blocks, a live preview of the real site and the settings of the selected block."
+msgstr "Édite les blocs ACF d’une page sur un seul écran : la liste des blocs, l’aperçu en direct du vrai site et les réglages du bloc sélectionné."
+
+#. Author of the plugin
+#: cinq-wp-editor.php
+msgid "CINQ"
+msgstr ""
+
+#. Author URI of the plugin
+#: cinq-wp-editor.php
+msgid "https://agencecinq.com/"
+msgstr ""
+
+#: cinq-wp-editor.php:83
+msgid "CINQ Editor is off:"
+msgstr "CINQ Éditeur est inactif :"
+
+#: includes/Admin.php:74
+#: includes/Admin.php:75
+#: includes/Admin.php:114
+#: includes/Admin.php:126
+#: includes/Admin.php:250
+msgid "Visual editor"
+msgstr "Éditeur visuel"
+
+#. translators: %s: Post title.
+#: includes/Admin.php:113
+#, php-format
+msgid "Visual editor: “%s”"
+msgstr "Éditeur visuel : « %s »"
+
+#: includes/Admin.php:126
+msgid "Open the editor from the list of pages."
+msgstr "Ouvrez l’éditeur depuis la liste des pages."
+
+#: includes/Admin.php:270
+msgid "Open the visual editor"
+msgstr "Ouvrir l’éditeur visuel"
+
+#: includes/Admin.php:294
+msgid "Edit visually"
+msgstr "Éditer en visuel"
+
+#. translators: %s: Block type.
+#: includes/Blocks.php:134
+#, php-format
+msgid "The theme has no “%s” block: delete this block."
+msgstr "Le thème n’a pas de bloc « %s » : supprimez ce bloc."
+
+#: includes/Blocks.php:142
+msgid "This block is no longer offered on this content: delete it to publish."
+msgstr "Ce bloc n’est plus proposé sur ce contenu : supprimez-le pour publier."
+
+#: includes/Drafts.php:51
+msgid "Editor drafts"
+msgstr "Brouillons de l’éditeur"
+
+#. translators: %s: Post title.
+#: includes/Drafts.php:120
+#, php-format
+msgid "Draft of “%s”"
+msgstr "Brouillon de « %s »"
+
+#. translators: 1: Name of the user holding the lock. 2: Post title.
+#: includes/Lock.php:69
+#, php-format
+msgid "%1$s is editing “%2$s”. If you take over, a message will let %1$s know, and their changes can no longer be published."
+msgstr "%1$s modifie actuellement « %2$s ». Si vous prenez le contrôle, un message préviendra %1$s, et ses modifications ne pourront plus être publiées."
+
+#. translators: %s: Post title.
+#: includes/Model.php:81
+#, php-format
+msgid "“%s” has no block zone."
+msgstr "Le contenu « %s » n’a pas de zone de blocs."
+
+#. translators: %s: Post type name.
+#: includes/Model.php:239
+#, php-format
+msgid "Archive: %s"
+msgstr "Archive : %s"
+
+#: includes/Plugin.php:47
+msgid "its scripts are not built: run “pnpm install && pnpm build” in the plugin folder."
+msgstr "ses scripts ne sont pas construits : lancez « pnpm install && pnpm build » dans le dossier du plugin."
+
+#: includes/Plugin.php:51
+msgid "it needs ACF Pro."
+msgstr "il a besoin d’ACF Pro."
+
+#: includes/Plugin.php:55
+msgid "the theme does not use Timber."
+msgstr "le thème n’utilise pas Timber."
+
+#. translators: %s: Template path.
+#: includes/Plugin.php:60
+#, php-format
+msgid "the theme has no %s template."
+msgstr "le thème n’a pas de gabarit %s."
+
+#: includes/Rest.php:219
+#: src/editor.js:2705
+msgid "The draft could not be saved."
+msgstr "Le brouillon n’a pas pu être enregistré."
+
+#. translators: %s: Name of the user holding the lock.
+#: includes/Rest.php:280
+#, php-format
+msgid "%s is editing this content: nothing was published. Your changes stay in your draft."
+msgstr "%s modifie ce contenu : rien n’a été publié. Vos modifications restent dans votre brouillon."
+
+#: includes/Rest.php:290
+msgid "Some fields are not valid: nothing was published."
+msgstr "Certains champs ne sont pas valides : rien n’a été publié."
+
+#: includes/Rest.php:329
+msgid "This field is not a user field."
+msgstr "Ce champ n’est pas un champ utilisateur."
+
+#. translators: 1: Blocks the page holds. 2: Blocks saved.
+#: includes/Zone.php:140
+#, php-format
+msgid "The page holds %1$d blocks after saving %2$d: reload the editor before going on."
+msgstr "La page contient %1$d bloc(s) après en avoir enregistré %2$d : rechargez l’éditeur avant de continuer."
+
+#. translators: %s: Block name.
+#: assets/preview.js:144
+#, js-format
+msgid "%s: this block shows nothing here. A required field may be empty, or its content comes from elsewhere (Yoast, Central, GitHub…)."
+msgstr "%s : ce bloc n’affiche rien ici. Un champ requis est peut-être vide, ou son contenu vient d’ailleurs (Yoast, Central, GitHub…)."
+
+#: assets/preview.js:145
+msgid "Block"
+msgstr "Bloc"
+
+#: assets/preview.js:154
+msgid "This page has no block yet. Add one from the panel on the left."
+msgstr "Cette page n’a pas encore de bloc. Ajoutez-en un depuis le panneau de gauche."
+
+#: assets/preview.js:210
+msgid "Loading the block…"
+msgstr "Chargement du bloc…"
+
+#: src/editor.js:111
+msgid "Desktop"
+msgstr "Ordinateur"
+
+#: src/editor.js:114
+msgid "Tablet"
+msgstr "Tablette"
+
+#: src/editor.js:115
+msgid "Mobile"
+msgstr "Mobile"
+
+#: src/editor.js:670
+msgid "Term IDs, separated by commas."
+msgstr "Identifiants des termes, séparés par des virgules."
+
+#. translators: %s: ACF field type.
+#: src/editor.js:697
+#, js-format
+msgid "“%s” field: edit it in the classic editor for now."
+msgstr "Champ « %s » : à modifier dans l’éditeur classique pour l’instant."
+
+#. translators: 1: Field label. 2: Its value.
+#: src/editor.js:819
+#: src/editor.js:897
+#: src/editor.js:1290
+#, js-format
+msgid "%1$s: %2$s"
+msgstr "%1$s : %2$s"
+
+#: src/editor.js:821
+msgid "no value"
+msgstr "aucune valeur"
+
+#: src/editor.js:824
+#: src/editor.js:903
+msgid "Choose…"
+msgstr "Choisir…"
+
+#: src/editor.js:844
+#: src/editor.js:928
+msgid "Clear"
+msgstr "Effacer"
+
+#: src/editor.js:899
+msgid "no color"
+msgstr "aucune couleur"
+
+#: src/editor.js:956
+msgid "Someone else has taken over"
+msgstr "Quelqu’un d’autre a pris le contrôle"
+
+#: src/editor.js:957
+msgid "This content is already being edited"
+msgstr "Ce contenu est déjà en cours de modification"
+
+#: src/editor.js:982
+msgid "Your unpublished changes stay in your draft: you will find them again when you reopen the page."
+msgstr "Vos modifications non publiées restent dans votre brouillon : vous les retrouverez en rouvrant la page."
+
+#: src/editor.js:995
+#: src/editor.js:3232
+msgid "Back to the list"
+msgstr "Revenir à la liste"
+
+#: src/editor.js:999
+msgid "Take over"
+msgstr "Prendre le contrôle"
+
+#. translators: %s: Name of the block or row.
+#: src/editor.js:1036
+#, js-format
+msgid "Options: %s"
+msgstr "Options : %s"
+
+#: src/editor.js:1058
+msgid "Duplicate"
+msgstr "Dupliquer"
+
+#: src/editor.js:1062
+msgid "Move up"
+msgstr "Monter"
+
+#: src/editor.js:1066
+msgid "Move down"
+msgstr "Descendre"
+
+#: src/editor.js:1072
+#: src/editor.js:2795
+msgid "Delete"
+msgstr "Supprimer"
+
+#: src/editor.js:1209
+msgid "Cancel"
+msgstr "Annuler"
+
+#: src/editor.js:1292
+msgid "no link"
+msgstr "aucun lien"
+
+#: src/editor.js:1295
+msgid "Add a link"
+msgstr "Ajouter un lien"
+
+#: src/editor.js:1378
+msgid "Use"
+msgstr "Utiliser"
+
+#: src/editor.js:1409
+msgid "Replace"
+msgstr "Remplacer"
+
+#: src/editor.js:1410
+msgid "Choose"
+msgstr "Choisir"
+
+#: src/editor.js:1419
+#: src/editor.js:1444
+#: src/editor.js:1607
+msgid "Remove"
+msgstr "Retirer"
+
+#: src/editor.js:1466
+msgid "Add images"
+msgstr "Ajouter des images"
+
+#. translators: %d: Most images the gallery takes.
+#: src/editor.js:1472
+#, js-format
+msgid "%d image at most."
+msgid_plural "%d images at most."
+msgstr[0] "%d image au plus."
+msgstr[1] "%d images au plus."
+
+#: src/editor.js:1693
+msgid "Search content…"
+msgstr "Rechercher un contenu…"
+
+#: src/editor.js:1694
+msgid "No content chosen."
+msgstr "Aucun contenu choisi."
+
+#: src/editor.js:1731
+msgid "Search users…"
+msgstr "Rechercher un utilisateur…"
+
+#: src/editor.js:1732
+msgid "No user chosen."
+msgstr "Aucun utilisateur choisi."
+
+#. translators: %s: Field label.
+#: src/editor.js:1756
+#, js-format
+msgid "%s: none of the tabs of this field is available here."
+msgstr "%s : aucun onglet de ce champ n’est disponible ici."
+
+#: src/editor.js:1780
+msgid "Search icons…"
+msgstr "Rechercher une icône…"
+
+#: src/editor.js:1807
+msgid "Image"
+msgstr "Image"
+
+#: src/editor.js:1816
+msgid "Image address"
+msgstr "Adresse de l’image"
+
+#: src/editor.js:1853
+msgid "Remove the icon"
+msgstr "Retirer l’icône"
+
+#: src/editor.js:1904
+msgid "Address"
+msgstr "Adresse"
+
+#: src/editor.js:1910
+msgid "Latitude"
+msgstr "Latitude"
+
+#: src/editor.js:1913
+msgid "Longitude"
+msgstr "Longitude"
+
+#: src/editor.js:1917
+msgid "Zoom"
+msgstr "Zoom"
+
+#: src/editor.js:1929
+msgid "View on Google Maps"
+msgstr "Voir sur Google Maps"
+
+#: src/editor.js:2005
+msgid "Empty item"
+msgstr "Élément vide"
+
+#. translators: %d: Position of the row.
+#: src/editor.js:2014
+#, js-format
+msgid "item %d"
+msgstr "élément %d"
+
+#: src/editor.js:2063
+msgid "Add an item"
+msgstr "Ajouter un élément"
+
+#: src/editor.js:2098
+msgid "Blocks of the page"
+msgstr "Blocs de la page"
+
+#: src/editor.js:2101
+msgid "Blocks"
+msgstr "Blocs"
+
+#: src/editor.js:2212
+#: src/editor.js:2368
+#: src/editor.js:3119
+msgid "Add a block"
+msgstr "Ajouter un bloc"
+
+#: src/editor.js:2225
+msgid "Block settings"
+msgstr "Réglages du bloc"
+
+#: src/editor.js:2228
+msgid "Select a block, in the list or right on the page, to edit its content."
+msgstr "Sélectionnez un bloc, dans la liste ou directement sur la page, pour modifier son contenu."
+
+#. translators: %s: Block type.
+#: src/editor.js:2249
+#, js-format
+msgid "The theme no longer has a “%s” block type."
+msgstr "Le type de bloc « %s » n’existe plus dans le thème."
+
+#. translators: %s: Block name.
+#: src/editor.js:2270
+#, js-format
+msgid "Settings of the %s block"
+msgstr "Réglages du bloc %s"
+
+#: src/editor.js:2307
+#: src/editor.js:3221
+msgid "Error"
+msgstr "Erreur"
+
+#: src/editor.js:2376
+msgid "Search blocks…"
+msgstr "Rechercher un bloc…"
+
+#: src/editor.js:2396
+msgid "No block matches."
+msgstr "Aucun bloc ne correspond."
+
+#: src/editor.js:2511
+msgid "You are back on your draft: it is not published yet."
+msgstr "Vous reprenez votre brouillon : il n’est pas encore publié."
+
+#: src/editor.js:2522
+msgid "This content could not be opened."
+msgstr "Impossible d’ouvrir ce contenu."
+
+#: src/editor.js:2549
+msgid "The template of this page does not render its blocks: your changes will not show there."
+msgstr "Le gabarit de cette page n’affiche pas ses blocs : vos modifications ne s’y verront pas."
+
+#: src/editor.js:2558
+#: src/editor.js:3179
+msgid "Edit in the classic editor"
+msgstr "Modifier dans l’éditeur classique"
+
+#: src/editor.js:2786
+msgid "Delete the block?"
+msgstr "Supprimer le bloc ?"
+
+#. translators: %s: Block name.
+#: src/editor.js:2789
+#, js-format
+msgid "The “%s” block will be removed from the page. You can still discard the draft to get it back."
+msgstr "Le bloc « %s » sera retiré de la page. Vous pourrez encore abandonner le brouillon pour le retrouver."
+
+#: src/editor.js:2900
+msgid "Page published: the live page is up to date."
+msgstr "Page publiée : la page en ligne est à jour."
+
+#: src/editor.js:2904
+msgid "Page saved."
+msgstr "Page enregistrée."
+
+#: src/editor.js:2911
+#: src/editor.js:3186
+msgid "View the page"
+msgstr "Voir la page"
+
+#. translators: %d: Number of invalid fields.
+#: src/editor.js:2933
+#, js-format
+msgid "(%d field to fix)"
+msgid_plural "(%d fields to fix)"
+msgstr[0] "(%d champ à corriger)"
+msgstr[1] "(%d champs à corriger)"
+
+#: src/editor.js:2948
+msgid "Publishing failed."
+msgstr "La publication a échoué."
+
+#: src/editor.js:2954
+msgid "Show the first one"
+msgstr "Voir le premier"
+
+#: src/editor.js:2969
+msgid "Discard the draft?"
+msgstr "Abandonner le brouillon ?"
+
+#: src/editor.js:2970
+msgid "Your unpublished changes will be lost: the page goes back to its published version."
+msgstr "Vos modifications non publiées seront perdues : la page revient à sa version publiée."
+
+#: src/editor.js:2974
+#: src/editor.js:3300
+msgid "Discard"
+msgstr "Abandonner"
+
+#: src/editor.js:2996
+msgid "Draft discarded: the page is back to its published version."
+msgstr "Brouillon abandonné : la page est revenue à sa version publiée."
+
+#: src/editor.js:3007
+msgid "The draft could not be discarded."
+msgstr "Le brouillon n’a pas pu être abandonné."
+
+#: src/editor.js:3091
+msgid "Publish the changes."
+msgstr "Publier les modifications."
+
+#: src/editor.js:3127
+msgid "Publish the changes"
+msgstr "Publier les modifications"
+
+#: src/editor.js:3128
+msgid "Save the page"
+msgstr "Enregistrer la page"
+
+#: src/editor.js:3135
+msgid "Discard the draft"
+msgstr "Abandonner le brouillon"
+
+#: src/editor.js:3143
+msgid "Hide the list of blocks"
+msgstr "Masquer la liste des blocs"
+
+#: src/editor.js:3144
+msgid "Show the list of blocks"
+msgstr "Afficher la liste des blocs"
+
+#: src/editor.js:3151
+msgid "Hide the settings"
+msgstr "Masquer les réglages"
+
+#: src/editor.js:3152
+msgid "Show the settings"
+msgstr "Afficher les réglages"
+
+#: src/editor.js:3158
+msgid "Preview: desktop"
+msgstr "Aperçu : ordinateur"
+
+#: src/editor.js:3165
+msgid "Preview: tablet"
+msgstr "Aperçu : tablette"
+
+#: src/editor.js:3172
+msgid "Preview: mobile"
+msgstr "Aperçu : mobile"
+
+#: src/editor.js:3214
+msgid "Unpublished changes"
+msgstr "Modifications non publiées"
+
+#: src/editor.js:3215
+#: src/editor.js:3219
+msgid "Up to date"
+msgstr "À jour"
+
+#: src/editor.js:3216
+msgid "Saving the draft…"
+msgstr "Enregistrement du brouillon…"
+
+#: src/editor.js:3218
+msgid "Draft saved"
+msgstr "Brouillon enregistré"
+
+#: src/editor.js:3220
+msgid "Publishing…"
+msgstr "Publication…"
+
+#: src/editor.js:3237
+msgid "List of blocks"
+msgstr "Liste des blocs"
+
+#: src/editor.js:3245
+msgid "(no title)"
+msgstr "(sans titre)"
+
+#: src/editor.js:3259
+#: src/editor.js:3266
+msgid "Preview"
+msgstr "Aperçu"
+
+#: src/editor.js:3291
+msgid "Classic editor"
+msgstr "Éditeur classique"
+
+#: src/editor.js:3314
+msgid "Publish"
+msgstr "Publier"
+
+#: src/editor.js:3315
+msgid "Save"
+msgstr "Enregistrer"
+
+#: src/editor.js:3319
+msgid "Settings"
+msgstr "Réglages"
+
+#: src/editor.js:3365
+msgid "Page preview"
+msgstr "Aperçu de la page"

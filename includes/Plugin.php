@@ -44,19 +44,20 @@ final class Plugin {
 		$missing = array();
 
 		if ( ! is_readable( CINQ_WP_EDITOR_PATH . self::SCRIPT_ASSET ) ) {
-			$missing[] = 'ses scripts ne sont pas construits : lancez « pnpm install && pnpm build » dans le dossier du plugin.';
+			$missing[] = __( 'its scripts are not built: run “pnpm install && pnpm build” in the plugin folder.', 'cinq-wp-editor' );
 		}
 
 		if ( ! function_exists( 'acf_get_field_groups' ) ) {
-			$missing[] = 'il a besoin d’ACF Pro.';
+			$missing[] = __( 'it needs ACF Pro.', 'cinq-wp-editor' );
 		}
 
 		if ( ! class_exists( Timber::class ) ) {
-			$missing[] = 'le thème n’utilise pas Timber.';
+			$missing[] = __( 'the theme does not use Timber.', 'cinq-wp-editor' );
 		}
 
 		if ( ! is_readable( get_theme_file_path( Preview::TEMPLATE ) ) ) {
-			$missing[] = sprintf( 'le thème n’a pas de gabarit %s.', Preview::TEMPLATE );
+			/* translators: %s: Template path. */
+			$missing[] = sprintf( __( 'the theme has no %s template.', 'cinq-wp-editor' ), Preview::TEMPLATE );
 		}
 
 		return $missing;

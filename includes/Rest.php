@@ -216,7 +216,7 @@ final class Rest {
 		$draft_id = Drafts::save( $zone, $post, get_current_user_id(), $blocks, $mapped['rows'] );
 
 		if ( 0 === $draft_id ) {
-			return new WP_Error( 'cinq_wp_editor_draft_failed', 'Le brouillon n’a pas pu être enregistré.', array( 'status' => 500 ) );
+			return new WP_Error( 'cinq_wp_editor_draft_failed', __( 'The draft could not be saved.', 'cinq-wp-editor' ), array( 'status' => 500 ) );
 		}
 
 		$render = array_values( array_unique( array_map( 'intval', (array) $request->get_param( 'render' ) ) ) );
@@ -276,7 +276,8 @@ final class Rest {
 		if ( null !== $holder ) {
 			return new WP_Error(
 				'cinq_wp_editor_locked',
-				sprintf( '%s modifie ce contenu : rien n’a été publié. Vos modifications restent dans votre brouillon.', $holder->display_name ),
+				/* translators: %s: Name of the user holding the lock. */
+				sprintf( __( '%s is editing this content: nothing was published. Your changes stay in your draft.', 'cinq-wp-editor' ), $holder->display_name ),
 				array( 'status' => 409 )
 			);
 		}
@@ -286,7 +287,7 @@ final class Rest {
 		if ( ! empty( $mapped['errors'] ) ) {
 			return new WP_Error(
 				'cinq_wp_editor_invalid',
-				'Certains champs ne sont pas valides : rien n’a été publié.',
+				__( 'Some fields are not valid: nothing was published.', 'cinq-wp-editor' ),
 				array(
 					'status' => 422,
 					'errors' => $mapped['errors'],
@@ -325,7 +326,7 @@ final class Rest {
 		$field = acf_get_field( (string) $request['field'] );
 
 		if ( ! is_array( $field ) || 'user' !== ( $field['type'] ?? '' ) ) {
-			return new WP_Error( 'cinq_wp_editor_not_user_field', 'Ce champ n’est pas un champ utilisateur.', array( 'status' => 400 ) );
+			return new WP_Error( 'cinq_wp_editor_not_user_field', __( 'This field is not a user field.', 'cinq-wp-editor' ), array( 'status' => 400 ) );
 		}
 
 		$include = array_filter( array_map( 'absint', (array) $request['include'] ) );

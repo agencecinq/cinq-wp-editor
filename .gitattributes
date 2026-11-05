@@ -5,6 +5,7 @@
 /bin              export-ignore
 /composer.json    export-ignore
 /composer.lock    export-ignore
+/eslint.config.cjs export-ignore
 /package.json     export-ignore
 /pnpm-lock.yaml   export-ignore
 /pnpm-workspace.yaml export-ignore

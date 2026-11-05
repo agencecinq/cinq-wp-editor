@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name:       CINQ Éditeur
+ * Plugin Name:       CINQ Editor
  * Plugin URI:        https://github.com/agencecinq/cinq-wp-editor
- * Description:       Édite les blocs ACF d'une page sur un seul écran : la liste des blocs, l'aperçu en direct du vrai site et les réglages du bloc sélectionné.
+ * Description:       Edits the ACF blocks of a page on one screen: the list of blocks, a live preview of the real site and the settings of the selected block.
  * Version:           0.2.0
  * Requires at least: 6.9
  * Requires PHP:      8.4
@@ -12,6 +12,7 @@
  * License URI:       https://opensource.org/licenses/MIT
  * Update URI:        https://github.com/agencecinq/cinq-wp-editor
  * Text Domain:       cinq-wp-editor
+ * Domain Path:       /languages
  *
  * @package CinqWpEditor
  */
@@ -52,11 +53,22 @@ spl_autoload_register(
 
 register_deactivation_hook( CINQ_WP_EDITOR_FILE, array( PluginUpdater::class, 'forget' ) );
 
-// The editor runs on what the theme already has: its ACF fields, its Timber
-// views and its `blocks/blocks.html.twig`. Missing one, it stays off. After
-// the theme is set up: Timber comes with the theme's dependencies.
+// The plugin's own translations: WordPress only finds those of plugins hosted
+// on WordPress.org by itself.
 add_action(
-	'after_setup_theme',
+	'init',
+	static function (): void {
+		load_plugin_textdomain( 'cinq-wp-editor', false, dirname( plugin_basename( CINQ_WP_EDITOR_FILE ) ) . '/languages' );
+	},
+	0
+);
+
+// The editor runs on what the theme already has: its ACF fields, its Timber
+// views and its `blocks/blocks.html.twig`. Missing one, it stays off. On init,
+// once the theme has brought Timber and the translations are loaded; what the
+// editor hooks comes later.
+add_action(
+	'init',
 	static function (): void {
 		$missing = Plugin::missing();
 
@@ -68,7 +80,7 @@ add_action(
 						return;
 					}
 
-					echo '<div class="notice notice-error"><p>' . esc_html__( 'CINQ Éditeur est inactif :', 'cinq-wp-editor' ) . ' ' . esc_html( implode( ' ', $missing ) ) . '</p></div>';
+					echo '<div class="notice notice-error"><p>' . esc_html__( 'CINQ Editor is off:', 'cinq-wp-editor' ) . ' ' . esc_html( implode( ' ', $missing ) ) . '</p></div>';
 				}
 			);
 			return;
@@ -76,5 +88,5 @@ add_action(
 
 		Plugin::run();
 	},
-	20
+	1
 );

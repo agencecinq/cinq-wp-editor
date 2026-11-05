@@ -1,4 +1,4 @@
-=== CINQ Éditeur ===
+=== CINQ Editor ===
 
 Tested up to: 7.1
 License: MIT
@@ -8,7 +8,7 @@ Edits the ACF blocks of a page on one screen: the blocks, a live preview of the 
 
 == Description ==
 
-CINQ Éditeur opens a page in a full-screen editor: the list of its blocks on the left, the real page in the middle, the fields of the selected block on the right. A change shows in the preview as it is typed, saved as a draft of one's own until **Publier**.
+CINQ Editor opens a page in a full-screen editor: the list of its blocks on the left, the real page in the middle, the fields of the selected block on the right. A change shows in the preview as it is typed, saved as a draft of one's own until **Publish**.
 
 Repository: [agencecinq/cinq-wp-editor](https://github.com/agencecinq/cinq-wp-editor). Its README explains how the editor works.
 
@@ -33,9 +33,9 @@ The blocks stay ACF rows on the post. Switching back to the edit screen is alway
 
 1. Download `cinq-wp-editor.zip` from the [latest release](https://github.com/agencecinq/cinq-wp-editor/releases/latest).
 2. Upload it under **Plugins > Add New > Upload Plugin**, or unzip it to `wp-content/plugins/cinq-wp-editor`.
-3. Activate **CINQ Éditeur** in the **Plugins** screen.
+3. Activate **CINQ Editor** in the **Plugins** screen.
 
-Pages with blocks then show **Éditeur visuel** in the list of pages, **Ouvrir l’éditeur visuel** on their edit screen, and **Éditer en visuel** in the admin bar of the site.
+Pages with blocks then show **Visual editor** in the list of pages, **Open the visual editor** on their edit screen, and **Edit visually** in the admin bar of the site.
 
 = Updates =
 
@@ -56,6 +56,8 @@ No update is offered when the plugin folder is a Git working copy, since updatin
 
 Run `pnpm install`, then `pnpm build` (or `pnpm start` to rebuild on every change): the interface is built with `@wordpress/scripts`, as WordPress's own screens are, and a working copy without `build/` stays off and says so. The release workflow builds it for the zip.
 
+The interface is in English, translated into French in `languages/`. After changing a string, run `composer i18n` (WP-CLI 2.7 or later): it extracts the strings to the POT file and merges them into the PO file. Translate the new or changed ones in the PO file, then run `composer i18n` again: it compiles the MO file PHP reads and the JSON files the scripts read.
+
 Run `composer install`, then `composer lint` (phpcs) or `composer lint:fix` (phpcbf). Use `./vendor/bin/phpcs`, not the global `phpcs` binary: the global install does not register the WordPress standards. `composer lint` also checks the code against PHP 8.4 and later with PHPCompatibilityWP.
 
 `bash bin/sandbox.sh` starts a throwaway WordPress with the agencecinq theme and a page filled with real blocks: see the README of the repository.
@@ -63,7 +65,7 @@ Run `composer install`, then `composer lint` (phpcs) or `composer lint:fix` (php
 == Changelog ==
 
 = 0.2.0 =
-* Breaking: CINQ WP MCP and MCP Adapter are no longer needed: the editor runs on ACF Pro and the theme alone, and requires PHP 8.4. The main file is renamed after the repository, `cinq-wp-editor/cinq-wp-editor.php`, and every identifier with it: the `CinqWpEditor` namespace, the REST routes under `cinq-wp-editor/v1`, the screen at `admin.php?page=cinq-wp-editor`, the drafts as `cinq_wp_editor_draft` posts. Drafts started with 0.1.0 are not carried over. Migration: install the release zip in place of the clone, then activate **CINQ Éditeur** again. CINQ WP MCP can stay for Claude, or go.
+* Breaking: CINQ WP MCP and MCP Adapter are no longer needed: the editor runs on ACF Pro and the theme alone, and requires PHP 8.4. The main file is renamed after the repository, `cinq-wp-editor/cinq-wp-editor.php`, and every identifier with it: the `CinqWpEditor` namespace, the REST routes under `cinq-wp-editor/v1`, the screen at `admin.php?page=cinq-wp-editor`, the drafts as `cinq_wp_editor_draft` posts. Drafts started with 0.1.0 are not carried over. Migration: install the release zip in place of the clone, then activate **CINQ Editor** again. CINQ WP MCP can stay for Claude, or go.
 * The block zone of a post comes from the field groups ACF applies to it: a page whose template the theme leaves out, such as a styleguide, no longer opens in the editor.
 * Fields are validated by ACF, with the rules and the messages of the edit screen. A block the theme no longer has, or no longer offers on the post, is reported on the block.
 * Backslashes typed in a field are kept. HTML is filtered as ACF filters it for users without `unfiltered_html`.
@@ -74,16 +76,17 @@ Run `composer install`, then `composer lint` (phpcs) or `composer lint:fix` (php
 * Removing a block and discarding the draft ask for confirmation in a dialog, as the block editor does.
 * Notices go through WordPress's notices store, as in the block editor: a snackbar for a publication or a discarded draft, a banner for an error, which a new one replaces. A refused publication links to the first block to fix.
 * Date, time and colour fields open WordPress's pickers, and show dates in the field's display format.
-* Link fields use the block editor's LinkControl, in a popover: search over contents and terms, direct entry, the link text and « Ouvrir dans un nouvel onglet », as the block editor links a button. It loads the block editor's scripts, which the browser usually has from the post editor already.
+* Link fields use the block editor's LinkControl, in a popover: search over contents and terms, direct entry, the link text and « Open in new tab », as the block editor links a button. It loads the block editor's scripts, which the browser usually has from the post editor already.
 * User, icon, Google Map and page link fields are edited in the editor too. Users are found as ACF finds them, among the roles the field allows; page links offer the archives the field allows; a place is an address and its coordinates, as ACF stores it, with or without a Google Maps key.
 * A page open in the editor is locked with WordPress's own lock, the one of the classic edit screen and the block editor: whoever opens it elsewhere sees who is editing it. Opened while someone else holds it, the editor says who, and offers to go back or to take over; taken over, it says so, and the changes stay in the draft. The heartbeat keeps the lock every ten seconds and leaving the page gives it back. A page locked by someone else is never published.
-* ⌘S / Ctrl+S publishes, from the editor, the preview or a rich text field, as it saves in the block editor. Pressed while the draft is being saved, it publishes once the save is done; the **Publier** button no longer waits for it either.
+* ⌘S / Ctrl+S publishes, from the editor, the preview or a rich text field, as it saves in the block editor. Pressed while the draft is being saved, it publishes once the save is done; the **Publish** button no longer waits for it either.
 * The command palette (⌘K / Ctrl+K) adds a block, publishes, discards the draft, changes the preview width, shows or hides the panels, opens the classic edit screen or the page.
-* The preview width is chosen in an **Aperçu** menu, as in the block editor: desktop, tablet or mobile.
+* The preview width is chosen in an **Preview** menu, as in the block editor: desktop, tablet or mobile.
 * The list of blocks and the settings close from the top bar, and the preview takes their room.
 * Blocks and repeater rows have an **Options** menu (duplicate, move up, move down, delete) instead of a row of buttons.
 * The editor screen is titled after the post. The admin header no longer warns that `strip_tags()` was passed null.
 * The interface is built with `@wordpress/scripts`: it imports the `@wordpress` packages, which WordPress loads as its scripts, and uses `@wordpress/icons`, the icons of the block editor, instead of Dashicons.
+* The interface is in English, translated into French: `__()` in PHP, `@wordpress/i18n` in the scripts, as the rest of the CINQ suite. The plugin loads its own translations: WordPress only finds those of plugins hosted on WordPress.org. The plugin is named **CINQ Editor**, « CINQ Éditeur » in French.
 * The plugin updates from its GitHub releases, like any other plugin.
 
 = 0.1.0 =

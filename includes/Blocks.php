@@ -130,7 +130,8 @@ final class Blocks {
 			if ( ! isset( $layouts[ $name ] ) ) {
 				$this->errors[] = array(
 					'path'    => $block_path,
-					'message' => sprintf( 'Le thème n’a pas de bloc « %s » : supprimez ce bloc.', $name ),
+					/* translators: %s: Block type. */
+					'message' => sprintf( __( 'The theme has no “%s” block: delete this block.', 'cinq-wp-editor' ), $name ),
 				);
 				continue;
 			}
@@ -138,7 +139,7 @@ final class Blocks {
 			if ( null !== $offered && ! isset( $offered[ $name ] ) ) {
 				$this->errors[] = array(
 					'path'    => $block_path,
-					'message' => 'Ce bloc n’est plus proposé sur ce contenu : supprimez-le pour publier.',
+					'message' => __( 'This block is no longer offered on this content: delete it to publish.', 'cinq-wp-editor' ),
 				);
 			}
 

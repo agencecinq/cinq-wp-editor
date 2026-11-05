@@ -135,7 +135,12 @@ final class Zone {
 		if ( count( $rows ) !== $stored ) {
 			return new WP_Error(
 				'cinq_wp_editor_write_failed',
-				sprintf( 'La page contient %d bloc(s) après en avoir enregistré %d : rechargez l’éditeur avant de continuer.', $stored, count( $rows ) ),
+				sprintf(
+					/* translators: 1: Blocks the page holds. 2: Blocks saved. */
+					__( 'The page holds %1$d blocks after saving %2$d: reload the editor before going on.', 'cinq-wp-editor' ),
+					$stored,
+					count( $rows )
+				),
 				array( 'status' => 500 )
 			);
 		}
