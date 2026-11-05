@@ -42,6 +42,11 @@ html.wp-toolbar:has(.cinq-wp-editor-screen) {
 	color: #1e1e1e;
 }
 
+/* navigateRegions wraps the editor in a div: the grid stays the root's. */
+.cinq-wp-editor > .components-navigate-regions {
+	display: contents;
+}
+
 .cinq-wp-editor__loading,
 .cinq-wp-editor__fatal {
 	grid-area: stage;
@@ -620,6 +625,7 @@ html.wp-toolbar:has(.cinq-wp-editor-screen) {
 /* Narrower screens: the inspector slides over the stage. */
 
 @media (max-width: 1180px) {
+
 	.cinq-wp-editor {
 		--cinq-blocks-width: 260px;
 

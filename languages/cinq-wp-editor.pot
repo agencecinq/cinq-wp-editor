@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-05T17:53:15+00:00\n"
+"POT-Creation-Date: 2026-11-05T18:05:24+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: cinq-wp-editor\n"
@@ -130,7 +130,7 @@ msgid "the theme has no %s template."
 msgstr ""
 
 #: includes/Rest.php:219
-#: src/editor.js:2802
+#: src/editor.js:2850
 msgid "The draft could not be saved."
 msgstr ""
 
@@ -172,430 +172,432 @@ msgstr ""
 msgid "Loading the block…"
 msgstr ""
 
-#: src/editor.js:113
+#: src/editor.js:137
 msgid "Desktop"
 msgstr ""
 
-#: src/editor.js:116
+#: src/editor.js:140
 msgid "Tablet"
 msgstr ""
 
-#: src/editor.js:117
+#: src/editor.js:141
 msgid "Mobile"
 msgstr ""
 
-#: src/editor.js:683
+#: src/editor.js:707
 msgid "Term IDs, separated by commas."
 msgstr ""
 
 #. translators: %s: ACF field type.
-#: src/editor.js:710
+#: src/editor.js:734
 #, js-format
 msgid "“%s” field: edit it in the classic editor for now."
 msgstr ""
 
 #. translators: 1: Field label. 2: Its value.
-#: src/editor.js:916
-#: src/editor.js:994
-#: src/editor.js:1387
+#: src/editor.js:940
+#: src/editor.js:1018
+#: src/editor.js:1409
 #, js-format
 msgid "%1$s: %2$s"
 msgstr ""
 
-#: src/editor.js:918
+#: src/editor.js:942
 msgid "no value"
 msgstr ""
 
-#: src/editor.js:921
-#: src/editor.js:1000
+#: src/editor.js:945
+#: src/editor.js:1024
 msgid "Choose…"
 msgstr ""
 
-#: src/editor.js:941
-#: src/editor.js:1025
+#: src/editor.js:965
+#: src/editor.js:1049
 msgid "Clear"
 msgstr ""
 
-#: src/editor.js:996
+#: src/editor.js:1020
 msgid "no color"
 msgstr ""
 
-#: src/editor.js:1053
+#: src/editor.js:1077
 msgid "Someone else has taken over"
 msgstr ""
 
-#: src/editor.js:1054
+#: src/editor.js:1078
 msgid "This content is already being edited"
 msgstr ""
 
-#: src/editor.js:1079
+#: src/editor.js:1103
 msgid "Your unpublished changes stay in your draft: you will find them again when you reopen the page."
 msgstr ""
 
-#: src/editor.js:1092
-#: src/editor.js:3329
+#: src/editor.js:1116
+#: src/editor.js:3387
 msgid "Back to the list"
 msgstr ""
 
-#: src/editor.js:1096
+#: src/editor.js:1120
 msgid "Take over"
 msgstr ""
 
 #. translators: %s: Name of the block or row.
-#: src/editor.js:1133
+#: src/editor.js:1157
 #, js-format
 msgid "Options: %s"
 msgstr ""
 
-#: src/editor.js:1155
+#: src/editor.js:1179
 msgid "Duplicate"
 msgstr ""
 
-#: src/editor.js:1159
+#: src/editor.js:1183
 msgid "Move up"
 msgstr ""
 
-#: src/editor.js:1163
+#: src/editor.js:1187
 msgid "Move down"
 msgstr ""
 
-#: src/editor.js:1169
-#: src/editor.js:2892
+#: src/editor.js:1193
+#: src/editor.js:2941
 msgid "Delete"
 msgstr ""
 
-#: src/editor.js:1306
+#: src/editor.js:1328
 msgid "Cancel"
 msgstr ""
 
-#: src/editor.js:1389
+#: src/editor.js:1411
 msgid "no link"
 msgstr ""
 
-#: src/editor.js:1392
+#: src/editor.js:1414
 msgid "Add a link"
 msgstr ""
 
-#: src/editor.js:1475
-msgid "Use"
-msgstr ""
-
-#: src/editor.js:1506
+#: src/editor.js:1513
 msgid "Replace"
 msgstr ""
 
-#: src/editor.js:1507
+#: src/editor.js:1514
 msgid "Choose"
 msgstr ""
 
-#: src/editor.js:1516
-#: src/editor.js:1541
-#: src/editor.js:1704
+#: src/editor.js:1525
+#: src/editor.js:1550
+#: src/editor.js:1719
 msgid "Remove"
 msgstr ""
 
-#: src/editor.js:1563
+#: src/editor.js:1580
 msgid "Add images"
 msgstr ""
 
 #. translators: %d: Most images the gallery takes.
-#: src/editor.js:1569
+#: src/editor.js:1588
 #, js-format
 msgid "%d image at most."
 msgid_plural "%d images at most."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/editor.js:1790
+#: src/editor.js:1811
 msgid "Search content…"
 msgstr ""
 
-#: src/editor.js:1791
+#: src/editor.js:1812
 msgid "No content chosen."
 msgstr ""
 
-#: src/editor.js:1828
+#: src/editor.js:1849
 msgid "Search users…"
 msgstr ""
 
-#: src/editor.js:1829
+#: src/editor.js:1850
 msgid "No user chosen."
 msgstr ""
 
 #. translators: %s: Field label.
-#: src/editor.js:1853
+#: src/editor.js:1874
 #, js-format
 msgid "%s: none of the tabs of this field is available here."
 msgstr ""
 
-#: src/editor.js:1877
+#: src/editor.js:1898
 msgid "Search icons…"
 msgstr ""
 
-#: src/editor.js:1904
+#: src/editor.js:1925
 msgid "Image"
 msgstr ""
 
-#: src/editor.js:1913
+#: src/editor.js:1934
 msgid "Image address"
 msgstr ""
 
-#: src/editor.js:1950
+#: src/editor.js:1971
 msgid "Remove the icon"
 msgstr ""
 
-#: src/editor.js:2001
+#: src/editor.js:2022
 msgid "Address"
 msgstr ""
 
-#: src/editor.js:2007
+#: src/editor.js:2028
 msgid "Latitude"
 msgstr ""
 
-#: src/editor.js:2010
+#: src/editor.js:2031
 msgid "Longitude"
 msgstr ""
 
-#: src/editor.js:2014
+#: src/editor.js:2035
 msgid "Zoom"
 msgstr ""
 
-#: src/editor.js:2026
+#: src/editor.js:2047
 msgid "View on Google Maps"
 msgstr ""
 
-#: src/editor.js:2102
+#: src/editor.js:2123
 msgid "Empty item"
 msgstr ""
 
 #. translators: %d: Position of the row.
-#: src/editor.js:2111
+#: src/editor.js:2132
 #, js-format
 msgid "item %d"
 msgstr ""
 
-#: src/editor.js:2160
+#: src/editor.js:2181
 msgid "Add an item"
 msgstr ""
 
-#: src/editor.js:2195
+#: src/editor.js:2218
 msgid "Blocks of the page"
 msgstr ""
 
-#: src/editor.js:2198
+#: src/editor.js:2221
 msgid "Blocks"
 msgstr ""
 
-#: src/editor.js:2309
-#: src/editor.js:2465
-#: src/editor.js:3216
+#: src/editor.js:2332
+#: src/editor.js:2495
+#: src/editor.js:3269
 msgid "Add a block"
 msgstr ""
 
-#: src/editor.js:2322
+#: src/editor.js:2347
+#: src/editor.js:2369
 msgid "Block settings"
 msgstr ""
 
-#: src/editor.js:2325
+#: src/editor.js:2350
 msgid "Select a block, in the list or right on the page, to edit its content."
 msgstr ""
 
 #. translators: %s: Block type.
-#: src/editor.js:2346
+#: src/editor.js:2374
 #, js-format
 msgid "The theme no longer has a “%s” block type."
 msgstr ""
 
 #. translators: %s: Block name.
-#: src/editor.js:2367
+#: src/editor.js:2397
 #, js-format
 msgid "Settings of the %s block"
 msgstr ""
 
-#: src/editor.js:2404
-#: src/editor.js:3318
+#: src/editor.js:2434
+#: src/editor.js:3371
 msgid "Error"
 msgstr ""
 
-#: src/editor.js:2473
+#: src/editor.js:2503
 msgid "Search blocks…"
 msgstr ""
 
-#: src/editor.js:2493
+#: src/editor.js:2523
 msgid "No block matches."
 msgstr ""
 
-#: src/editor.js:2608
+#: src/editor.js:2653
 msgid "You are back on your draft: it is not published yet."
 msgstr ""
 
-#: src/editor.js:2619
+#: src/editor.js:2665
 msgid "This content could not be opened."
 msgstr ""
 
-#: src/editor.js:2646
+#: src/editor.js:2693
 msgid "The template of this page does not render its blocks: your changes will not show there."
 msgstr ""
 
-#: src/editor.js:2655
-#: src/editor.js:3276
+#: src/editor.js:2702
+#: src/editor.js:3329
 msgid "Edit in the classic editor"
 msgstr ""
 
-#: src/editor.js:2883
+#: src/editor.js:2932
 msgid "Delete the block?"
 msgstr ""
 
 #. translators: %s: Block name.
-#: src/editor.js:2886
+#: src/editor.js:2935
 #, js-format
 msgid "The “%s” block will be removed from the page. You can still discard the draft to get it back."
 msgstr ""
 
-#: src/editor.js:2997
+#: src/editor.js:3046
 msgid "Page published: the live page is up to date."
 msgstr ""
 
-#: src/editor.js:3001
+#: src/editor.js:3050
 msgid "Page saved."
 msgstr ""
 
-#: src/editor.js:3008
-#: src/editor.js:3283
+#: src/editor.js:3057
+#: src/editor.js:3336
 msgid "View the page"
 msgstr ""
 
 #. translators: %d: Number of invalid fields.
-#: src/editor.js:3030
+#: src/editor.js:3079
 #, js-format
 msgid "(%d field to fix)"
 msgid_plural "(%d fields to fix)"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/editor.js:3045
+#: src/editor.js:3095
 msgid "Publishing failed."
 msgstr ""
 
-#: src/editor.js:3051
+#: src/editor.js:3102
 msgid "Show the first one"
 msgstr ""
 
-#: src/editor.js:3066
+#: src/editor.js:3117
 msgid "Discard the draft?"
 msgstr ""
 
-#: src/editor.js:3067
+#: src/editor.js:3118
 msgid "Your unpublished changes will be lost: the page goes back to its published version."
 msgstr ""
 
-#: src/editor.js:3071
-#: src/editor.js:3397
+#: src/editor.js:3122
+#: src/editor.js:3455
 msgid "Discard"
 msgstr ""
 
-#: src/editor.js:3093
+#: src/editor.js:3144
 msgid "Draft discarded: the page is back to its published version."
 msgstr ""
 
-#: src/editor.js:3104
+#: src/editor.js:3156
 msgid "The draft could not be discarded."
 msgstr ""
 
-#: src/editor.js:3188
+#: src/editor.js:3241
 msgid "Publish the changes."
 msgstr ""
 
-#: src/editor.js:3224
+#: src/editor.js:3277
 msgid "Publish the changes"
 msgstr ""
 
-#: src/editor.js:3225
+#: src/editor.js:3278
 msgid "Save the page"
 msgstr ""
 
-#: src/editor.js:3232
+#: src/editor.js:3285
 msgid "Discard the draft"
 msgstr ""
 
-#: src/editor.js:3240
+#: src/editor.js:3293
 msgid "Hide the list of blocks"
 msgstr ""
 
-#: src/editor.js:3241
+#: src/editor.js:3294
 msgid "Show the list of blocks"
 msgstr ""
 
-#: src/editor.js:3248
+#: src/editor.js:3301
 msgid "Hide the settings"
 msgstr ""
 
-#: src/editor.js:3249
+#: src/editor.js:3302
 msgid "Show the settings"
 msgstr ""
 
-#: src/editor.js:3255
+#: src/editor.js:3308
 msgid "Preview: desktop"
 msgstr ""
 
-#: src/editor.js:3262
+#: src/editor.js:3315
 msgid "Preview: tablet"
 msgstr ""
 
-#: src/editor.js:3269
+#: src/editor.js:3322
 msgid "Preview: mobile"
 msgstr ""
 
-#: src/editor.js:3311
+#: src/editor.js:3364
 msgid "Unpublished changes"
 msgstr ""
 
-#: src/editor.js:3312
-#: src/editor.js:3316
+#: src/editor.js:3365
+#: src/editor.js:3369
 msgid "Up to date"
 msgstr ""
 
-#: src/editor.js:3313
+#: src/editor.js:3366
 msgid "Saving the draft…"
 msgstr ""
 
-#: src/editor.js:3315
+#: src/editor.js:3368
 msgid "Draft saved"
 msgstr ""
 
-#: src/editor.js:3317
+#: src/editor.js:3370
 msgid "Publishing…"
 msgstr ""
 
-#: src/editor.js:3334
+#: src/editor.js:3382
+msgid "Editor top bar"
+msgstr ""
+
+#: src/editor.js:3392
 msgid "List of blocks"
 msgstr ""
 
-#: src/editor.js:3342
+#: src/editor.js:3400
 msgid "(no title)"
 msgstr ""
 
-#: src/editor.js:3356
-#: src/editor.js:3363
+#: src/editor.js:3414
+#: src/editor.js:3421
 msgid "Preview"
 msgstr ""
 
-#: src/editor.js:3388
+#: src/editor.js:3446
 msgid "Classic editor"
 msgstr ""
 
-#: src/editor.js:3411
+#: src/editor.js:3469
 msgid "Publish"
 msgstr ""
 
-#: src/editor.js:3412
+#: src/editor.js:3470
 msgid "Save"
 msgstr ""
 
-#: src/editor.js:3416
+#: src/editor.js:3474
 msgid "Settings"
 msgstr ""
 
-#: src/editor.js:3462
+#: src/editor.js:3519
+#: src/editor.js:3525
 msgid "Page preview"
 msgstr ""

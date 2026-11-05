@@ -78,7 +78,7 @@ jobs:
           node-version: '22'
           cache: pnpm
 
-      - run: pnpm install --frozen-lockfile && pnpm lint:js && pnpm build
+      - run: pnpm install --frozen-lockfile && pnpm lint:js && pnpm lint:css && pnpm build
 
       - name: Build the zip
         run: |

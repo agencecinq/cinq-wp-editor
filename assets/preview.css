@@ -71,6 +71,7 @@ cinq-consent {
 }
 
 @keyframes cinq-wp-editor-pulse {
+
 	to {
 		opacity: 0.5;
 	}

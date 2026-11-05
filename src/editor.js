@@ -17,6 +17,7 @@ import {
 	store as blockEditorStore,
 } from '@wordpress/block-editor';
 import { useCommand } from '@wordpress/commands';
+import { useDebouncedInput, useInstanceId } from '@wordpress/compose';
 import {
 	BaseControl,
 	Button,
@@ -31,6 +32,7 @@ import {
 	MenuItem,
 	MenuItemsChoice,
 	Modal,
+	navigateRegions,
 	Notice,
 	NoticeList,
 	PanelBody,
@@ -59,6 +61,7 @@ import {
 	useRef,
 	useState,
 } from '@wordpress/element';
+import { decodeEntities } from '@wordpress/html-entities';
 import { __, _n, sprintf } from '@wordpress/i18n';
 import {
 	Icon,
@@ -82,7 +85,9 @@ import {
 	store as keyboardShortcutsStore,
 	useShortcut,
 } from '@wordpress/keyboard-shortcuts';
+import { MediaUpload } from '@wordpress/media-utils';
 import { store as noticesStore } from '@wordpress/notices';
+import { store as preferencesStore } from '@wordpress/preferences';
 import { addQueryArgs } from '@wordpress/url';
 
 const config = window.cinqWpEditor;
@@ -105,6 +110,25 @@ const API = `/${ config.namespace }/posts/${ config.postId }`;
 
 // The editor's notices, apart from any other screen's, in WordPress's own store.
 const NOTICES = 'cinq-wp-editor';
+
+// The editor's preferences, kept per user as the block editor keeps its own:
+// which side panels are open.
+const PREFERENCES = 'cinq-wp-editor';
+
+dispatch( preferencesStore ).setDefaults( PREFERENCES, {
+	blocksOpen: true,
+	inspectorOpen: true,
+} );
+
+/**
+ * Text from the server, which may carry HTML entities, as text.
+ *
+ * @param {{message?: string}} error    Error from apiFetch.
+ * @param {string}             fallback Message when it has none.
+ * @return {string} Message to show.
+ */
+const messageOf = ( error, fallback ) =>
+	decodeEntities( error.message || fallback );
 
 // Preview widths, as the block editor offers them.
 const DEVICES = [
@@ -1073,7 +1097,7 @@ function LockedModal( { lock, post } ) {
 					/>
 				) }
 				<div>
-					<p>{ lock.text }</p>
+					<p>{ decodeEntities( lock.text ) }</p>
 					{ lock.takenOver && (
 						<p>
 							{ __(
@@ -1180,8 +1204,6 @@ function RowMenu( { label, onDuplicate, onUp, onDown, onRemove } ) {
 	);
 }
 
-let editorSeed = 0;
-
 /**
  * TinyMCE, as ACF and the classic edit screen run it: same toolbars (ACF's,
  * with the theme's `acf/fields/wysiwyg/toolbars`), same Visual / Code tabs,
@@ -1191,7 +1213,7 @@ let editorSeed = 0;
  * @param {FieldProps} props Field props.
  */
 function WysiwygField( { field, label, help, value, onChange } ) {
-	const id = useMemo( () => `cinq-wysiwyg-${ ++editorSeed }`, [] );
+	const id = useInstanceId( WysiwygField, 'cinq-wysiwyg' );
 	const holder = useRef( null );
 	const content = useRef( value ?? '' );
 	const latest = useRef( onChange );
@@ -1464,27 +1486,6 @@ function Thumbnail( { id } ) {
 	);
 }
 
-function openMediaFrame( field, multiple, onSelect ) {
-	const frame = media( {
-		title: field.label,
-		multiple,
-		library:
-			field.type === 'image' || field.type === 'gallery'
-				? { type: 'image' }
-				: {},
-		button: { text: __( 'Use', 'cinq-wp-editor' ) },
-	} );
-
-	frame.on( 'select', () => {
-		const ids = frame
-			.state()
-			.get( 'selection' )
-			.map( ( attachment ) => attachment.id );
-		onSelect( ids );
-	} );
-	frame.open();
-}
-
 function MediaField( { field, label, help, value, onChange } ) {
 	const id = Number( value ) || 0;
 
@@ -1493,19 +1494,27 @@ function MediaField( { field, label, help, value, onChange } ) {
 			<span className="cinq-label">{ label }</span>
 			{ id ? <Thumbnail id={ id } /> : null }
 			<div className="cinq-media__actions">
-				<Button
-					variant="secondary"
-					size="compact"
-					onClick={ () =>
-						openMediaFrame( field, false, ( ids ) =>
-							onChange( ids[ 0 ] || '' )
-						)
+				<MediaUpload
+					title={ field.label }
+					allowedTypes={
+						field.type === 'image' ? [ 'image' ] : undefined
 					}
-				>
-					{ id
-						? __( 'Replace', 'cinq-wp-editor' )
-						: __( 'Choose', 'cinq-wp-editor' ) }
-				</Button>
+					value={ id || undefined }
+					onSelect={ ( attachment ) =>
+						onChange( attachment.id || '' )
+					}
+					render={ ( { open } ) => (
+						<Button
+							variant="secondary"
+							size="compact"
+							onClick={ open }
+						>
+							{ id
+								? __( 'Replace', 'cinq-wp-editor' )
+								: __( 'Choose', 'cinq-wp-editor' ) }
+						</Button>
+					) }
+				/>
 				{ id ? (
 					<Button
 						variant="tertiary"
@@ -1548,20 +1557,30 @@ function GalleryField( { field, label, help, value, onChange } ) {
 					</span>
 				) ) }
 			</div>
-			<Button
-				variant="secondary"
-				size="compact"
-				disabled={ full }
-				onClick={ () =>
-					openMediaFrame( field, true, ( picked ) =>
-						onChange(
-							[ ...ids, ...picked ].slice( 0, max || undefined )
-						)
+			{ /* The library opens with the gallery selected, as ACF's does. */ }
+			<MediaUpload
+				title={ field.label }
+				allowedTypes={ [ 'image' ] }
+				multiple
+				value={ ids }
+				onSelect={ ( attachments ) =>
+					onChange(
+						attachments
+							.map( ( attachment ) => attachment.id )
+							.slice( 0, max || undefined )
 					)
 				}
-			>
-				{ __( 'Add images', 'cinq-wp-editor' ) }
-			</Button>
+				render={ ( { open } ) => (
+					<Button
+						variant="secondary"
+						size="compact"
+						disabled={ full }
+						onClick={ open }
+					>
+						{ __( 'Add images', 'cinq-wp-editor' ) }
+					</Button>
+				) }
+			/>
 			{ full && (
 				<p className="cinq-help">
 					{ sprintf(
@@ -1621,7 +1640,7 @@ function ReferenceField( {
 	const [ titles, setTitles ] = useState( () =>
 		Object.fromEntries( extra.map( ( item ) => [ item.id, item.title ] ) )
 	);
-	const [ query, setQuery ] = useState( '' );
+	const [ query, setQuery, searched ] = useDebouncedInput( '' );
 	const [ results, setResults ] = useState( [] );
 	// The callers pass new functions on each render: searching again for
 	// that would never end.
@@ -1652,26 +1671,22 @@ function ReferenceField( {
 	}, [ key, titlesRef, source ] );
 
 	useEffect( () => {
-		const term = query.trim().toLowerCase();
+		const term = searched.trim().toLowerCase();
 
 		if ( term.length < 2 ) {
 			setResults( [] );
 			return;
 		}
 
-		const timer = setTimeout( () => {
-			const fixed = source.current.extra.filter( ( item ) =>
-				item.title.toLowerCase().includes( term )
-			);
+		const fixed = source.current.extra.filter( ( item ) =>
+			item.title.toLowerCase().includes( term )
+		);
 
-			source.current
-				.search( query )
-				.then( ( list ) => setResults( [ ...fixed, ...list ] ) )
-				.catch( () => setResults( fixed ) );
-		}, 250 );
-
-		return () => clearTimeout( timer );
-	}, [ query, source ] );
+		source.current
+			.search( searched )
+			.then( ( list ) => setResults( [ ...fixed, ...list ] ) )
+			.catch( () => setResults( fixed ) );
+	}, [ searched, source ] );
 
 	const set = ( next ) => {
 		if ( multiple ) {
@@ -1755,6 +1770,7 @@ function PostField( { field, label, help, value, onChange } ) {
 		Array.isArray( field.post_type ) && field.post_type.length
 			? field.post_type.join( ',' )
 			: 'any';
+	// Titles come rendered, with HTML entities: ‘&#8217;’ for an apostrophe.
 	const find = ( args ) =>
 		apiFetch( {
 			path: addQueryArgs( '/wp/v2/search', {
@@ -1762,7 +1778,12 @@ function PostField( { field, label, help, value, onChange } ) {
 				subtype,
 				...args,
 			} ),
-		} );
+		} ).then( ( list ) =>
+			list.map( ( item ) => ( {
+				...item,
+				title: decodeEntities( item.title ),
+			} ) )
+		);
 
 	return (
 		<ReferenceField
@@ -2191,6 +2212,8 @@ function BlockList( {
 	return (
 		<aside
 			id="cinq-wp-editor-blocks"
+			role="region"
+			tabIndex="-1"
 			className="cinq-panel cinq-blocks"
 			aria-label={ __( 'Blocks of the page', 'cinq-wp-editor' ) }
 		>
@@ -2318,6 +2341,8 @@ function Inspector( { item, index, layout, errors, onChange } ) {
 		return (
 			<aside
 				id="cinq-wp-editor-inspector"
+				role="region"
+				tabIndex="-1"
 				className="cinq-panel cinq-inspector is-empty"
 				aria-label={ __( 'Block settings', 'cinq-wp-editor' ) }
 			>
@@ -2338,7 +2363,10 @@ function Inspector( { item, index, layout, errors, onChange } ) {
 		return (
 			<aside
 				id="cinq-wp-editor-inspector"
+				role="region"
+				tabIndex="-1"
 				className="cinq-panel cinq-inspector"
+				aria-label={ __( 'Block settings', 'cinq-wp-editor' ) }
 			>
 				<Notice status="warning" isDismissible={ false }>
 					{ sprintf(
@@ -2361,6 +2389,8 @@ function Inspector( { item, index, layout, errors, onChange } ) {
 	return (
 		<aside
 			id="cinq-wp-editor-inspector"
+			role="region"
+			tabIndex="-1"
 			className="cinq-panel cinq-inspector"
 			aria-label={ sprintf(
 				/* translators: %s: Block name. */
@@ -2512,8 +2542,23 @@ function App() {
 	const [ changed, setChanged ] = useState( false );
 	const [ picker, setPicker ] = useState( false );
 	// The side panels, as the block editor lets one close its list view and settings.
-	const [ blocksOpen, setBlocksOpen ] = useState( true );
-	const [ inspectorOpen, setInspectorOpen ] = useState( true );
+	const { blocksOpen, inspectorOpen } = useSelect(
+		( select ) => ( {
+			blocksOpen: select( preferencesStore ).get(
+				PREFERENCES,
+				'blocksOpen'
+			),
+			inspectorOpen: select( preferencesStore ).get(
+				PREFERENCES,
+				'inspectorOpen'
+			),
+		} ),
+		[]
+	);
+	const { toggle: togglePreference } = useDispatch( preferencesStore );
+	const toggleBlocks = () => togglePreference( PREFERENCES, 'blocksOpen' );
+	const toggleInspector = () =>
+		togglePreference( PREFERENCES, 'inspectorOpen' );
 	const [ device, setDevice ] = useState( 'desktop' );
 	// Notices as the block editor shows them: a banner for what needs
 	// attention, a snackbar for what went well. A fixed id per kind makes a
@@ -2615,11 +2660,13 @@ function App() {
 			} )
 			.catch( ( error ) =>
 				setLoadError(
-					error.message ||
+					messageOf(
+						error,
 						__(
 							'This content could not be opened.',
 							'cinq-wp-editor'
 						)
+					)
 				)
 			);
 	}, [ say ] );
@@ -2798,8 +2845,10 @@ function App() {
 			setStatus( 'error' );
 			say(
 				'error',
-				error.message ||
-					__( 'The draft could not be saved.', 'cinq-wp-editor' ),
+				messageOf(
+					error,
+					__( 'The draft could not be saved.', 'cinq-wp-editor' )
+				),
 				{ id: 'save' }
 			);
 		}
@@ -3041,8 +3090,10 @@ function App() {
 			setErrors( invalid );
 			say(
 				'error',
-				( error.message ||
-					__( 'Publishing failed.', 'cinq-wp-editor' ) ) + count,
+				messageOf(
+					error,
+					__( 'Publishing failed.', 'cinq-wp-editor' )
+				) + count,
 				{
 					id: 'publish',
 					actions: item
@@ -3100,8 +3151,10 @@ function App() {
 		} catch ( error ) {
 			say(
 				'error',
-				error.message ||
-					__( 'The draft could not be discarded.', 'cinq-wp-editor' ),
+				messageOf(
+					error,
+					__( 'The draft could not be discarded.', 'cinq-wp-editor' )
+				),
 				{ id: 'discard' }
 			);
 		}
@@ -3240,7 +3293,7 @@ function App() {
 			? __( 'Hide the list of blocks', 'cinq-wp-editor' )
 			: __( 'Show the list of blocks', 'cinq-wp-editor' ),
 		icon: listView,
-		callback: run( () => setBlocksOpen( ( open ) => ! open ) ),
+		callback: run( toggleBlocks ),
 	} );
 	useCommand( {
 		name: 'cinq-wp-editor/inspector',
@@ -3248,7 +3301,7 @@ function App() {
 			? __( 'Hide the settings', 'cinq-wp-editor' )
 			: __( 'Show the settings', 'cinq-wp-editor' ),
 		icon: drawerRight,
-		callback: run( () => setInspectorOpen( ( open ) => ! open ) ),
+		callback: run( toggleInspector ),
 	} );
 	useCommand( {
 		name: 'cinq-wp-editor/device-desktop',
@@ -3322,7 +3375,12 @@ function App() {
 
 	return (
 		<>
-			<header className="cinq-topbar">
+			<header
+				className="cinq-topbar"
+				role="region"
+				tabIndex="-1"
+				aria-label={ __( 'Editor top bar', 'cinq-wp-editor' ) }
+			>
 				<div className="cinq-topbar__start">
 					<Button
 						icon={ arrowLeft }
@@ -3334,11 +3392,11 @@ function App() {
 						label={ __( 'List of blocks', 'cinq-wp-editor' ) }
 						isPressed={ blocksOpen }
 						aria-controls="cinq-wp-editor-blocks"
-						onClick={ () => setBlocksOpen( ( open ) => ! open ) }
+						onClick={ toggleBlocks }
 					/>
 					<div>
 						<strong className="cinq-topbar__title">
-							{ state.post.title ||
+							{ decodeEntities( state.post.title ) ||
 								__( '(no title)', 'cinq-wp-editor' ) }
 						</strong>
 						<span className="cinq-topbar__type">
@@ -3416,7 +3474,7 @@ function App() {
 						label={ __( 'Settings', 'cinq-wp-editor' ) }
 						isPressed={ inspectorOpen }
 						aria-controls="cinq-wp-editor-inspector"
-						onClick={ () => setInspectorOpen( ( open ) => ! open ) }
+						onClick={ toggleInspector }
 					/>
 				</div>
 			</header>
@@ -3454,7 +3512,12 @@ function App() {
 				onDuplicate={ duplicateBlock }
 				onAdd={ () => setPicker( true ) }
 			/>
-			<main className={ `cinq-stage is-${ device }` }>
+			<main
+				className={ `cinq-stage is-${ device }` }
+				role="region"
+				tabIndex="-1"
+				aria-label={ __( 'Page preview', 'cinq-wp-editor' ) }
+			>
 				<iframe
 					ref={ frame }
 					className="cinq-stage__frame"
@@ -3500,5 +3563,8 @@ function App() {
 const root = document.getElementById( 'cinq-wp-editor' );
 
 if ( root ) {
-	createRoot( root ).render( <App /> );
+	// Ctrl+` and Ctrl+Shift+` move between the regions, as in the block editor.
+	const Editor = navigateRegions( App );
+
+	createRoot( root ).render( <Editor /> );
 }
