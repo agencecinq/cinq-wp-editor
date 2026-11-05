@@ -16,7 +16,7 @@ Repository: [agencecinq/cinq-wp-editor](https://github.com/agencecinq/cinq-wp-ed
 
 * WordPress 7.1 or later: the editor follows the latest WordPress release only, to use what it brings as soon as it ships
 * PHP 8.4 or later
-* ACF Pro
+* ACF Pro 6.8 or later, and a theme on Timber 2.5 or later: their latest releases, as for WordPress
 * A Timber theme rendering its blocks through `views/blocks/blocks.html.twig`, the convention of CINQ themes
 * Optional: a `mcp.json` at the theme root, whose `blocks` entries describe the blocks in the catalogue
 
@@ -66,7 +66,7 @@ Run `composer install`, then `composer lint` (phpcs) or `composer lint:fix` (php
 == Changelog ==
 
 = 0.2.0 =
-* Breaking: CINQ WP MCP and MCP Adapter are no longer needed: the editor runs on ACF Pro and the theme alone, and requires WordPress 7.1, the latest release, and PHP 8.4. The main file is renamed after the repository, `cinq-wp-editor/cinq-wp-editor.php`, and every identifier with it: the `CinqWpEditor` namespace, the REST routes under `cinq-wp-editor/v1`, the screen at `admin.php?page=cinq-wp-editor`, the drafts as `cinq_wp_editor_draft` posts. Drafts started with 0.1.0 are not carried over. Migration: install the release zip in place of the clone, then activate **CINQ Editor** again. CINQ WP MCP can stay for Claude, or go.
+* Breaking: CINQ WP MCP and MCP Adapter are no longer needed: the editor runs on ACF Pro and the theme alone, and requires the latest releases of WordPress (7.1), ACF Pro (6.8) and Timber (2.5), and PHP 8.4. It carries no code for older ones. The main file is renamed after the repository, `cinq-wp-editor/cinq-wp-editor.php`, and every identifier with it: the `CinqWpEditor` namespace, the REST routes under `cinq-wp-editor/v1`, the screen at `admin.php?page=cinq-wp-editor`, the drafts as `cinq_wp_editor_draft` posts. Drafts started with 0.1.0 are not carried over. Migration: install the release zip in place of the clone, then activate **CINQ Editor** again. CINQ WP MCP can stay for Claude, or go.
 * The block zone of a post comes from the field groups ACF applies to it: a page whose template the theme leaves out, such as a styleguide, no longer opens in the editor.
 * Fields are validated by ACF, with the rules and the messages of the edit screen. A block the theme no longer has, or no longer offers on the post, is reported on the block.
 * Backslashes typed in a field are kept. HTML is filtered as ACF filters it for users without `unfiltered_html`.

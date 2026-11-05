@@ -40,7 +40,7 @@ final class Renderer {
 	public static function blocks( WP_Post $post, Zone $zone, int $draft_id, array $indexes ): array {
 		$html = array_fill_keys( $indexes, null );
 
-		if ( empty( $indexes ) || ! class_exists( Timber::class ) ) {
+		if ( empty( $indexes ) ) {
 			return $html;
 		}
 

@@ -105,7 +105,7 @@ bin/sandbox.sh           throwaway test WordPress
 ## Requirements
 
 - WordPress 7.1+, the latest release only, PHP 8.4+
-- ACF Pro
+- ACF Pro 6.8+ and Timber 2.5+, their latest releases
 - A Timber theme rendering its blocks through `views/blocks/blocks.html.twig` (the convention of CINQ themes)
 - Optional: a `mcp.json` at the theme root, for the catalogue descriptions
 

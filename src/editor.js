@@ -88,9 +88,9 @@ import { addQueryArgs } from '@wordpress/url';
 const config = window.cinqWpEditor;
 
 // WordPress APIs that are no packages: the media library, the heartbeat and
-// the classic editor, `wp.editor` until the block editor takes the name.
-const { media, heartbeat } = window.wp;
-const classicEditor = window.wp.oldEditor || window.wp.editor;
+// the classic editor, which WordPress names `wp.oldEditor` next to the block
+// editor's `wp.editor`.
+const { media, heartbeat, oldEditor: classicEditor } = window.wp;
 
 // LinkControl searches through the block editor's settings: given the
 // search the post editor gives it, WordPress's own over posts and terms.

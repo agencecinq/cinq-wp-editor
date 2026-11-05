@@ -199,8 +199,7 @@ final class Model {
 	 * @return array<int, array{name: string, label: string}>
 	 */
 	private static function icon_tabs( array $field ): array {
-		$type    = acf_get_field_type( 'icon_picker' );
-		$tabs    = $type && method_exists( $type, 'get_tabs' ) ? (array) $type->get_tabs() : array();
+		$tabs    = acf_get_field_type( 'icon_picker' )->get_tabs();
 		$allowed = is_array( $field['tabs'] ?? null ) ? $field['tabs'] : array_keys( $tabs );
 		$out     = array();
 

@@ -462,14 +462,7 @@ add_action(
 add_filter(
 	'timber/locations',
 	static function ( array $locations ): array {
-		$views = __DIR__ . '/views/';
-
-		if ( isset( $locations['__main__'] ) && is_array( $locations['__main__'] ) ) {
-			$locations['__main__'][] = $views;
-			return $locations;
-		}
-
-		$locations[] = $views;
+		$locations[ Timber\Loader::MAIN_NAMESPACE ][] = __DIR__ . '/views/';
 
 		return $locations;
 	},

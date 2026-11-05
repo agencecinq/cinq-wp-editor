@@ -9,6 +9,8 @@ declare( strict_types = 1 );
 
 namespace CinqWpEditor;
 
+use Timber\Loader;
+
 defined( 'ABSPATH' ) || exit;
 
 /**
@@ -161,18 +163,11 @@ final class Preview {
 	/**
 	 * Puts the editor's views in front of the theme's.
 	 *
-	 * @param array<int|string, mixed> $locations Twig locations, keyed by namespace.
-	 * @return array<int|string, mixed>
+	 * @param array<string, array<int, string>> $locations Twig locations, keyed by namespace.
+	 * @return array<string, array<int, string>>
 	 */
 	public static function locations( array $locations ): array {
-		$views = CINQ_WP_EDITOR_PATH . 'views/';
-
-		if ( isset( $locations['__main__'] ) && is_array( $locations['__main__'] ) ) {
-			array_unshift( $locations['__main__'], $views );
-			return $locations;
-		}
-
-		array_unshift( $locations, $views );
+		array_unshift( $locations[ Loader::MAIN_NAMESPACE ], CINQ_WP_EDITOR_PATH . 'views/' );
 
 		return $locations;
 	}

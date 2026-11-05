@@ -24,6 +24,16 @@ final class Plugin {
 	public const SCRIPT_ASSET = 'build/editor.asset.php';
 
 	/**
+	 * ACF Pro the editor is built against: its latest release.
+	 */
+	public const ACF_VERSION = '6.8';
+
+	/**
+	 * Timber the editor is built against: its latest release.
+	 */
+	public const TIMBER_VERSION = '2.5';
+
+	/**
 	 * Registers every hook of the plugin.
 	 *
 	 * @return void
@@ -47,12 +57,15 @@ final class Plugin {
 			$missing[] = __( 'its scripts are not built: run “pnpm install && pnpm build” in the plugin folder.', 'cinq-wp-editor' );
 		}
 
-		if ( ! function_exists( 'acf_get_field_groups' ) ) {
-			$missing[] = __( 'it needs ACF Pro.', 'cinq-wp-editor' );
+		// The latest releases only, as for WordPress.
+		if ( ! defined( 'ACF_PRO' ) || version_compare( ACF_VERSION, self::ACF_VERSION, '<' ) ) {
+			/* translators: %s: ACF Pro version. */
+			$missing[] = sprintf( __( 'it needs ACF Pro %s or later.', 'cinq-wp-editor' ), self::ACF_VERSION );
 		}
 
-		if ( ! class_exists( Timber::class ) ) {
-			$missing[] = __( 'the theme does not use Timber.', 'cinq-wp-editor' );
+		if ( ! class_exists( Timber::class ) || version_compare( Timber::VERSION, self::TIMBER_VERSION, '<' ) ) {
+			/* translators: %s: Timber version. */
+			$missing[] = sprintf( __( 'the theme needs Timber %s or later.', 'cinq-wp-editor' ), self::TIMBER_VERSION );
 		}
 
 		if ( ! is_readable( get_theme_file_path( Preview::TEMPLATE ) ) ) {

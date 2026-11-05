@@ -187,14 +187,9 @@ final class Admin {
 	 * @return array<string, array<int, string>>
 	 */
 	private static function toolbars(): array {
-		$type     = acf_get_field_type( 'wysiwyg' );
 		$toolbars = array();
 
-		if ( ! $type || ! method_exists( $type, 'get_toolbars' ) ) {
-			return $toolbars;
-		}
-
-		foreach ( (array) $type->get_toolbars() as $label => $rows ) {
+		foreach ( acf_get_field_type( 'wysiwyg' )->get_toolbars() as $label => $rows ) {
 			// The key ACF gives each toolbar in its own script.
 			$key = str_replace( '-', '_', sanitize_title( (string) $label ) );
 
@@ -243,9 +238,7 @@ final class Admin {
 	 * @return array<string, string> Labels keyed by class, such as `dashicons-admin-home`.
 	 */
 	private static function dashicons(): array {
-		$type = acf_get_field_type( 'icon_picker' );
-
-		return $type && method_exists( $type, 'get_dashicons' ) ? (array) $type->get_dashicons() : array();
+		return acf_get_field_type( 'icon_picker' )->get_dashicons();
 	}
 
 	/**
@@ -255,7 +248,7 @@ final class Admin {
 	 * @return string
 	 */
 	public static function body_class( string $classes ): string {
-		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		$screen = get_current_screen();
 
 		if ( null !== $screen && '' !== self::$hook && $screen->id === self::$hook ) {
 			$classes .= ' cinq-wp-editor-screen';
