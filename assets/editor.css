@@ -42,8 +42,9 @@ html.wp-toolbar:has(.cinq-wp-editor-screen) {
 	color: #1e1e1e;
 }
 
-/* navigateRegions wraps the editor in a div: the grid stays the root's. */
-.cinq-wp-editor > .components-navigate-regions {
+/* navigateRegions wraps the editor in a div, with no class:
+   the grid stays the root's. */
+.cinq-wp-editor > div {
 	display: contents;
 }
 

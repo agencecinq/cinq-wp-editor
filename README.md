@@ -161,6 +161,22 @@ built is committed.
 `composer install`, then `composer lint` (phpcs, WordPress standards and PHP 8.4 compatibility)
 or `composer lint:fix`.
 
+`pnpm test:e2e` runs the end-to-end tests of `tests/e2e/` in Chromium, with Playwright and
+`@wordpress/e2e-test-utils-playwright`, as Gutenberg tests its editor. They run against a site that
+is already up, with ACF Pro, a CINQ theme and `bin/mu-plugins/test-block.php` linked into its
+mu-plugins; each test creates its own draft page and deletes it. Name the site and an
+administrator in a `.env.e2e` file, kept out of Git:
+
+```
+WP_BASE_URL=https://eigrene.local
+WP_USERNAME=cinq-e2e
+WP_PASSWORD=…
+NODE_EXTRA_CA_CERTS=/Users/…/Local/run/router/nginx/certs/eigrene.local.crt
+```
+
+`NODE_EXTRA_CA_CERTS` makes Node trust a Local site's self-signed certificate. Give the
+administrator the `en_US` locale: the tests read the interface in its source language.
+
 The interface is in English, translated into French in `languages/`: `__()` in PHP,
 `@wordpress/i18n` in the scripts. After changing a string, run `composer i18n` (WP-CLI 2.7 or
 later): it extracts the strings to the POT file and merges them into the PO file. Translate the

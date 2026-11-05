@@ -2337,6 +2337,10 @@ function BlockList( {
 }
 
 function Inspector( { item, index, layout, errors, onChange } ) {
+	// Panels the user opened or closed, by block and field: their choice
+	// stands. Otherwise a panel opens when one of its fields is in error.
+	const [ toggled, setToggled ] = useState( {} );
+
 	if ( ! item ) {
 		return (
 			<aside
@@ -2419,39 +2423,62 @@ function Inspector( { item, index, layout, errors, onChange } ) {
 					.filter( ( field ) =>
 						isVisible( field, layout.fields, values )
 					)
-					.map( ( field, position ) => (
-						<PanelBody
-							key={ `${ item.uid }-${ field.key || field.name }` }
-							title={
-								<>
-									{ field.label }
-									{ errorsUnder(
-										errors,
-										`${ path }.${ field.name }`
-									).length ? (
-										<span
-											className="cinq-dot"
-											aria-label={ __(
-												'Error',
-												'cinq-wp-editor'
-											) }
+					.map( ( field, position ) => {
+						const panel = `${ item.uid }-${ field.key || field.name }`;
+						const hasError =
+							errorsUnder( errors, `${ path }.${ field.name }` )
+								.length > 0;
+
+						return (
+							<PanelBody
+								key={ panel }
+								opened={
+									toggled[ panel ] ??
+									( hasError ||
+										( field.name !== 'layout' &&
+											position < 2 ) )
+								}
+								onToggle={ ( next ) =>
+									setToggled( ( current ) => ( {
+										...current,
+										[ panel ]: next,
+									} ) )
+								}
+								title={
+									<>
+										{ field.label }
+										{ hasError ? (
+											<span
+												className="cinq-dot"
+												aria-label={ __(
+													'Error',
+													'cinq-wp-editor'
+												) }
+											/>
+										) : null }
+									</>
+								}
+							>
+								{ field.type === 'group' ? (
+									<>
+										{ field.instructions && (
+											<p className="cinq-help">
+												{ field.instructions }
+											</p>
+										) }
+										<Fields
+											fields={ field.sub_fields }
+											value={ values[ field.name ] }
+											onChange={ ( next ) =>
+												setField( field.name, next )
+											}
+											path={ `${ path }.${ field.name }` }
+											errors={ errors }
 										/>
-									) : null }
-								</>
-							}
-							initialOpen={
-								field.name !== 'layout' && position < 2
-							}
-						>
-							{ field.type === 'group' ? (
-								<>
-									{ field.instructions && (
-										<p className="cinq-help">
-											{ field.instructions }
-										</p>
-									) }
-									<Fields
-										fields={ field.sub_fields }
+									</>
+								) : (
+									<Field
+										field={ field }
 										value={ values[ field.name ] }
 										onChange={ ( next ) =>
 											setField( field.name, next )
@@ -2459,20 +2486,10 @@ function Inspector( { item, index, layout, errors, onChange } ) {
 										path={ `${ path }.${ field.name }` }
 										errors={ errors }
 									/>
-								</>
-							) : (
-								<Field
-									field={ field }
-									value={ values[ field.name ] }
-									onChange={ ( next ) =>
-										setField( field.name, next )
-									}
-									path={ `${ path }.${ field.name }` }
-									errors={ errors }
-								/>
-							) }
-						</PanelBody>
-					) )
+								) }
+							</PanelBody>
+						);
+					} )
 			}
 		</aside>
 	);

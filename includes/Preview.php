@@ -129,6 +129,7 @@ final class Preview {
 
 		if ( ! has_filter( 'acf/pre_load_value', array( self::class, 'load_draft' ) ) ) {
 			add_filter( 'acf/pre_load_value', array( self::class, 'load_draft' ), 10, 3 );
+			add_filter( 'acf/pre_load_reference', array( self::class, 'reference' ), 10, 3 );
 			add_filter( 'timber/twig', array( self::class, 'twig' ) );
 		}
 	}
@@ -158,6 +159,27 @@ final class Preview {
 
 		// ACF reads the draft as it would the post: same field, other ID.
 		return acf_get_value( self::$draft_id, $field );
+	}
+
+	/**
+	 * Names the zone's field for the post being previewed.
+	 *
+	 * ACF finds a field from its name through the post's `_blocks` meta, which
+	 * it writes on the first save. A post never saved yet has none, and ACF
+	 * falls back on the first field of that name it knows, maybe another
+	 * zone's: the draft's rows would then be read with the wrong layouts.
+	 *
+	 * @param string|null $reference  Field key found so far.
+	 * @param string      $field_name Field name.
+	 * @param int|string  $post_id    ACF post ID.
+	 * @return string|null
+	 */
+	public static function reference( $reference, $field_name, $post_id ) {
+		if ( null !== $reference || null === self::$zone || $field_name !== self::$zone->name() ) {
+			return $reference;
+		}
+
+		return is_numeric( $post_id ) && (int) $post_id === self::$post_id ? self::$zone->key() : $reference;
 	}
 
 	/**

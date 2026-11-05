@@ -10,5 +10,7 @@
 /pnpm-lock.yaml   export-ignore
 /pnpm-workspace.yaml export-ignore
 /src              export-ignore
+/tests            export-ignore
+/playwright.config.js export-ignore
 /phpcs.xml.dist   export-ignore
 /README.md        export-ignore

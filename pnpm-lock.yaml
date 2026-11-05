@@ -218,6 +218,12 @@ importers:
         specifier: ^5.1.0
         version: 5.1.0
     devDependencies:
+      '@playwright/test':
+        specifier: 1.64.1
+        version: 1.64.1
+      '@wordpress/e2e-test-utils-playwright':
+        specifier: ^3.2.0
+        version: 3.2.0(@playwright/test@1.64.1)(@types/node@26.6.6)(supports-color@10.2.2)(webpack@5.112.2)
       '@wordpress/scripts':
         specifier: ^37.1.0
         version: 37.1.0(@playwright/test@1.64.1)(@types/node@26.6.6)(@typescript-eslint/eslint-plugin@8.72.1(@typescript-eslint/parser@8.72.1(eslint@10.14.0(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(eslint@10.14.0(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(@typescript-eslint/parser@8.72.1(eslint@10.14.0(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(@wordpress/theme@4.0.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(csso@5.0.5)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(supports-color@10.2.2)(svgo@3.3.5)(type-fest@5.10.0)(typescript@6.0.3)

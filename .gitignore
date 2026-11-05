@@ -7,3 +7,5 @@
 /node_modules/
 /build/
 /.sandbox/
+/.env.e2e
+/artifacts/

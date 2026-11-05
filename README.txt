@@ -86,6 +86,9 @@ Run `composer install`, then `composer lint` (phpcs) or `composer lint:fix` (php
 * The list of blocks and the settings stay open or closed as each user left them, kept in their WordPress preferences as the block editor keeps its own.
 * Ctrl+` and Ctrl+Shift+` move between the top bar, the list of blocks, the preview and the settings, as in the block editor.
 * Images, files and galleries open the media library through WordPress's MediaUpload; a gallery opens with its images selected.
+* Fixed: on a page never saved before, the preview read the draft with another field named `blocks`, and showed its blocks empty. The editor tells ACF which field the page's zone is.
+* Fixed: after a refused publication, the fields to fix could sit in closed panels. A panel opens by itself when one of its fields is in error, unless the user closed it.
+* End-to-end tests, with Playwright and WordPress's own test utilities: adding a block, its preview, ACF's validation, publishing with ⌘S, discarding a draft.
 * ⌘S / Ctrl+S publishes, from the editor, the preview or a rich text field, as it saves in the block editor. Pressed while the draft is being saved, it publishes once the save is done; the **Publish** button no longer waits for it either.
 * The command palette (⌘K / Ctrl+K) adds a block, publishes, discards the draft, changes the preview width, shows or hides the panels, opens the classic edit screen or the page.
 * The preview width is chosen in an **Preview** menu, as in the block editor: desktop, tablet or mobile.
