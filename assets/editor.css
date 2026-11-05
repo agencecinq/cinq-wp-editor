@@ -386,7 +386,6 @@ html.wp-toolbar:has(.cinq-wp-editor-screen) {
 .cinq-label,
 .cinq-group > legend,
 .cinq-repeater > legend,
-.cinq-link > legend,
 .cinq-choices > legend {
 	display: block;
 	margin-bottom: 8px;
@@ -754,4 +753,17 @@ html.wp-toolbar:has(.cinq-wp-editor-screen) {
 .cinq-lock__avatar {
 	flex: none;
 	border-radius: 50%;
+}
+
+/* Link: a button showing the link, opening the block editor's LinkControl. */
+
+.cinq-link__toggle {
+	max-width: 100%;
+	overflow: hidden;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+.cinq-link__url {
+	overflow-wrap: anywhere;
 }

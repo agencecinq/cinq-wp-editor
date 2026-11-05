@@ -43,6 +43,13 @@
 	const { useSelect, useDispatch } = wp.data;
 	const { useShortcut } = wp.keyboardShortcuts;
 	const { useCommand } = wp.commands;
+	const { LinkControl } = wp.blockEditor;
+
+	// LinkControl searches through the block editor's settings: given the
+	// search the post editor gives it, WordPress's own over posts and terms.
+	wp.data.dispatch("core/block-editor").updateSettings({
+		__experimentalFetchLinkSuggestions: (search, options) => wp.coreData.__experimentalFetchLinkSuggestions(search, options, {}),
+	});
 	const { gmdateI18n, getSettings: getDateSettings } = wp.date;
 	const apiFetch = wp.apiFetch;
 	// The classic editor's API: `wp.editor` until the block editor takes the name.
@@ -350,7 +357,7 @@
 				break;
 
 			case "link":
-				control = h(LinkField, { label, help, value, onChange });
+				control = h(LinkField, { field, label, help, value, onChange });
 				break;
 
 			case "image":
@@ -743,30 +750,45 @@
 		);
 	}
 
-	function LinkField({ label, help, value, onChange }) {
-		const link = value && typeof value === "object" ? value : { title: "", url: "", target: "" };
-		const set = (key, next) => onChange({ ...link, [key]: next });
+	/**
+	 * A link, as the block editor edits one: its LinkControl, in a popover
+	 * opened from a button showing the link. Search, direct entry, the link
+	 * text and « Ouvrir dans un nouvel onglet » are WordPress's own. ACF stores
+	 * `{ title, url, target }`.
+	 */
+	function LinkField({ field, label, help, value, onChange }) {
+		const link = value && typeof value === "object" && value.url ? value : null;
+		const current = link ? { url: link.url, title: link.title || "", opensInNewTab: link.target === "_blank" } : undefined;
+		const save = (next) => onChange({ title: next.title || "", url: next.url || "", target: next.opensInNewTab ? "_blank" : "" });
+		const shown = link ? link.title || link.url : "";
 
 		return h(
-			"fieldset",
-			{ className: "cinq-link" },
-			h("legend", null, label),
-			h(TextControl, { label: "Texte du lien", value: link.title || "", onChange: (next) => set("title", next), __nextHasNoMarginBottom: true }),
-			h(TextControl, {
-				label: "Adresse",
-				type: "url",
-				value: link.url || "",
-				placeholder: "/contact/ ou https://…",
-				onChange: (next) => set("url", next),
-				__nextHasNoMarginBottom: true,
+			"div",
+			{ className: "components-base-control cinq-link" },
+			h(BaseControl.VisualLabel, null, label),
+			h(Dropdown, {
+				popoverProps: { placement: "left-start" },
+				renderToggle: ({ isOpen, onToggle }) =>
+					h(
+						Button,
+						{ variant: "secondary", className: "cinq-link__toggle", icon: "admin-links", onClick: onToggle, "aria-expanded": isOpen, "aria-label": `${field.label} : ${shown || "aucun lien"}` },
+						shown || "Ajouter un lien"
+					),
+				renderContent: ({ onClose }) =>
+					h(LinkControl, {
+						value: current,
+						onChange: save,
+						onRemove: () => {
+							onChange("");
+							onClose();
+						},
+						hasTextControl: true,
+						forceIsEditingLink: !link,
+						withCreateSuggestion: false,
+					}),
 			}),
-			h(ToggleControl, {
-				label: "Ouvrir dans un nouvel onglet",
-				checked: link.target === "_blank",
-				onChange: (checked) => set("target", checked ? "_blank" : ""),
-				__nextHasNoMarginBottom: true,
-			}),
-			help && h("p", { className: "cinq-help" }, help)
+			link && link.title && h("p", { className: "components-base-control__help cinq-link__url" }, link.url),
+			help && h("p", { className: "components-base-control__help" }, help)
 		);
 	}
 

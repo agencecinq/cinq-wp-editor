@@ -148,11 +148,11 @@ final class Admin {
 
 		wp_enqueue_media();
 		wp_enqueue_editor();
-		wp_enqueue_style( 'cinq-wp-editor', CINQ_WP_EDITOR_URL . 'assets/editor.css', array( 'wp-components' ), Plugin::asset_version( 'assets/editor.css' ) );
+		wp_enqueue_style( 'cinq-wp-editor', CINQ_WP_EDITOR_URL . 'assets/editor.css', array( 'wp-components', 'wp-block-editor' ), Plugin::asset_version( 'assets/editor.css' ) );
 		wp_enqueue_script(
 			'cinq-wp-editor',
 			CINQ_WP_EDITOR_URL . 'assets/editor.js',
-			array( 'wp-element', 'wp-components', 'wp-data', 'wp-notices', 'wp-date', 'wp-keyboard-shortcuts', 'wp-commands', 'wp-api-fetch', 'wp-url', 'media-editor', 'heartbeat' ),
+			array( 'wp-element', 'wp-components', 'wp-data', 'wp-notices', 'wp-date', 'wp-keyboard-shortcuts', 'wp-commands', 'wp-block-editor', 'wp-core-data', 'wp-api-fetch', 'wp-url', 'media-editor', 'heartbeat' ),
 			Plugin::asset_version( 'assets/editor.js' ),
 			true
 		);
