@@ -155,8 +155,9 @@ final class Blocks {
 	/**
 	 * Builds a row keyed by field key out of values keyed by field name.
 	 *
-	 * Every field gets a value, its default when the editor sent none: ACF
-	 * only validates the inputs it is given, as a form posts all of them.
+	 * Every field gets a value, empty when the editor sent none, as an empty
+	 * input of the edit screen posts it: ACF only validates the inputs it is
+	 * given. Defaults are the editor's to fill, when it adds a block.
 	 *
 	 * @param array<int, array<string, mixed>> $fields Fields of the row.
 	 * @param array<string, mixed>             $values Values, keyed by field name.
@@ -177,7 +178,7 @@ final class Blocks {
 
 			$field_input = sprintf( '%s[%s]', $input, $key );
 			$field_path  = sprintf( '%s.%s', $path, $name );
-			$value       = array_key_exists( $name, $values ) ? $values[ $name ] : ( $field['default_value'] ?? '' );
+			$value       = array_key_exists( $name, $values ) ? $values[ $name ] : '';
 
 			$this->paths[ $field_input ] = $field_path;
 

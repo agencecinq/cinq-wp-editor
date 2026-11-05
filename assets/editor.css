@@ -652,6 +652,13 @@ html.wp-toolbar:has(.cinq-wp-editor-screen) {
 	left: 16px;
 	z-index: 100000;
 	width: min(480px, calc(100vw - 32px));
+	pointer-events: none;
+}
+
+/* WordPress places the list absolutely, from the top of its container: in
+   the flow instead, the container grows upwards from the bottom edge. */
+.cinq-snackbars .components-snackbar-list {
+	position: static;
 }
 
 /* Date and colour fields: a button opening WordPress's picker. */

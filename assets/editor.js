@@ -103,8 +103,10 @@
 			case "link":
 				return fallback && typeof fallback === "object" ? copy(fallback) : undefined;
 
+			// A default that is an object, such as the icon picker's empty
+			// `{ type, value }`, is no value to send.
 			default:
-				return fallback === undefined || fallback === null || fallback === "" || Array.isArray(fallback) ? undefined : fallback;
+				return fallback === undefined || fallback === null || fallback === "" || typeof fallback === "object" ? undefined : fallback;
 		}
 	}
 
@@ -771,6 +773,9 @@
 
 	function GalleryField({ field, label, help, value, onChange }) {
 		const ids = toArray(value).map(Number).filter(Boolean);
+		// ACF checks the maximum in its interface only, not when saving.
+		const max = Number(field.max) || 0;
+		const full = max > 0 && ids.length >= max;
 
 		return h(
 			"div",
@@ -788,7 +793,12 @@
 					)
 				)
 			),
-			h(Button, { variant: "secondary", size: "compact", onClick: () => openMediaFrame(field, true, (picked) => onChange([...ids, ...picked])) }, "Ajouter des images"),
+			h(
+				Button,
+				{ variant: "secondary", size: "compact", disabled: full, onClick: () => openMediaFrame(field, true, (picked) => onChange([...ids, ...picked].slice(0, max || undefined))) },
+				"Ajouter des images"
+			),
+			full && h("p", { className: "cinq-help" }, `${max} image${max > 1 ? "s" : ""} au plus.`),
 			help && h("p", { className: "cinq-help" }, help)
 		);
 	}
