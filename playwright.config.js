@@ -1,5 +1,5 @@
 /**
- * WordPress's Playwright config, as @wordpress/scripts ships it, on a site
+ * WordPress's Playwright config, as `@wordpress/scripts` ships it, on a site
  * that already runs: no wp-env, which needs Docker.
  *
  * WP_BASE_URL, WP_USERNAME and WP_PASSWORD name the site and an administrator;
