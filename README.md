@@ -23,6 +23,37 @@ Anyone may use it, under the MIT licence. Keep in mind that it follows CINQ's st
 choices, and changes with them: a site built another way will need its own adaptations, and
 these are not something the plugin sets out to support.
 
+## Why not the block editor
+
+We tried, more than once: the last time, on the Agence CINQ theme, with its layouts as ACF Blocks
+in the block editor and without touching the theme. It does not fit how we build sites. Our way
+is opinionated, and we know it:
+
+- **Where the data lives.** Our blocks are ACF flexible content rows in the post's meta, which the
+  classic edit screen, our Timber templates and CINQ WP MCP all read. The block editor keeps blocks
+  in `post_content`, as JSON in HTML comments: every page of every site would have to be migrated,
+  and the MCP rewritten.
+- **One definition per block.** Each layout would need a second definition as an ACF Block.
+  Cloning the layout's fields does not do: ACF cannot find a cloned field by its key outside its
+  group, so it neither reads nor saves the block's values. The fields would have to be copied, and
+  kept in step by hand.
+- **Classic Timber themes.** Our templates render `post.meta( 'blocks' )`, full width, section by
+  section. Block editor content is `post_content`, which our default page template shows in a
+  narrow text column, and our blocks template does not show at all.
+- **Tailwind, built by Vite.** Our styles are Tailwind utilities compiled by Vite, served from a
+  manifest that our Vite helper only reads on the front end. The editor canvas would need styles of
+  its own, and `cinq-wp-classic-editor` removes the block library's styles from our sites anyway.
+- **JavaScript modules.** Our components (accordions, modals, drawers…) are `@agencecinq`
+  packages that an ES module, enqueued with `wp_enqueue_script_module`, loads on demand on the real
+  page. The editor canvas does not load them: what it shows is not what visitors get.
+- **Not the real page.** Even with all of the above, the canvas shows the content alone, without
+  the header, the footer or the template around it.
+
+So we kept what the block editor does well, its packages, and left its data model. This editor
+is built with `@wordpress/components`, the block editor's `LinkControl`, WordPress's notices,
+command palette, keyboard shortcuts and preferences, and `@wordpress/scripts`, on top of ACF and
+Timber.
+
 ## The idea
 
 Our sites are made of ACF blocks (a `blocks` flexible content field). In the classic admin, the
