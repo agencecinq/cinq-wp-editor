@@ -312,8 +312,9 @@ final class Rest {
 	}
 
 	/**
-	 * Finds users for a user field, as ACF's own search does on the edit
-	 * screen: among the roles the field allows, by name, login or e-mail.
+	 * Finds users for a user field of the post's zone, as ACF's own search
+	 * does on the edit screen: among the roles the field allows, by name or
+	 * login, and by e-mail for whoever may edit users.
 	 *
 	 * The core route only lists authors of published posts to whoever cannot
 	 * `list_users`, and does not filter them by role for them: an editor could
@@ -323,9 +324,23 @@ final class Rest {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function users( WP_REST_Request $request ) {
-		$field = acf_get_field( (string) $request['field'] );
+		$post = self::post( $request );
 
-		if ( ! is_array( $field ) || 'user' !== ( $field['type'] ?? '' ) ) {
+		if ( is_wp_error( $post ) ) {
+			return $post;
+		}
+
+		$zone = Model::zone( $post );
+
+		if ( is_wp_error( $zone ) ) {
+			return $zone;
+		}
+
+		// Only a user field the editor shows on this post: its roles always
+		// bound the search, as they do in the editor.
+		$field = $zone->field( (string) $request['field'] );
+
+		if ( null === $field || 'user' !== ( $field['type'] ?? '' ) ) {
 			return new WP_Error( 'cinq_wp_editor_not_user_field', __( 'This field is not a user field.', 'cinq-wp-editor' ), array( 'status' => 400 ) );
 		}
 
@@ -344,8 +359,14 @@ final class Rest {
 		if ( ! empty( $include ) ) {
 			$args['include'] = $include;
 		} elseif ( '' !== $search ) {
-			$args['search']         = '*' . $search . '*';
-			$args['search_columns'] = array( 'user_login', 'user_nicename', 'user_email', 'display_name' );
+			$args['search'] = '*' . $search . '*';
+
+			// E-mail addresses are searched only by whoever may see them, as ACF
+			// and the core users route do: otherwise a search for « a@ », then
+			// « ad@ »… would spell anyone's address out.
+			$args['search_columns'] = current_user_can( 'edit_users' )
+				? array( 'user_login', 'user_nicename', 'user_email', 'display_name' )
+				: array( 'user_login', 'user_nicename', 'display_name' );
 		}
 
 		$users = array_map(

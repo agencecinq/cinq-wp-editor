@@ -149,6 +149,54 @@ final class Zone {
 	}
 
 	/**
+	 * Finds a field of the zone by its key, at any depth: in a layout, a
+	 * group, a repeater or a nested flexible content.
+	 *
+	 * @param string $key Field key.
+	 * @return array<string, mixed>|null The field, or null when the zone has none such.
+	 */
+	public function field( string $key ): ?array {
+		foreach ( $this->layouts() as $layout ) {
+			$found = self::find( (array) ( $layout['sub_fields'] ?? array() ), $key );
+
+			if ( null !== $found ) {
+				return $found;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Finds a field by its key among fields and their children.
+	 *
+	 * @param array<int, array<string, mixed>> $fields Fields.
+	 * @param string                           $key    Field key.
+	 * @return array<string, mixed>|null
+	 */
+	private static function find( array $fields, string $key ): ?array {
+		foreach ( $fields as $field ) {
+			if ( ( $field['key'] ?? '' ) === $key ) {
+				return $field;
+			}
+
+			$children = (array) ( $field['sub_fields'] ?? array() );
+
+			foreach ( self::index_layouts( $field ) as $layout ) {
+				$children = array_merge( $children, (array) ( $layout['sub_fields'] ?? array() ) );
+			}
+
+			$found = self::find( $children, $key );
+
+			if ( null !== $found ) {
+				return $found;
+			}
+		}
+
+		return null;
+	}
+
+	/**
 	 * Indexes the layouts of a flexible content field by name.
 	 *
 	 * @param array<string, mixed> $field Flexible content field.
