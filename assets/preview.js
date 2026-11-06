@@ -23,7 +23,9 @@
 	const { __, sprintf } = window.wp.i18n;
 	const { zone, sections } = window.cinqWpEditorPreview;
 
+	// Names the editor gives the blocks, by index, and the sections, by key.
 	let labels = [];
+	let sectionLabels = {};
 	let selected = null;
 	let hovered = null;
 	let refreshToken = 0;
@@ -41,7 +43,8 @@
 
 	/**
 	 * Elements rendering the fields of a section, outside the zone, whose
-	 * blocks may name fields of their own the same way.
+	 * blocks may name fields of their own the same way. An element inside
+	 * another one of the section is left out: the outer one outlines it.
 	 */
 	function elementsOf(key) {
 		const section = sectionByKey(key);
@@ -51,9 +54,11 @@
 			return [];
 		}
 
-		return Array.from(document.querySelectorAll("[data-field]")).filter(
+		const elements = Array.from(document.querySelectorAll("[data-field]")).filter(
 			(element) => shows(section, element) && !(root && root.contains(element))
 		);
+
+		return elements.filter((element) => !elements.some((other) => other !== element && other.contains(element)));
 	}
 
 	/**
@@ -86,8 +91,10 @@
 		return box;
 	}
 
-	const hoverBox = makeBox("is-hover");
-	const selectBox = makeBox("is-selected");
+	// One box per element of a section, one for a block: boxes are added as
+	// a target needs them, and hidden when it needs fewer.
+	const hoverBoxes = [];
+	const selectBoxes = [];
 
 	/**
 	 * Union of the boxes of some elements: a block's children, as its marker
@@ -128,41 +135,49 @@
 		};
 	}
 
-	function rectOfTarget(target) {
+	/**
+	 * Boxes of a target, from the top of the page: one per element of a
+	 * section, so that what lies between two of them is not outlined.
+	 */
+	function rectsOf(target) {
 		if (typeof target === "string") {
-			return rectOf(elementsOf(target));
+			return elementsOf(target)
+				.map((element) => rectOf([element]))
+				.filter(Boolean)
+				.sort((a, b) => a.top - b.top);
 		}
 
 		const wrapper = wrapperAt(target);
+		const rect = wrapper ? rectOf(wrapper.children) : null;
 
-		return wrapper ? rectOf(wrapper.children) : null;
+		return rect ? [rect] : [];
 	}
 
 	function labelOf(target) {
-		if (typeof target === "string") {
-			const section = sectionByKey(target);
-
-			return section ? section.title : "";
-		}
-
-		return labels[target] || "";
+		return (typeof target === "string" ? sectionLabels[target] : labels[target]) || "";
 	}
 
-	function place(box, target) {
-		const rect = rectOfTarget(target);
+	/**
+	 * Outlines a target, its label on the first box; null hides the boxes.
+	 */
+	function place(boxes, modifier, target) {
+		const rects = target === null ? [] : rectsOf(target);
 
-		if (!rect) {
-			box.hidden = true;
-			return;
-		}
+		rects.forEach((rect, position) => {
+			boxes[position] ??= makeBox(modifier);
 
-		box.hidden = false;
-		box.style.top = `${rect.top}px`;
-		box.style.left = `${rect.left}px`;
-		box.style.width = `${rect.width}px`;
-		box.style.height = `${rect.height}px`;
-		box.classList.toggle("is-at-top", rect.top < 24);
-		box.firstChild.textContent = labelOf(target);
+			const box = boxes[position];
+
+			box.hidden = false;
+			box.style.top = `${rect.top}px`;
+			box.style.left = `${rect.left}px`;
+			box.style.width = `${rect.width}px`;
+			box.style.height = `${rect.height}px`;
+			box.classList.toggle("is-at-top", rect.top < 24);
+			box.firstChild.textContent = position === 0 ? labelOf(target) : "";
+		});
+
+		boxes.slice(rects.length).forEach((box) => (box.hidden = true));
 	}
 
 	let frame = 0;
@@ -170,13 +185,8 @@
 	function redraw() {
 		cancelAnimationFrame(frame);
 		frame = requestAnimationFrame(() => {
-			place(selectBox, selected);
-
-			if (hovered !== null && hovered !== selected) {
-				place(hoverBox, hovered);
-			} else {
-				hoverBox.hidden = true;
-			}
+			place(selectBoxes, "is-selected", selected);
+			place(hoverBoxes, "is-hover", hovered === selected ? null : hovered);
 		});
 	}
 
@@ -223,7 +233,7 @@
 	}
 
 	function scrollToTarget(target) {
-		const rect = rectOfTarget(target);
+		const [rect] = target === null ? [] : rectsOf(target);
 
 		if (rect) {
 			window.scrollTo({ top: Math.max(0, rect.top - 80), behavior: "smooth" });
@@ -349,6 +359,10 @@
 
 		if (Array.isArray(data.labels)) {
 			labels = data.labels;
+		}
+
+		if (data.sectionLabels) {
+			sectionLabels = data.sectionLabels;
 		}
 
 		switch (data.type) {

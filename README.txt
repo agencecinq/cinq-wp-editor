@@ -66,6 +66,10 @@ Run `composer install`, then `composer lint` (phpcs) or `composer lint:fix` (php
 
 == Changelog ==
 
+= 0.3.2 =
+* A fixed section shown by several elements is outlined element by element in the preview, its name on the first one: what lies between them, such as a photo between an introduction and figures, is no longer outlined. An element inside another one of the section adds no box.
+* The preview names a fixed section in the editor's language, as it names blocks: the name comes from the editor, not from the page.
+
 = 0.3.1 =
 * `data-field` may name several fields, separated by spaces, as `class` lists classes: an element rendering fields that no group field holds together, such as a page header, names them all, and is outlined and selected as the section of any of them.
 
