@@ -21,8 +21,9 @@ defined( 'ABSPATH' ) || exit;
  * them the way the theme expects: images, links, clones and all. Nothing about
  * ACF's storage is reimplemented here.
  *
- * The blocks as the editor sent them are kept next to the rows, so that a block
- * ACF refused (a required field still empty) is not lost on reload.
+ * The blocks and the fixed sections' fields as the editor sent them are kept
+ * next to the rows, so that a value ACF refused (a required field still empty)
+ * is not lost on reload.
  */
 final class Drafts {
 
@@ -32,9 +33,14 @@ final class Drafts {
 	public const POST_TYPE = 'cinq_wp_editor_draft';
 
 	/**
-	 * Meta key of the editor state.
+	 * Meta key of the blocks, as the editor sent them.
 	 */
 	private const STATE_META = '_cinq_wp_editor_blocks';
+
+	/**
+	 * Meta key of the fixed sections' fields, as the editor sent them.
+	 */
+	private const FIELDS_META = '_cinq_wp_editor_fields';
 
 	/**
 	 * Registers the post type.
@@ -99,14 +105,15 @@ final class Drafts {
 	/**
 	 * Saves a draft, creating its hidden post on first save.
 	 *
-	 * @param Zone                             $zone   Zone.
-	 * @param WP_Post                          $post   Post being edited.
-	 * @param int                              $user_id User.
-	 * @param array<int, array<string, mixed>> $blocks Blocks as the editor sent them.
-	 * @param array<int, array<string, mixed>> $rows   The same blocks, as ACF rows.
+	 * @param Zone                                                                          $zone     Zone.
+	 * @param Sections                                                                      $sections Sections.
+	 * @param WP_Post                                                                       $post     Post being edited.
+	 * @param int                                                                           $user_id  User.
+	 * @param array{blocks: array<int, array<string, mixed>>, fields: array<string, mixed>} $sent     Blocks and fields as the editor sent them.
+	 * @param array{rows: array<int, array<string, mixed>>, row: array<string, mixed>}      $mapped   The same, as ACF values.
 	 * @return int Draft post ID, or 0 on failure.
 	 */
-	public static function save( Zone $zone, WP_Post $post, int $user_id, array $blocks, array $rows ): int {
+	public static function save( Zone $zone, Sections $sections, WP_Post $post, int $user_id, array $sent, array $mapped ): int {
 		$draft_id = self::find( $post->ID, $user_id );
 
 		if ( 0 === $draft_id ) {
@@ -126,11 +133,14 @@ final class Drafts {
 			}
 		}
 
-		if ( is_wp_error( $zone->write( $draft_id, $rows ) ) ) {
+		if ( is_wp_error( $zone->write( $draft_id, $mapped['rows'] ) ) ) {
 			return 0;
 		}
 
-		update_post_meta( $draft_id, self::STATE_META, wp_slash( (string) wp_json_encode( $blocks ) ) );
+		$sections->write( $draft_id, $mapped['row'] );
+
+		update_post_meta( $draft_id, self::STATE_META, wp_slash( (string) wp_json_encode( $sent['blocks'] ) ) );
+		update_post_meta( $draft_id, self::FIELDS_META, wp_slash( (string) wp_json_encode( (object) $sent['fields'] ) ) );
 
 		// Touches the draft so its modified date tells when it was last edited.
 		wp_update_post(
@@ -154,6 +164,19 @@ final class Drafts {
 		$decoded = '' === $json ? null : json_decode( $json, true );
 
 		return is_array( $decoded ) ? array_values( $decoded ) : null;
+	}
+
+	/**
+	 * Returns the fixed sections' fields of a draft as the editor sent them.
+	 *
+	 * @param int $draft_id Draft post ID.
+	 * @return array<string, mixed>|null Null when the draft holds none.
+	 */
+	public static function fields( int $draft_id ): ?array {
+		$json    = (string) get_post_meta( $draft_id, self::FIELDS_META, true );
+		$decoded = '' === $json ? null : json_decode( $json, true );
+
+		return is_array( $decoded ) ? $decoded : null;
 	}
 
 	/**

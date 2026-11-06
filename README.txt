@@ -4,7 +4,7 @@ Tested up to: 7.1
 License: MIT
 License URI: https://opensource.org/licenses/MIT
 
-Edits the ACF blocks of a page on one screen: the blocks, a live preview of the real site, and the settings of the selected block.
+Edits the ACF blocks of a page on one screen: the blocks and the fields of its template, a live preview of the real site, and the settings of the selected block or section.
 
 == Description ==
 
@@ -17,7 +17,7 @@ Repository: [agencecinq/cinq-wp-editor](https://github.com/agencecinq/cinq-wp-ed
 * WordPress 7.1 or later: the editor follows the latest WordPress release only, to use what it brings as soon as it ships
 * PHP 8.4 or later
 * ACF Pro 6.8 or later, and a theme on Timber 2.5 or later: their latest releases, as for WordPress
-* A Timber theme rendering each block through `views/blocks/block.html.twig`, the convention of CINQ themes: in the editor's preview (the `cinq_wp_editor` Twig global), it wraps the block in `<div data-cinq-block="{{ loop }}" style="display: contents">`, and `views/blocks/blocks.html.twig` marks its container with `data-cinq-blocks`, rendered even with no block. The public page is unchanged.
+* A Timber theme rendering each block through `views/blocks/block.html.twig`, the convention of CINQ themes: in the editor's preview (the `cinq_wp_editor` Twig global), it wraps the block in `<div data-cinq-block="{{ loop }}" style="display: contents">`, and `views/blocks/blocks.html.twig` renders its stack even with no block. Every element rendering a field of the template names it with `data-field`, on the public page too: the stack's container with `data-field="blocks"`, a hero with `data-field="hero"`.
 * Optional: a `mcp.json` at the theme root, whose `blocks` entries describe the blocks in the catalogue
 
 The editor checks them on every request. Missing one, it stays off and says why in the admin.
@@ -25,6 +25,7 @@ The editor checks them on every request. Missing one, it stays off and says why 
 = What it reads =
 
 * The block zone of a post: the `blocks` flexible content field of the field groups ACF applies to the post, location rules included.
+* Its fixed sections: the other field groups ACF applies to the post, in the main column.
 * The blocks offered: the layouts of that field, as the theme prepares them for the edit screen (`acf/prepare_field`), less those marked `hidden` in `mcp.json`.
 * Validation and storage: ACF's own, as on the edit screen.
 
@@ -64,6 +65,12 @@ Run `composer install`, then `composer lint` (phpcs) or `composer lint:fix` (php
 `bash bin/sandbox.sh` starts a throwaway WordPress with the agencecinq theme and a page filled with real blocks: see the README of the repository.
 
 == Changelog ==
+
+= 0.3.0 =
+* The fields of the page's template around its blocks, such as a hero, are edited in the editor as fixed sections: listed above the blocks, under the content type's name, never moved, duplicated nor deleted. A section is a field group ACF applies to the post, in the main column, without the block zone; a group in the side column, settings of the post, stays on the classic edit screen. Its fields are validated by ACF, saved in the draft and published with the blocks, as a whole or not at all.
+* Breaking: the theme names the fields it renders with a `data-field` attribute, kept on the public page. The container of the block stack is `data-field="blocks"` in place of `data-cinq-blocks`, which the editor no longer reads. A fixed section is outlined, selected and scrolled to in the preview through the elements naming one of its fields, such as `data-field="hero"`. Migration: in `views/blocks/blocks.html.twig`, put `data-field="blocks"` on the stack's container, always, instead of `data-cinq-blocks` in the preview only (a `display: contents` container, when the stack has none, stays the preview's); then put `data-field="{{ name }}"` on the element rendering each field of a template outside the blocks, as Agence CINQ does on its hero.
+* Breaking: the REST routes send and return the blocks and the fields together: `published` and `draft` are `{ blocks, fields }`, and saving or publishing takes `fields` next to `blocks`.
+* Fixed: a group whose fields are named `0`, `1`…, such as a pair of links, showed empty and lost its values on the first change.
 
 = 0.2.0 =
 * Breaking: CINQ WP MCP and MCP Adapter are no longer needed: the editor runs on ACF Pro and the theme alone, and requires the latest releases of WordPress (7.1), ACF Pro (6.8) and Timber (2.5), and PHP 8.4. It carries no code for older ones. The main file is renamed after the repository, `cinq-wp-editor/cinq-wp-editor.php`, and every identifier with it: the `CinqWpEditor` namespace, the REST routes under `cinq-wp-editor/v1`, the screen at `admin.php?page=cinq-wp-editor`, the drafts as `cinq_wp_editor_draft` posts. Drafts started with 0.1.0 are not carried over. Migration: install the release zip in place of the clone, then activate **CINQ Editor** again. CINQ WP MCP can stay for Claude, or go.

@@ -33,18 +33,19 @@ final class Renderer {
 	 *
 	 * @param WP_Post         $post     Post being edited.
 	 * @param Zone            $zone     Zone.
+	 * @param Sections        $sections Fixed sections.
 	 * @param int             $draft_id Draft holding the blocks.
 	 * @param array<int, int> $indexes  Indexes of the blocks to render.
 	 * @return array<int, string|null> HTML keyed by index.
 	 */
-	public static function blocks( WP_Post $post, Zone $zone, int $draft_id, array $indexes ): array {
+	public static function blocks( WP_Post $post, Zone $zone, Sections $sections, int $draft_id, array $indexes ): array {
 		$html = array_fill_keys( $indexes, null );
 
 		if ( empty( $indexes ) ) {
 			return $html;
 		}
 
-		Preview::activate( $post->ID, $zone, $draft_id );
+		Preview::activate( $post->ID, $zone, $sections, $draft_id );
 
 		// Blocks may ask for the current page: the breadcrumb, a grid of
 		// posts. The request becomes the page's own before they render.

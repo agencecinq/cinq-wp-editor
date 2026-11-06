@@ -1,9 +1,14 @@
 /**
  * CINQ Éditeur, inside the preview frame.
  *
- * Draws the hover and selection outlines, turns a click on a block into a
- * selection in the editor, and swaps the blocks for fresh ones when the editor
- * says the draft changed. It never navigates: links are inert in the preview.
+ * Draws the hover and selection outlines, turns a click on a block or a fixed
+ * section into a selection in the editor, and swaps the blocks for fresh ones
+ * when the editor says the draft changed. It never navigates: links are inert
+ * in the preview.
+ *
+ * The theme names the fields it renders with `data-field`: the zone's stack,
+ * and the elements of the fixed sections, such as a hero. What is outlined is
+ * a target: a block's index, a number, or a section's key, a string.
  */
 (function () {
 	"use strict";
@@ -15,6 +20,7 @@
 	const ORIGIN = window.location.origin;
 	const SOURCE = "cinq-wp-editor-preview";
 	const { __, sprintf } = window.wp.i18n;
+	const { zone, sections } = window.cinqWpEditorPreview;
 
 	let labels = [];
 	let selected = null;
@@ -23,9 +29,46 @@
 	let currentUids = [];
 
 	const send = (message) => window.parent.postMessage({ source: SOURCE, ...message }, ORIGIN);
-	const container = () => document.querySelector("[data-cinq-blocks]");
+	const ZONE = `[data-field="${CSS.escape(zone)}"]`;
+	const container = () => document.querySelector(ZONE);
 	const wrapperAt = (index) =>
 		index === null || index === undefined ? null : document.querySelector(`[data-cinq-block="${index}"]`);
+	const sectionByKey = (key) => sections.find((section) => section.key === key);
+	const toMessage = (target) => (typeof target === "string" ? { section: target } : { index: target });
+
+	/**
+	 * Elements rendering the fields of a section, outside the zone, whose
+	 * blocks may name fields of their own the same way.
+	 */
+	function elementsOf(key) {
+		const section = sectionByKey(key);
+		const root = container();
+
+		if (!section) {
+			return [];
+		}
+
+		return Array.from(document.querySelectorAll("[data-field]")).filter(
+			(element) => section.fields.includes(element.dataset.field) && !(root && root.contains(element))
+		);
+	}
+
+	/**
+	 * The section an element of the page belongs to, if any.
+	 */
+	function sectionAt(element) {
+		const root = container();
+
+		for (let node = element.closest("[data-field]"); node; node = node.parentElement && node.parentElement.closest("[data-field]")) {
+			const section = sections.find((candidate) => candidate.fields.includes(node.dataset.field));
+
+			if (section && !(root && root.contains(node))) {
+				return section.key;
+			}
+		}
+
+		return null;
+	}
 
 	function makeBox(modifier) {
 		const box = document.createElement("div");
@@ -44,20 +87,21 @@
 	const selectBox = makeBox("is-selected");
 
 	/**
-	 * Union of the boxes of a block's children: its marker has no box of its own.
+	 * Union of the boxes of some elements: a block's children, as its marker
+	 * has no box of its own, or the elements of a section.
 	 */
-	function rectOf(wrapper) {
+	function rectOf(elements) {
 		let top = Infinity;
 		let left = Infinity;
 		let right = -Infinity;
 		let bottom = -Infinity;
 
-		for (const child of wrapper.children) {
-			if (child.tagName === "STYLE" || child.tagName === "SCRIPT") {
+		for (const element of elements) {
+			if (element.tagName === "STYLE" || element.tagName === "SCRIPT") {
 				continue;
 			}
 
-			const rect = child.getBoundingClientRect();
+			const rect = element.getBoundingClientRect();
 
 			if (!rect.width && !rect.height) {
 				continue;
@@ -81,9 +125,28 @@
 		};
 	}
 
-	function place(box, index) {
-		const wrapper = wrapperAt(index);
-		const rect = wrapper ? rectOf(wrapper) : null;
+	function rectOfTarget(target) {
+		if (typeof target === "string") {
+			return rectOf(elementsOf(target));
+		}
+
+		const wrapper = wrapperAt(target);
+
+		return wrapper ? rectOf(wrapper.children) : null;
+	}
+
+	function labelOf(target) {
+		if (typeof target === "string") {
+			const section = sectionByKey(target);
+
+			return section ? section.title : "";
+		}
+
+		return labels[target] || "";
+	}
+
+	function place(box, target) {
+		const rect = rectOfTarget(target);
 
 		if (!rect) {
 			box.hidden = true;
@@ -96,7 +159,7 @@
 		box.style.width = `${rect.width}px`;
 		box.style.height = `${rect.height}px`;
 		box.classList.toggle("is-at-top", rect.top < 24);
-		box.firstChild.textContent = labels[index] || "";
+		box.firstChild.textContent = labelOf(target);
 	}
 
 	let frame = 0;
@@ -131,7 +194,7 @@
 		wrappers.forEach((wrapper) => {
 			wrapper.querySelectorAll(":scope > .cinq-wp-editor-empty").forEach((node) => node.remove());
 
-			if (rectOf(wrapper)) {
+			if (rectOf(wrapper.children)) {
 				return;
 			}
 
@@ -156,9 +219,8 @@
 		}
 	}
 
-	function scrollToBlock(index) {
-		const wrapper = wrapperAt(index);
-		const rect = wrapper ? rectOf(wrapper) : null;
+	function scrollToTarget(target) {
+		const rect = rectOfTarget(target);
 
 		if (rect) {
 			window.scrollTo({ top: Math.max(0, rect.top - 80), behavior: "smooth" });
@@ -263,7 +325,7 @@
 			return;
 		}
 
-		const fresh = new DOMParser().parseFromString(html, "text/html").querySelector("[data-cinq-blocks]");
+		const fresh = new DOMParser().parseFromString(html, "text/html").querySelector(ZONE);
 		const root = container();
 
 		if (!fresh || !root) {
@@ -293,16 +355,16 @@
 				break;
 
 			case "select":
-				selected = data.index;
+				selected = data.section ?? data.index ?? null;
 				redraw();
 
 				if (data.scroll) {
-					scrollToBlock(data.index);
+					scrollToTarget(selected);
 				}
 				break;
 
 			case "hover":
-				hovered = data.index;
+				hovered = data.section ?? data.index ?? null;
 				redraw();
 				break;
 
@@ -342,11 +404,12 @@
 			}
 
 			const wrapper = target.closest("[data-cinq-block]");
+			const next = wrapper ? Number(wrapper.dataset.cinqBlock) : sectionAt(target);
 
-			if (wrapper) {
-				selected = Number(wrapper.dataset.cinqBlock);
+			if (next !== null) {
+				selected = next;
 				redraw();
-				send({ type: "select", index: selected });
+				send({ type: "select", ...toMessage(selected) });
 			}
 		},
 		true
@@ -355,13 +418,20 @@
 	document.addEventListener("submit", (event) => event.preventDefault(), true);
 
 	document.addEventListener("mouseover", (event) => {
-		const wrapper = event.target instanceof Element ? event.target.closest("[data-cinq-block]") : null;
-		const index = wrapper ? Number(wrapper.dataset.cinqBlock) : null;
+		const target = event.target instanceof Element ? event.target : null;
+		const wrapper = target ? target.closest("[data-cinq-block]") : null;
+		let next = null;
 
-		if (index !== hovered) {
-			hovered = index;
+		if (wrapper) {
+			next = Number(wrapper.dataset.cinqBlock);
+		} else if (target) {
+			next = sectionAt(target);
+		}
+
+		if (next !== hovered) {
+			hovered = next;
 			redraw();
-			send({ type: "hover", index });
+			send({ type: "hover", ...toMessage(next) });
 		}
 	});
 

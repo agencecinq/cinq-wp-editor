@@ -174,7 +174,7 @@ final class Zone {
 	 * @param string                           $key    Field key.
 	 * @return array<string, mixed>|null
 	 */
-	private static function find( array $fields, string $key ): ?array {
+	public static function find( array $fields, string $key ): ?array {
 		foreach ( $fields as $field ) {
 			if ( ( $field['key'] ?? '' ) === $key ) {
 				return $field;

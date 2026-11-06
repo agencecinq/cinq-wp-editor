@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-05T18:05:24+00:00\n"
+"POT-Creation-Date: 2026-11-06T08:49:58+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: cinq-wp-editor\n"
@@ -70,21 +70,21 @@ msgid "Edit visually"
 msgstr ""
 
 #. translators: %s: Block type.
-#: includes/Blocks.php:134
+#: includes/Blocks.php:192
 #, php-format
 msgid "The theme has no “%s” block: delete this block."
 msgstr ""
 
-#: includes/Blocks.php:142
+#: includes/Blocks.php:200
 msgid "This block is no longer offered on this content: delete it to publish."
 msgstr ""
 
-#: includes/Drafts.php:51
+#: includes/Drafts.php:57
 msgid "Editor drafts"
 msgstr ""
 
 #. translators: %s: Post title.
-#: includes/Drafts.php:120
+#: includes/Drafts.php:127
 #, php-format
 msgid "Draft of “%s”"
 msgstr ""
@@ -96,13 +96,13 @@ msgid "%1$s is editing “%2$s”. If you take over, a message will let %1$s kno
 msgstr ""
 
 #. translators: %s: Post title.
-#: includes/Model.php:81
+#: includes/Model.php:83
 #, php-format
 msgid "“%s” has no block zone."
 msgstr ""
 
 #. translators: %s: Post type name.
-#: includes/Model.php:238
+#: includes/Model.php:291
 #, php-format
 msgid "Archive: %s"
 msgstr ""
@@ -129,22 +129,22 @@ msgstr ""
 msgid "the theme has no %s template."
 msgstr ""
 
-#: includes/Rest.php:219
-#: src/editor.js:2850
+#: includes/Rest.php:237
+#: src/editor.js:2977
 msgid "The draft could not be saved."
 msgstr ""
 
 #. translators: %s: Name of the user holding the lock.
-#: includes/Rest.php:280
+#: includes/Rest.php:298
 #, php-format
 msgid "%s is editing this content: nothing was published. Your changes stay in your draft."
 msgstr ""
 
-#: includes/Rest.php:290
+#: includes/Rest.php:309
 msgid "Some fields are not valid: nothing was published."
 msgstr ""
 
-#: includes/Rest.php:329
+#: includes/Rest.php:363
 msgid "This field is not a user field."
 msgstr ""
 
@@ -184,420 +184,426 @@ msgstr ""
 msgid "Mobile"
 msgstr ""
 
-#: src/editor.js:707
+#: src/editor.js:731
 msgid "Term IDs, separated by commas."
 msgstr ""
 
 #. translators: %s: ACF field type.
-#: src/editor.js:734
+#: src/editor.js:758
 #, js-format
 msgid "“%s” field: edit it in the classic editor for now."
 msgstr ""
 
 #. translators: 1: Field label. 2: Its value.
-#: src/editor.js:940
-#: src/editor.js:1018
-#: src/editor.js:1409
+#: src/editor.js:964
+#: src/editor.js:1042
+#: src/editor.js:1433
 #, js-format
 msgid "%1$s: %2$s"
 msgstr ""
 
-#: src/editor.js:942
+#: src/editor.js:966
 msgid "no value"
 msgstr ""
 
-#: src/editor.js:945
-#: src/editor.js:1024
+#: src/editor.js:969
+#: src/editor.js:1048
 msgid "Choose…"
 msgstr ""
 
-#: src/editor.js:965
-#: src/editor.js:1049
+#: src/editor.js:989
+#: src/editor.js:1073
 msgid "Clear"
 msgstr ""
 
-#: src/editor.js:1020
+#: src/editor.js:1044
 msgid "no color"
 msgstr ""
 
-#: src/editor.js:1077
+#: src/editor.js:1101
 msgid "Someone else has taken over"
 msgstr ""
 
-#: src/editor.js:1078
+#: src/editor.js:1102
 msgid "This content is already being edited"
 msgstr ""
 
-#: src/editor.js:1103
+#: src/editor.js:1127
 msgid "Your unpublished changes stay in your draft: you will find them again when you reopen the page."
 msgstr ""
 
-#: src/editor.js:1116
-#: src/editor.js:3387
+#: src/editor.js:1140
+#: src/editor.js:3584
 msgid "Back to the list"
 msgstr ""
 
-#: src/editor.js:1120
+#: src/editor.js:1144
 msgid "Take over"
 msgstr ""
 
 #. translators: %s: Name of the block or row.
-#: src/editor.js:1157
+#: src/editor.js:1181
 #, js-format
 msgid "Options: %s"
 msgstr ""
 
-#: src/editor.js:1179
+#: src/editor.js:1203
 msgid "Duplicate"
 msgstr ""
 
-#: src/editor.js:1183
+#: src/editor.js:1207
 msgid "Move up"
 msgstr ""
 
-#: src/editor.js:1187
+#: src/editor.js:1211
 msgid "Move down"
 msgstr ""
 
-#: src/editor.js:1193
-#: src/editor.js:2941
+#: src/editor.js:1217
+#: src/editor.js:3086
 msgid "Delete"
 msgstr ""
 
-#: src/editor.js:1328
+#: src/editor.js:1352
 msgid "Cancel"
 msgstr ""
 
-#: src/editor.js:1411
+#: src/editor.js:1435
 msgid "no link"
 msgstr ""
 
-#: src/editor.js:1414
+#: src/editor.js:1438
 msgid "Add a link"
 msgstr ""
 
-#: src/editor.js:1513
+#: src/editor.js:1537
 msgid "Replace"
 msgstr ""
 
-#: src/editor.js:1514
+#: src/editor.js:1538
 msgid "Choose"
 msgstr ""
 
-#: src/editor.js:1525
-#: src/editor.js:1550
-#: src/editor.js:1719
+#: src/editor.js:1549
+#: src/editor.js:1574
+#: src/editor.js:1743
 msgid "Remove"
 msgstr ""
 
-#: src/editor.js:1580
+#: src/editor.js:1604
 msgid "Add images"
 msgstr ""
 
 #. translators: %d: Most images the gallery takes.
-#: src/editor.js:1588
+#: src/editor.js:1612
 #, js-format
 msgid "%d image at most."
 msgid_plural "%d images at most."
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/editor.js:1811
+#: src/editor.js:1835
 msgid "Search content…"
 msgstr ""
 
-#: src/editor.js:1812
+#: src/editor.js:1836
 msgid "No content chosen."
 msgstr ""
 
-#: src/editor.js:1849
+#: src/editor.js:1873
 msgid "Search users…"
 msgstr ""
 
-#: src/editor.js:1850
+#: src/editor.js:1874
 msgid "No user chosen."
 msgstr ""
 
 #. translators: %s: Field label.
-#: src/editor.js:1874
+#: src/editor.js:1898
 #, js-format
 msgid "%s: none of the tabs of this field is available here."
 msgstr ""
 
-#: src/editor.js:1898
+#: src/editor.js:1922
 msgid "Search icons…"
 msgstr ""
 
-#: src/editor.js:1925
+#: src/editor.js:1949
 msgid "Image"
 msgstr ""
 
-#: src/editor.js:1934
+#: src/editor.js:1958
 msgid "Image address"
 msgstr ""
 
-#: src/editor.js:1971
+#: src/editor.js:1995
 msgid "Remove the icon"
 msgstr ""
 
-#: src/editor.js:2022
+#: src/editor.js:2046
 msgid "Address"
 msgstr ""
 
-#: src/editor.js:2028
+#: src/editor.js:2052
 msgid "Latitude"
 msgstr ""
 
-#: src/editor.js:2031
+#: src/editor.js:2055
 msgid "Longitude"
 msgstr ""
 
-#: src/editor.js:2035
+#: src/editor.js:2059
 msgid "Zoom"
 msgstr ""
 
-#: src/editor.js:2047
+#: src/editor.js:2071
 msgid "View on Google Maps"
 msgstr ""
 
-#: src/editor.js:2123
+#: src/editor.js:2147
 msgid "Empty item"
 msgstr ""
 
 #. translators: %d: Position of the row.
-#: src/editor.js:2132
+#: src/editor.js:2156
 #, js-format
 msgid "item %d"
 msgstr ""
 
-#: src/editor.js:2181
+#: src/editor.js:2205
 msgid "Add an item"
 msgstr ""
 
-#: src/editor.js:2218
+#: src/editor.js:2245
 msgid "Blocks of the page"
 msgstr ""
 
-#: src/editor.js:2221
+#: src/editor.js:2296
 msgid "Blocks"
 msgstr ""
 
-#: src/editor.js:2332
-#: src/editor.js:2495
-#: src/editor.js:3269
+#: src/editor.js:2407
+#: src/editor.js:2603
+#: src/editor.js:3427
 msgid "Add a block"
 msgstr ""
 
-#: src/editor.js:2347
-#: src/editor.js:2369
+#: src/editor.js:2448
+#: src/editor.js:3568
 msgid "Block settings"
 msgstr ""
 
-#: src/editor.js:2350
+#: src/editor.js:2451
 msgid "Select a block, in the list or right on the page, to edit its content."
 msgstr ""
 
 #. translators: %s: Block type.
-#: src/editor.js:2374
+#: src/editor.js:2474
 #, js-format
 msgid "The theme no longer has a “%s” block type."
 msgstr ""
 
-#. translators: %s: Block name.
-#: src/editor.js:2397
-#, js-format
-msgid "Settings of the %s block"
-msgstr ""
-
-#: src/editor.js:2434
-#: src/editor.js:3371
+#: src/editor.js:2544
+#: src/editor.js:3529
 msgid "Error"
 msgstr ""
 
-#: src/editor.js:2503
+#: src/editor.js:2611
 msgid "Search blocks…"
 msgstr ""
 
-#: src/editor.js:2523
+#: src/editor.js:2631
 msgid "No block matches."
 msgstr ""
 
-#: src/editor.js:2653
+#: src/editor.js:2773
 msgid "You are back on your draft: it is not published yet."
 msgstr ""
 
-#: src/editor.js:2665
+#: src/editor.js:2785
 msgid "This content could not be opened."
 msgstr ""
 
-#: src/editor.js:2693
+#: src/editor.js:2813
 msgid "The template of this page does not render its blocks: your changes will not show there."
 msgstr ""
 
-#: src/editor.js:2702
-#: src/editor.js:3329
+#: src/editor.js:2822
+#: src/editor.js:3487
 msgid "Edit in the classic editor"
 msgstr ""
 
-#: src/editor.js:2932
+#: src/editor.js:3077
 msgid "Delete the block?"
 msgstr ""
 
 #. translators: %s: Block name.
-#: src/editor.js:2935
+#: src/editor.js:3080
 #, js-format
 msgid "The “%s” block will be removed from the page. You can still discard the draft to get it back."
 msgstr ""
 
-#: src/editor.js:3046
+#: src/editor.js:3196
 msgid "Page published: the live page is up to date."
 msgstr ""
 
-#: src/editor.js:3050
+#: src/editor.js:3200
 msgid "Page saved."
 msgstr ""
 
-#: src/editor.js:3057
-#: src/editor.js:3336
+#: src/editor.js:3207
+#: src/editor.js:3494
 msgid "View the page"
 msgstr ""
 
 #. translators: %d: Number of invalid fields.
-#: src/editor.js:3079
+#: src/editor.js:3232
 #, js-format
 msgid "(%d field to fix)"
 msgid_plural "(%d fields to fix)"
 msgstr[0] ""
 msgstr[1] ""
 
-#: src/editor.js:3095
+#: src/editor.js:3248
 msgid "Publishing failed."
 msgstr ""
 
-#: src/editor.js:3102
+#: src/editor.js:3255
 msgid "Show the first one"
 msgstr ""
 
-#: src/editor.js:3117
+#: src/editor.js:3270
 msgid "Discard the draft?"
 msgstr ""
 
-#: src/editor.js:3118
+#: src/editor.js:3271
 msgid "Your unpublished changes will be lost: the page goes back to its published version."
 msgstr ""
 
-#: src/editor.js:3122
-#: src/editor.js:3455
+#: src/editor.js:3275
+#: src/editor.js:3652
 msgid "Discard"
 msgstr ""
 
-#: src/editor.js:3144
+#: src/editor.js:3302
 msgid "Draft discarded: the page is back to its published version."
 msgstr ""
 
-#: src/editor.js:3156
+#: src/editor.js:3314
 msgid "The draft could not be discarded."
 msgstr ""
 
-#: src/editor.js:3241
+#: src/editor.js:3399
 msgid "Publish the changes."
 msgstr ""
 
-#: src/editor.js:3277
+#: src/editor.js:3435
 msgid "Publish the changes"
 msgstr ""
 
-#: src/editor.js:3278
+#: src/editor.js:3436
 msgid "Save the page"
 msgstr ""
 
-#: src/editor.js:3285
+#: src/editor.js:3443
 msgid "Discard the draft"
 msgstr ""
 
-#: src/editor.js:3293
+#: src/editor.js:3451
 msgid "Hide the list of blocks"
 msgstr ""
 
-#: src/editor.js:3294
+#: src/editor.js:3452
 msgid "Show the list of blocks"
 msgstr ""
 
-#: src/editor.js:3301
+#: src/editor.js:3459
 msgid "Hide the settings"
 msgstr ""
 
-#: src/editor.js:3302
+#: src/editor.js:3460
 msgid "Show the settings"
 msgstr ""
 
-#: src/editor.js:3308
+#: src/editor.js:3466
 msgid "Preview: desktop"
 msgstr ""
 
-#: src/editor.js:3315
+#: src/editor.js:3473
 msgid "Preview: tablet"
 msgstr ""
 
-#: src/editor.js:3322
+#: src/editor.js:3480
 msgid "Preview: mobile"
 msgstr ""
 
-#: src/editor.js:3364
+#: src/editor.js:3522
 msgid "Unpublished changes"
 msgstr ""
 
-#: src/editor.js:3365
-#: src/editor.js:3369
+#: src/editor.js:3523
+#: src/editor.js:3527
 msgid "Up to date"
 msgstr ""
 
-#: src/editor.js:3366
+#: src/editor.js:3524
 msgid "Saving the draft…"
 msgstr ""
 
-#: src/editor.js:3368
+#: src/editor.js:3526
 msgid "Draft saved"
 msgstr ""
 
-#: src/editor.js:3370
+#: src/editor.js:3528
 msgid "Publishing…"
 msgstr ""
 
-#: src/editor.js:3382
+#. translators: %s: Section name.
+#: src/editor.js:3550
+#, js-format
+msgid "Settings of %s"
+msgstr ""
+
+#. translators: %s: Block name.
+#: src/editor.js:3565
+#, js-format
+msgid "Settings of the %s block"
+msgstr ""
+
+#: src/editor.js:3579
 msgid "Editor top bar"
 msgstr ""
 
-#: src/editor.js:3392
+#: src/editor.js:3589
 msgid "List of blocks"
 msgstr ""
 
-#: src/editor.js:3400
+#: src/editor.js:3597
 msgid "(no title)"
 msgstr ""
 
-#: src/editor.js:3414
-#: src/editor.js:3421
+#: src/editor.js:3611
+#: src/editor.js:3618
 msgid "Preview"
 msgstr ""
 
-#: src/editor.js:3446
+#: src/editor.js:3643
 msgid "Classic editor"
 msgstr ""
 
-#: src/editor.js:3469
+#: src/editor.js:3666
 msgid "Publish"
 msgstr ""
 
-#: src/editor.js:3470
+#: src/editor.js:3667
 msgid "Save"
 msgstr ""
 
-#: src/editor.js:3474
+#: src/editor.js:3671
 msgid "Settings"
 msgstr ""
 
-#: src/editor.js:3519
-#: src/editor.js:3525
+#: src/editor.js:3719
+#: src/editor.js:3725
 msgid "Page preview"
 msgstr ""

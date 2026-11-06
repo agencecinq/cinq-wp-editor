@@ -1,7 +1,8 @@
 <?php
 /**
  * Development only: a « Test de l'éditeur » block with every ACF Pro field
- * type, added to the `blocks` flexible content of the active theme.
+ * type, added to the `blocks` flexible content of the active theme, and a
+ * « Section de test » field group on pages, a fixed section next to the blocks.
  *
  * Loaded by the sandbox, which mounts bin/mu-plugins. On a local site, link it
  * into wp-content/mu-plugins. The theme is not touched: the layout is added to
@@ -467,4 +468,54 @@ add_filter(
 		return $locations;
 	},
 	99
+);
+
+// A fixed section on pages: fields of the template, next to the blocks.
+add_action(
+	'acf/include_fields',
+	static function (): void {
+		acf_add_local_field_group(
+			array(
+				'key'      => 'group_cinq_test_section',
+				'title'    => 'Section de test',
+				'location' => array(
+					array(
+						array(
+							'param'    => 'post_type',
+							'operator' => '==',
+							'value'    => 'page',
+						),
+					),
+				),
+				'fields'   => array(
+					array(
+						'key'       => 'field_cinq_test_section_tagline',
+						'name'      => 'cinq_test_tagline',
+						'label'     => 'Accroche (20 caractères)',
+						'type'      => 'text',
+						'maxlength' => 20,
+					),
+					array(
+						'key'   => 'field_cinq_test_section_subtitle',
+						'name'  => 'cinq_test_subtitle',
+						'label' => 'Sous-titre',
+						'type'  => 'text',
+					),
+				),
+			)
+		);
+	}
+);
+
+// The section's template: its tagline, named as a theme names the fields it
+// renders.
+add_action(
+	'wp_footer',
+	static function (): void {
+		$tagline = is_page() ? get_field( 'cinq_test_tagline', get_queried_object_id() ) : '';
+
+		if ( $tagline ) {
+			printf( '<p data-field="cinq_test_tagline">%s</p>', esc_html( $tagline ) );
+		}
+	}
 );

@@ -24,6 +24,10 @@ defined( 'ABSPATH' ) || exit;
  * `acf/validate_value` filters of the theme. Its errors carry the input name
  * of the form, `blocks[0][field_…]`; they are reported on the editor's path,
  * `blocks[0].title`.
+ *
+ * The fields of the fixed sections go the same way, as one row: input names
+ * `acf[field_…]`, as the edit screen posts them, and editor paths
+ * `fields.hero.title`.
  */
 final class Blocks {
 
@@ -73,22 +77,76 @@ final class Blocks {
 			$rows = wp_kses_post_deep( $rows );
 		}
 
+		$inputs = array(
+			Zone::NAME => array(
+				'field' => $zone->field,
+				'value' => $rows,
+			),
+		);
+
 		return array(
 			'rows'   => array_values( $rows ),
-			'errors' => array_merge( $builder->errors, $builder->validate( $zone, $rows ) ),
+			'errors' => array_merge( $builder->errors, $builder->validate( $inputs, Zone::NAME ) ),
 		);
 	}
 
 	/**
-	 * Runs ACF's validation over the rows.
+	 * Returns the values of the fixed sections stored on a post, keyed by
+	 * field name.
 	 *
-	 * @param Zone                             $zone Zone.
-	 * @param array<int, array<string, mixed>> $rows Rows, keyed by the index of their block.
+	 * @param Sections $sections Sections.
+	 * @param int      $acf_id   Post the values are stored against.
+	 * @return array<string, mixed>
+	 */
+	public static function read_fields( Sections $sections, int $acf_id ): array {
+		return self::from_row( $sections->fields(), $sections->read( $acf_id ) );
+	}
+
+	/**
+	 * Builds the row of the fixed sections' values, and validates it.
+	 *
+	 * @param Sections             $sections Sections.
+	 * @param array<string, mixed> $values   Values, keyed by field name.
+	 * @return array{row: array<string, mixed>, errors: array<int, array{path: string, message: string}>}
+	 */
+	public static function prepare_fields( Sections $sections, array $values ): array {
+		$builder = new self();
+		$row     = $builder->to_row( $sections->fields(), $values, 'acf', Sections::PATH );
+
+		if ( ! acf_allow_unfiltered_html() ) {
+			$row = wp_kses_post_deep( $row );
+		}
+
+		$inputs = array();
+
+		foreach ( $sections->fields() as $field ) {
+			$key = (string) $field['key'];
+
+			$inputs[ sprintf( 'acf[%s]', $key ) ] = array(
+				'field' => $field,
+				'value' => $row[ $key ] ?? '',
+			);
+		}
+
+		return array(
+			'row'    => $row,
+			'errors' => array_merge( $builder->errors, $builder->validate( $inputs, Sections::PATH ) ),
+		);
+	}
+
+	/**
+	 * Runs ACF's validation over some values.
+	 *
+	 * @param array<string, array{field: array<string, mixed>, value: mixed}> $inputs   Values and their field, keyed by input name.
+	 * @param string                                                          $fallback Editor path of an error on an input not built here.
 	 * @return array<int, array{path: string, message: string}>
 	 */
-	private function validate( Zone $zone, array $rows ): array {
+	private function validate( array $inputs, string $fallback ): array {
 		acf_reset_validation_errors();
-		acf_validate_value( $rows, $zone->field, Zone::NAME );
+
+		foreach ( $inputs as $input => $checked ) {
+			acf_validate_value( $checked['value'], $checked['field'], $input );
+		}
 
 		// False, not an empty list, when every value is valid.
 		$found  = acf_get_validation_errors();
@@ -97,7 +155,7 @@ final class Blocks {
 		foreach ( is_array( $found ) ? $found : array() as $error ) {
 			$input    = (string) ( $error['input'] ?? '' );
 			$errors[] = array(
-				'path'    => $this->paths[ $input ] ?? Zone::NAME,
+				'path'    => $this->paths[ $input ] ?? $fallback,
 				'message' => wp_strip_all_tags( (string) ( $error['message'] ?? '' ) ),
 			);
 		}

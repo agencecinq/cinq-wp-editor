@@ -15,10 +15,12 @@ use WP_Post;
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Reads the zone, the layouts and the blocks of a post out of ACF.
+ * Reads the zone, the layouts, the fixed sections and the blocks of a post out
+ * of ACF.
  *
- * The editor only edits the zone of a post: the `blocks` field of a page or a
- * case study. Options pages and terms are out of scope here.
+ * The editor edits the zone of a post, the `blocks` field of a page or a case
+ * study, and the fields of its template around it. Options pages and terms are
+ * out of scope here.
  */
 final class Model {
 
@@ -156,38 +158,89 @@ final class Model {
 	}
 
 	/**
-	 * Returns the blocks stored on a post, keyed by field name.
+	 * Returns the fixed sections of a post.
 	 *
-	 * @param Zone $zone   Zone.
-	 * @param int  $acf_id Post ID the values are stored against.
-	 * @return array<int, array<string, mixed>>
+	 * @param Zone    $zone Zone.
+	 * @param WP_Post $post Post.
+	 * @return Sections
 	 */
-	public static function read_blocks( Zone $zone, int $acf_id ): array {
-		return Blocks::read( $zone, $acf_id );
+	public static function sections( Zone $zone, WP_Post $post ): Sections {
+		return Sections::for_post( $post, $zone );
 	}
 
 	/**
-	 * Turns blocks sent by the editor into ACF rows, validated by ACF.
+	 * Returns the fixed sections, ready for the client.
 	 *
-	 * @param Zone                             $zone   Zone.
-	 * @param WP_Post                          $post   Post being edited.
-	 * @param array<int, array<string, mixed>> $blocks Blocks, keyed by field name.
-	 * @return array{rows: array<int, array<string, mixed>>, errors: array<int, array{path: string, message: string}>}
+	 * @param Sections $sections Sections.
+	 * @return array<int, array{key: string, title: string, fields: array<int, array<string, mixed>>}>
 	 */
-	public static function map( Zone $zone, WP_Post $post, array $blocks ): array {
-		return Blocks::prepare( $zone, $blocks, self::offered( $zone, $post ) );
+	public static function groups( Sections $sections ): array {
+		return array_map(
+			static fn( array $group ): array => array(
+				'key'    => $group['key'],
+				'title'  => $group['title'],
+				'fields' => self::fields( $group['fields'] ),
+			),
+			$sections->groups
+		);
 	}
 
 	/**
-	 * Writes rows onto the post itself.
+	 * Returns the blocks and the fixed sections' values stored on a post,
+	 * keyed by field name.
 	 *
-	 * @param Zone                             $zone Zone.
-	 * @param WP_Post                          $post Post.
-	 * @param array<int, array<string, mixed>> $rows Rows, keyed by field key.
+	 * @param Zone     $zone     Zone.
+	 * @param Sections $sections Sections.
+	 * @param int      $acf_id   Post ID the values are stored against.
+	 * @return array{blocks: array<int, array<string, mixed>>, fields: array<string, mixed>}
+	 */
+	public static function read( Zone $zone, Sections $sections, int $acf_id ): array {
+		return array(
+			'blocks' => Blocks::read( $zone, $acf_id ),
+			'fields' => Blocks::read_fields( $sections, $acf_id ),
+		);
+	}
+
+	/**
+	 * Turns the blocks and the fields sent by the editor into ACF values,
+	 * validated by ACF.
+	 *
+	 * @param Zone                                                                          $zone     Zone.
+	 * @param Sections                                                                      $sections Sections.
+	 * @param WP_Post                                                                       $post     Post being edited.
+	 * @param array{blocks: array<int, array<string, mixed>>, fields: array<string, mixed>} $sent     Blocks and fields, keyed by field name.
+	 * @return array{rows: array<int, array<string, mixed>>, row: array<string, mixed>, errors: array<int, array{path: string, message: string}>}
+	 */
+	public static function map( Zone $zone, Sections $sections, WP_Post $post, array $sent ): array {
+		$blocks = Blocks::prepare( $zone, $sent['blocks'], self::offered( $zone, $post ) );
+		$fields = Blocks::prepare_fields( $sections, $sent['fields'] );
+
+		return array(
+			'rows'   => $blocks['rows'],
+			'row'    => $fields['row'],
+			'errors' => array_merge( $blocks['errors'], $fields['errors'] ),
+		);
+	}
+
+	/**
+	 * Writes the zone's rows and the sections' row onto the post itself.
+	 *
+	 * @param Zone                                                                     $zone     Zone.
+	 * @param Sections                                                                 $sections Sections.
+	 * @param WP_Post                                                                  $post     Post.
+	 * @param array{rows: array<int, array<string, mixed>>, row: array<string, mixed>} $mapped   Values, keyed by field key.
 	 * @return true|WP_Error
 	 */
-	public static function publish( Zone $zone, WP_Post $post, array $rows ) {
-		return $zone->write( $post->ID, $rows );
+	public static function publish( Zone $zone, Sections $sections, WP_Post $post, array $mapped ) {
+		$written = $zone->write( $post->ID, $mapped['rows'] );
+
+		if ( is_wp_error( $written ) ) {
+			return $written;
+		}
+
+		$sections->write( $post->ID, $mapped['row'] );
+
+		return true;
 	}
 
 	/**

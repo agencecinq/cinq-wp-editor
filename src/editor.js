@@ -367,16 +367,42 @@ function summaryOf( value ) {
 	return found[ 0 ] || '';
 }
 
+// Editor path of the fixed sections' fields, as the server names it.
+const FIELDS = 'fields';
+
+const isUnder = ( path, root ) =>
+	path === root ||
+	path.startsWith( `${ root }.` ) ||
+	path.startsWith( `${ root }[` );
 const errorsAt = ( errors, path ) =>
 	errors
 		.filter( ( error ) => error.path === path )
 		.map( ( error ) => error.message );
 const errorsUnder = ( errors, path ) =>
-	errors.filter(
-		( error ) =>
-			error.path === path ||
-			error.path.startsWith( `${ path }.` ) ||
-			error.path.startsWith( `${ path }[` )
+	errors.filter( ( error ) => isUnder( error.path, path ) );
+
+/**
+ * Whether a path points into one of the fields of a fixed section.
+ *
+ * @param {Object} section Fixed section, with its fields.
+ * @param {string} path    Editor path.
+ * @return {boolean} Whether the section holds the path.
+ */
+const holds = ( section, path ) =>
+	section.fields.some( ( field ) =>
+		isUnder( path, `${ FIELDS }.${ field.name }` )
+	);
+
+/**
+ * The values of a fixed section, out of all the sections' fields.
+ *
+ * @param {Object} section Fixed section, with its fields.
+ * @param {Object} fields  Values of every section, keyed by field name.
+ * @return {Object} Values of the section.
+ */
+const valuesOf = ( section, fields ) =>
+	Object.fromEntries(
+		section.fields.map( ( field ) => [ field.name, fields[ field.name ] ] )
 	);
 
 /* ------------------------------------------------------------------ */
@@ -384,10 +410,8 @@ const errorsUnder = ( errors, path ) =>
 /* ------------------------------------------------------------------ */
 
 function Fields( { fields, value, onChange, path, errors } ) {
-	const values =
-		value && typeof value === 'object' && ! Array.isArray( value )
-			? value
-			: {};
+	// Fields named 0, 1… come from PHP as a list: their values all the same.
+	const values = value && typeof value === 'object' ? { ...value } : {};
 
 	return (
 		<>
@@ -2194,6 +2218,9 @@ function RepeaterField( { field, value, onChange, path, errors } ) {
 /* ------------------------------------------------------------------ */
 
 function BlockList( {
+	sections,
+	sectionsTitle,
+	fields,
 	items,
 	layouts,
 	selected,
@@ -2217,6 +2244,63 @@ function BlockList( {
 			className="cinq-panel cinq-blocks"
 			aria-label={ __( 'Blocks of the page', 'cinq-wp-editor' ) }
 		>
+			{ sections.length > 0 && (
+				<>
+					<h2 className="cinq-panel__title">{ sectionsTitle }</h2>
+					<ul className="cinq-blocks__list is-fixed">
+						{ sections.map( ( section ) => {
+							const classes = [ 'cinq-blocks__item', 'is-fixed' ];
+							if ( section.key === selected ) {
+								classes.push( 'is-selected' );
+							}
+							if ( section.key === hovered ) {
+								classes.push( 'is-hovered' );
+							}
+							if (
+								errors.some( ( error ) =>
+									holds( section, error.path )
+								)
+							) {
+								classes.push( 'has-error' );
+							}
+							return (
+								<li
+									key={ section.key }
+									className={ classes.join( ' ' ) }
+									onMouseEnter={ () =>
+										onHover( { section: section.key } )
+									}
+									onMouseLeave={ () =>
+										onHover( { index: null } )
+									}
+								>
+									<button
+										type="button"
+										className="cinq-blocks__select"
+										onClick={ () =>
+											onSelect( section.key )
+										}
+										aria-current={
+											section.key === selected
+												? 'true'
+												: undefined
+										}
+									>
+										<span className="cinq-blocks__label">
+											{ section.title }
+										</span>
+										<span className="cinq-blocks__summary">
+											{ summaryOf(
+												valuesOf( section, fields )
+											) || ' ' }
+										</span>
+									</button>
+								</li>
+							);
+						} ) }
+					</ul>
+				</>
+			) }
 			<h2 className="cinq-panel__title">
 				{ __( 'Blocks', 'cinq-wp-editor' ) }
 				<span className="cinq-count">{ items.length }</span>
@@ -2279,8 +2363,8 @@ function BlockList( {
 								setDragging( null );
 								setOver( null );
 							} }
-							onMouseEnter={ () => onHover( index ) }
-							onMouseLeave={ () => onHover( null ) }
+							onMouseEnter={ () => onHover( { index } ) }
+							onMouseLeave={ () => onHover( { index: null } ) }
 						>
 							<span className="cinq-blocks__grip" aria-hidden>
 								<Icon icon={ dragHandle } size={ 24 } />
@@ -2336,12 +2420,34 @@ function BlockList( {
 	);
 }
 
-function Inspector( { item, index, layout, errors, onChange } ) {
+/**
+ * The settings of what is selected: a block, or a fixed section.
+ *
+ * @param {Object}                   props          Props.
+ * @param {?string}                  props.id       Block uid or section key, null when nothing is selected.
+ * @param {string}                   props.path     Editor path of the values.
+ * @param {?Object}                  props.layout   Label, description, guidance and fields; null when the theme has no such block.
+ * @param {string}                   props.missing  Block type the theme no longer has.
+ * @param {Object}                   props.values   Values, keyed by field name.
+ * @param {string}                   props.label    Name of the settings region.
+ * @param {Object[]}                 props.errors   Errors of the page.
+ * @param {(values: Object) => void} props.onChange Called with the new values.
+ */
+function Inspector( {
+	id,
+	path,
+	layout,
+	missing,
+	values,
+	label,
+	errors,
+	onChange,
+} ) {
 	// Panels the user opened or closed, by block and field: their choice
 	// stands. Otherwise a panel opens when one of its fields is in error.
 	const [ toggled, setToggled ] = useState( {} );
 
-	if ( ! item ) {
+	if ( ! id ) {
 		return (
 			<aside
 				id="cinq-wp-editor-inspector"
@@ -2360,7 +2466,6 @@ function Inspector( { item, index, layout, errors, onChange } ) {
 		);
 	}
 
-	const path = `blocks[${ index }]`;
 	const own = errorsAt( errors, path );
 
 	if ( ! layout ) {
@@ -2370,7 +2475,7 @@ function Inspector( { item, index, layout, errors, onChange } ) {
 				role="region"
 				tabIndex="-1"
 				className="cinq-panel cinq-inspector"
-				aria-label={ __( 'Block settings', 'cinq-wp-editor' ) }
+				aria-label={ label }
 			>
 				<Notice status="warning" isDismissible={ false }>
 					{ sprintf(
@@ -2379,14 +2484,13 @@ function Inspector( { item, index, layout, errors, onChange } ) {
 							'The theme no longer has a “%s” block type.',
 							'cinq-wp-editor'
 						),
-						item.block.acf_fc_layout
+						missing
 					) }
 				</Notice>
 			</aside>
 		);
 	}
 
-	const values = item.block;
 	const setField = ( name, next ) =>
 		onChange( { ...values, [ name ]: next } );
 
@@ -2396,11 +2500,7 @@ function Inspector( { item, index, layout, errors, onChange } ) {
 			role="region"
 			tabIndex="-1"
 			className="cinq-panel cinq-inspector"
-			aria-label={ sprintf(
-				/* translators: %s: Block name. */
-				__( 'Settings of the %s block', 'cinq-wp-editor' ),
-				layout.label
-			) }
+			aria-label={ label }
 		>
 			<header className="cinq-inspector__head">
 				<h2 className="cinq-panel__title">{ layout.label }</h2>
@@ -2424,7 +2524,7 @@ function Inspector( { item, index, layout, errors, onChange } ) {
 						isVisible( field, layout.fields, values )
 					)
 					.map( ( field, position ) => {
-						const panel = `${ item.uid }-${ field.key || field.name }`;
+						const panel = `${ id }-${ field.key || field.name }`;
 						const hasError =
 							errorsUnder( errors, `${ path }.${ field.name }` )
 								.length > 0;
@@ -2551,6 +2651,9 @@ function App() {
 	const [ state, setState ] = useState( null );
 	const [ loadError, setLoadError ] = useState( null );
 	const [ items, setItems ] = useState( [] );
+	// Values of the fixed sections, keyed by field name.
+	const [ fields, setFields ] = useState( {} );
+	// A block's uid or a fixed section's key.
 	const [ selected, setSelected ] = useState( null );
 	const [ hovered, setHovered ] = useState( null );
 	const [ errors, setErrors ] = useState( [] );
@@ -2597,6 +2700,7 @@ function App() {
 
 	const frame = useRef( null );
 	const itemsRef = useRef( items );
+	const fieldsRef = useRef( fields );
 	const timer = useRef( 0 );
 	const inFlight = useRef( false );
 	const publishAfterSave = useRef( false );
@@ -2608,11 +2712,14 @@ function App() {
 	const again = useRef( false );
 	const pending = useRef( false );
 	const dirty = useRef( new Set() );
+	// A fixed section changed: no template renders one alone, the page reloads.
+	const reload = useRef( false );
 	const scrollOnSelect = useRef( false );
 	const scrollAfterRender = useRef( false );
 	const selectedRef = useRef( selected );
 
 	itemsRef.current = items;
+	fieldsRef.current = fields;
 	selectedRef.current = selected;
 
 	const layouts = useMemo( () => {
@@ -2627,6 +2734,10 @@ function App() {
 		( item ) =>
 			( layouts[ item.block.acf_fc_layout ] || {} ).label ||
 			item.block.acf_fc_layout
+	);
+	const sections = state ? state.sections : [];
+	const selectedSection = sections.find(
+		( section ) => section.key === selected
 	);
 	const selectedIndex = items.findIndex( ( item ) => item.uid === selected );
 	const labelsRef = useRef( labels );
@@ -2656,12 +2767,13 @@ function App() {
 	useEffect( () => {
 		apiFetch( { path: API } )
 			.then( ( data ) => {
-				const blocks = data.draft || data.published;
+				const content = data.draft || data.published;
 
 				setState( data );
 				setItems(
-					blocks.map( ( block ) => ( { uid: uid(), block } ) )
+					content.blocks.map( ( block ) => ( { uid: uid(), block } ) )
 				);
+				setFields( content.fields );
 				setChanged( Boolean( data.draft ) );
 
 				if ( data.draft ) {
@@ -2745,17 +2857,21 @@ function App() {
 					type: 'order',
 					uids: itemsRef.current.map( ( item ) => item.uid ),
 				} );
-				toFrame( { type: 'select', index: index < 0 ? null : index } );
+				toFrame( {
+					type: 'select',
+					index: index < 0 ? null : index,
+					section: selectedSection ? selectedSection.key : null,
+				} );
 			}
 
 			if ( data.type === 'select' ) {
 				const item = itemsRef.current[ data.index ];
 				scrollOnSelect.current = false;
-				setSelected( item ? item.uid : null );
+				setSelected( data.section || ( item ? item.uid : null ) );
 			}
 
 			if ( data.type === 'hover' ) {
-				setHovered( data.index );
+				setHovered( data.section ?? data.index );
 			}
 
 			if ( data.type === 'save' ) {
@@ -2771,10 +2887,11 @@ function App() {
 		toFrame( {
 			type: 'select',
 			index: selectedIndex < 0 ? null : selectedIndex,
+			section: selectedSection ? selectedSection.key : null,
 			scroll: scrollOnSelect.current,
 		} );
 		scrollOnSelect.current = false;
-	}, [ selected, selectedIndex, toFrame ] );
+	}, [ selected, selectedIndex, selectedSection, toFrame ] );
 
 	const labelsKey = labels.join( '|' );
 	const orderKey = JSON.stringify( order );
@@ -2810,7 +2927,10 @@ function App() {
 			)
 			.filter( ( index ) => index >= 0 );
 
+		const reloadPage = reload.current;
+
 		dirty.current.clear();
+		reload.current = false;
 		pending.current = false;
 		setStatus( 'saving' );
 
@@ -2820,6 +2940,7 @@ function App() {
 				method: 'PUT',
 				data: {
 					blocks: snapshot.map( ( item ) => item.block ),
+					fields: fieldsRef.current,
 					render,
 				},
 			} );
@@ -2838,8 +2959,11 @@ function App() {
 				}
 			} );
 
-			// A block the server could not render alone: the whole page.
-			if ( fallback ) {
+			// A fixed section changed: the page again, scrolled where it was.
+			// A block the server could not render alone: all the blocks.
+			if ( reloadPage ) {
+				frame.current.contentWindow.location.reload();
+			} else if ( fallback ) {
 				toFrame( { type: 'refresh' } );
 			}
 
@@ -2901,10 +3025,31 @@ function App() {
 			dirty.current.add( renderUid );
 		}
 
-		pending.current = true;
 		itemsRef.current = nextItems;
 
 		setItems( nextItems );
+		schedule();
+	}
+
+	/**
+	 * Applies a change to the fixed sections, then saves after a pause.
+	 *
+	 * @param {Object} nextFields Values of every section, keyed by field name.
+	 */
+	function commitFields( nextFields ) {
+		reload.current = true;
+		fieldsRef.current = nextFields;
+
+		setFields( nextFields );
+		schedule();
+	}
+
+	/**
+	 * Marks the page changed, and saves the draft after a pause.
+	 */
+	function schedule() {
+		pending.current = true;
+
 		setChanged( true );
 		clearTimeout( timer.current );
 		timer.current = setTimeout( flush, SAVE_DELAY );
@@ -3026,6 +3171,7 @@ function App() {
 	async function publish() {
 		// Changes not saved yet were not rendered either: the page, after.
 		const stale = dirty.current.size > 0;
+		const reloadPage = reload.current;
 
 		clearTimeout( timer.current );
 		setStatus( 'publishing' );
@@ -3037,21 +3183,25 @@ function App() {
 				method: 'POST',
 				data: {
 					blocks: itemsRef.current.map( ( item ) => item.block ),
+					fields: fieldsRef.current,
 				},
 			} );
 
 			pending.current = false;
 			dirty.current.clear();
+			reload.current = false;
 			setErrors( [] );
 			setChanged( false );
 			setStatus( 'idle' );
 			setState( ( current ) => ( {
 				...current,
-				published: response.blocks,
+				published: response.published,
 				draft: null,
 			} ) );
 
-			if ( stale ) {
+			if ( reloadPage ) {
+				frame.current.contentWindow.location.reload();
+			} else if ( stale ) {
 				toFrame( { type: 'refresh' } );
 			}
 			const live = state.post.status === 'publish';
@@ -3083,12 +3233,15 @@ function App() {
 			);
 		} catch ( error ) {
 			const invalid = ( error.data && error.data.errors ) || [];
-			const first = invalid.length
-				? /^blocks\[(\d+)\]/.exec( invalid[ 0 ].path )
+			const firstPath = invalid.length ? invalid[ 0 ].path : '';
+			const block = /^blocks\[(\d+)\]/.exec( firstPath );
+			const item = block
+				? itemsRef.current[ Number( block[ 1 ] ) ]
 				: null;
-			const item = first
-				? itemsRef.current[ Number( first[ 1 ] ) ]
-				: null;
+			const section = state.sections.find( ( candidate ) =>
+				holds( candidate, firstPath )
+			);
+			const first = item ? item.uid : section && section.key;
 			const count = invalid.length
 				? ' ' +
 					sprintf(
@@ -3113,14 +3266,14 @@ function App() {
 				) + count,
 				{
 					id: 'publish',
-					actions: item
+					actions: first
 						? [
 								{
 									label: __(
 										'Show the first one',
 										'cinq-wp-editor'
 									),
-									onClick: () => selectFromList( item.uid ),
+									onClick: () => selectFromList( first ),
 								},
 							]
 						: [],
@@ -3145,12 +3298,17 @@ function App() {
 		clearTimeout( timer.current );
 		pending.current = false;
 		dirty.current.clear();
+		reload.current = false;
 
 		try {
 			await apiFetch( { path: `${ API }/draft`, method: 'DELETE' } );
 			setItems(
-				state.published.map( ( block ) => ( { uid: uid(), block } ) )
+				state.published.blocks.map( ( block ) => ( {
+					uid: uid(),
+					block,
+				} ) )
 			);
+			setFields( state.published.fields );
 			setSelected( null );
 			setErrors( [] );
 			setChanged( false );
@@ -3389,6 +3547,45 @@ function App() {
 	}[ status ];
 
 	const isPublished = state.post.status === 'publish';
+	const selectedItem = items[ selectedIndex ];
+	const selectedLayout = selectedItem
+		? layouts[ selectedItem.block.acf_fc_layout ]
+		: null;
+	let inspected = { id: null };
+
+	if ( selectedSection ) {
+		inspected = {
+			id: selectedSection.key,
+			path: FIELDS,
+			layout: {
+				label: selectedSection.title,
+				fields: selectedSection.fields,
+			},
+			values: fields,
+			label: sprintf(
+				/* translators: %s: Section name. */
+				__( 'Settings of %s', 'cinq-wp-editor' ),
+				selectedSection.title
+			),
+			onChange: commitFields,
+		};
+	} else if ( selectedItem ) {
+		inspected = {
+			id: selectedItem.uid,
+			path: `blocks[${ selectedIndex }]`,
+			layout: selectedLayout,
+			missing: selectedItem.block.acf_fc_layout,
+			values: selectedItem.block,
+			label: selectedLayout
+				? sprintf(
+						/* translators: %s: Block name. */
+						__( 'Settings of the %s block', 'cinq-wp-editor' ),
+						selectedLayout.label
+					)
+				: __( 'Block settings', 'cinq-wp-editor' ),
+			onChange: ( block ) => updateBlock( selectedItem.uid, block ),
+		};
+	}
 
 	return (
 		<>
@@ -3512,16 +3709,19 @@ function App() {
 				/>
 			</div>
 			<BlockList
+				sections={ sections }
+				sectionsTitle={ state.post.typeLabel }
+				fields={ fields }
 				items={ items }
 				layouts={ layouts }
 				selected={ selected }
 				hovered={ hovered }
 				errors={ errors }
 				onSelect={ selectFromList }
-				onHover={ ( index ) =>
+				onHover={ ( target ) =>
 					toFrame( {
 						type: 'hover',
-						index,
+						...target,
 					} )
 				}
 				onMove={ moveBlock }
@@ -3542,19 +3742,7 @@ function App() {
 					title={ __( 'Page preview', 'cinq-wp-editor' ) }
 				/>
 			</main>
-			<Inspector
-				item={ items[ selectedIndex ] }
-				index={ selectedIndex }
-				layout={
-					selectedIndex < 0
-						? null
-						: layouts[ items[ selectedIndex ].block.acf_fc_layout ]
-				}
-				errors={ errors }
-				onChange={ ( block ) =>
-					updateBlock( items[ selectedIndex ].uid, block )
-				}
-			/>
+			<Inspector { ...inspected } errors={ errors } />
 			{ locked && <LockedModal lock={ locked } post={ state.post } /> }
 			{ picker && (
 				<BlockPicker
