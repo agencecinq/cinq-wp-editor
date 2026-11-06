@@ -203,6 +203,10 @@ html.wp-toolbar:has(.cinq-wp-editor-screen) {
 	list-style: none;
 }
 
+.cinq-blocks__list.is-fixed {
+	flex: none;
+}
+
 .cinq-blocks__item {
 	position: relative;
 	display: flex;
@@ -211,6 +215,11 @@ html.wp-toolbar:has(.cinq-wp-editor-screen) {
 	margin: 0 0 2px;
 	padding: 2px 4px 2px 0;
 	border-radius: 4px;
+}
+
+/* No grip: the label lines up with the blocks' ones. */
+.cinq-blocks__item.is-fixed {
+	padding-left: 18px;
 }
 
 .cinq-blocks__item:hover,

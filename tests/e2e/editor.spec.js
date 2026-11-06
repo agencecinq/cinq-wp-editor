@@ -126,8 +126,10 @@ test.describe( 'CINQ WP Editor', () => {
 		const editor = page.locator( '#cinq-wp-editor' );
 		const preview = page.frameLocator( 'iframe[title="Page preview"]' );
 
-		// The theme marks its stack, even with no block yet.
-		await expect( preview.locator( '[data-cinq-blocks]' ) ).toBeAttached();
+		// The theme names its stack, even with no block yet.
+		await expect(
+			preview.locator( '[data-field="blocks"]' )
+		).toBeAttached();
 
 		await page
 			.getByRole( 'region', { name: 'Blocks of the page' } )
@@ -189,11 +191,88 @@ test.describe( 'CINQ WP Editor', () => {
 		} );
 
 		expect( state.draft ).toBeNull();
-		expect( state.published[ 0 ] ).toMatchObject( {
+		expect( state.published.blocks[ 0 ] ).toMatchObject( {
 			acf_fc_layout: 'cinq_test',
 			text: 'Hello from Playwright',
 			group: { title: 'Un groupe' },
 			repeater: [ { text: 'Une ligne' } ],
 		} );
+	} );
+
+	test( 'edits a fixed section, and publishes it with the blocks once ACF accepts it', async ( {
+		admin,
+		page,
+		requestUtils,
+	} ) => {
+		await admin.visitAdminPage(
+			'admin.php',
+			`page=cinq-wp-editor&post=${ pageId }`
+		);
+
+		const editor = page.locator( '#cinq-wp-editor' );
+
+		await page
+			.getByRole( 'region', { name: 'Blocks of the page' } )
+			.getByRole( 'button', { name: /Section de test/ } )
+			.click();
+
+		const settings = page.getByRole( 'region', {
+			name: 'Settings of Section de test',
+		} );
+
+		const tagline = settings.getByRole( 'textbox', {
+			name: /Accroche \(20 caractères\)/,
+		} );
+
+		await settings
+			.getByRole( 'textbox', { name: 'Sous-titre' } )
+			.fill( 'Un sous-titre' );
+		await tagline.fill( 'Une accroche bien trop longue' );
+		await expect( editor.getByText( 'Draft saved' ) ).toBeVisible();
+
+		// The tagline is too long: nothing is published.
+		await page.getByRole( 'button', { name: 'Save', exact: true } ).click();
+		await expect(
+			editor.getByText(
+				/Some fields are not valid: nothing was published/
+			)
+		).toBeVisible();
+
+		await tagline.fill( 'Une accroche' );
+		await expect( editor.getByText( 'Draft saved' ) ).toBeVisible();
+
+		// The preview reloads with the draft's tagline.
+		const preview = page.frameLocator( 'iframe[title="Page preview"]' );
+		const shown = preview.locator( '[data-field="cinq_test_tagline"]' );
+
+		await expect( shown ).toHaveText( 'Une accroche' );
+
+		await page.getByRole( 'button', { name: 'Save', exact: true } ).click();
+		await expect( editor.getByText( 'Page saved.' ) ).toBeVisible();
+
+		const state = await requestUtils.rest( {
+			path: `/cinq-wp-editor/v1/posts/${ pageId }`,
+		} );
+
+		expect( state.draft ).toBeNull();
+		expect( state.published.fields ).toMatchObject( {
+			cinq_test_tagline: 'Une accroche',
+			cinq_test_subtitle: 'Un sous-titre',
+		} );
+
+		// Opened again: hovering the section in the list outlines it in the
+		// preview, and clicking it in the preview selects it.
+		await page.reload();
+		await expect( shown ).toHaveText( 'Une accroche' );
+		await page
+			.getByRole( 'region', { name: 'Blocks of the page' } )
+			.getByRole( 'button', { name: /Section de test/ } )
+			.hover();
+		await expect(
+			preview.locator( '.cinq-wp-editor-box.is-hover' )
+		).toBeVisible();
+		await expect( settings ).toBeHidden();
+		await shown.click();
+		await expect( settings ).toBeVisible();
 	} );
 } );

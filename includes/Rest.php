@@ -55,6 +55,10 @@ final class Rest {
 				'required' => true,
 				'items'    => array( 'type' => 'object' ),
 			),
+			'fields' => array(
+				'type'     => 'object',
+				'required' => true,
+			),
 		);
 
 		register_rest_route(
@@ -162,8 +166,19 @@ final class Rest {
 			return $zone;
 		}
 
+		$sections     = Model::sections( $zone, $post );
+		$published    = Model::read( $zone, $sections, $post->ID );
 		$draft_id     = Drafts::find( $post->ID, get_current_user_id() );
 		$draft_blocks = 0 === $draft_id ? null : Drafts::blocks( $draft_id );
+		$draft        = null;
+
+		// A draft that holds no fields left the published ones as they were.
+		if ( null !== $draft_blocks ) {
+			$draft = array(
+				'blocks' => $draft_blocks,
+				'fields' => Drafts::fields( $draft_id ) ?? $published['fields'],
+			);
+		}
 
 		return new WP_REST_Response(
 			array(
@@ -180,15 +195,17 @@ final class Rest {
 				),
 				'zone'      => $zone->name(),
 				'layouts'   => Model::layouts( $zone, $post ),
-				'published' => Model::read_blocks( $zone, $post->ID ),
-				'draft'     => $draft_blocks,
+				'sections'  => Model::groups( $sections ),
+				'published' => self::content( $published ),
+				'draft'     => null === $draft ? null : self::content( $draft ),
 				'draftDate' => 0 === $draft_id ? null : get_post_modified_time( 'c', true, $draft_id ),
 			)
 		);
 	}
 
 	/**
-	 * Saves the editor's blocks as the user's draft, and renders the changed ones.
+	 * Saves the editor's blocks and fields as the user's draft, and renders the
+	 * changed blocks.
 	 *
 	 * Blocks ACF could not take are left out of what the preview shows,
 	 * and reported; the blocks themselves are kept whole in the draft. The
@@ -211,9 +228,10 @@ final class Rest {
 			return $zone;
 		}
 
-		$blocks   = self::blocks( $request );
-		$mapped   = Model::map( $zone, $post, $blocks );
-		$draft_id = Drafts::save( $zone, $post, get_current_user_id(), $blocks, $mapped['rows'] );
+		$sections = Model::sections( $zone, $post );
+		$sent     = self::sent( $request );
+		$mapped   = Model::map( $zone, $sections, $post, $sent );
+		$draft_id = Drafts::save( $zone, $sections, $post, get_current_user_id(), $sent, $mapped );
 
 		if ( 0 === $draft_id ) {
 			return new WP_Error( 'cinq_wp_editor_draft_failed', __( 'The draft could not be saved.', 'cinq-wp-editor' ), array( 'status' => 500 ) );
@@ -225,7 +243,7 @@ final class Rest {
 			array(
 				'saved'  => true,
 				'errors' => $mapped['errors'],
-				'html'   => (object) Renderer::blocks( $post, $zone, $draft_id, $render ),
+				'html'   => (object) Renderer::blocks( $post, $zone, $sections, $draft_id, $render ),
 			)
 		);
 	}
@@ -249,7 +267,7 @@ final class Rest {
 	}
 
 	/**
-	 * Writes the editor's blocks onto the post, then drops the draft.
+	 * Writes the editor's blocks and fields onto the post, then drops the draft.
 	 *
 	 * Refused as a whole when one value does not validate: half a page is never
 	 * published.
@@ -282,7 +300,8 @@ final class Rest {
 			);
 		}
 
-		$mapped = Model::map( $zone, $post, self::blocks( $request ) );
+		$sections = Model::sections( $zone, $post );
+		$mapped   = Model::map( $zone, $sections, $post, self::sent( $request ) );
 
 		if ( ! empty( $mapped['errors'] ) ) {
 			return new WP_Error(
@@ -295,7 +314,7 @@ final class Rest {
 			);
 		}
 
-		$written = Model::publish( $zone, $post, $mapped['rows'] );
+		$written = Model::publish( $zone, $sections, $post, $mapped );
 
 		if ( is_wp_error( $written ) ) {
 			return $written;
@@ -305,14 +324,13 @@ final class Rest {
 
 		return new WP_REST_Response(
 			array(
-				'published' => true,
-				'blocks'    => Model::read_blocks( $zone, $post->ID ),
+				'published' => self::content( Model::read( $zone, $sections, $post->ID ) ),
 			)
 		);
 	}
 
 	/**
-	 * Finds users for a user field of the post's zone, as ACF's own search
+	 * Finds users for a user field of the post's zone or sections, as ACF's own search
 	 * does on the edit screen: among the roles the field allows, by name or
 	 * login, and by e-mail for whoever may edit users.
 	 *
@@ -338,7 +356,8 @@ final class Rest {
 
 		// Only a user field the editor shows on this post: its roles always
 		// bound the search, as they do in the editor.
-		$field = $zone->field( (string) $request['field'] );
+		$key   = (string) $request['field'];
+		$field = $zone->field( $key ) ?? Model::sections( $zone, $post )->field( $key );
 
 		if ( null === $field || 'user' !== ( $field['type'] ?? '' ) ) {
 			return new WP_Error( 'cinq_wp_editor_not_user_field', __( 'This field is not a user field.', 'cinq-wp-editor' ), array( 'status' => 400 ) );
@@ -397,14 +416,33 @@ final class Rest {
 	}
 
 	/**
-	 * Returns the blocks of a request as a list of objects.
+	 * Returns the blocks and the fields of a request: a list of objects, and
+	 * an object.
 	 *
 	 * @param WP_REST_Request $request Request.
-	 * @return array<int, array<string, mixed>>
+	 * @return array{blocks: array<int, array<string, mixed>>, fields: array<string, mixed>}
 	 */
-	private static function blocks( WP_REST_Request $request ): array {
+	private static function sent( WP_REST_Request $request ): array {
 		$blocks = $request->get_param( 'blocks' );
+		$fields = $request->get_param( 'fields' );
 
-		return is_array( $blocks ) ? array_values( array_filter( $blocks, 'is_array' ) ) : array();
+		return array(
+			'blocks' => is_array( $blocks ) ? array_values( array_filter( $blocks, 'is_array' ) ) : array(),
+			'fields' => is_array( $fields ) ? $fields : array(),
+		);
+	}
+
+	/**
+	 * Shapes blocks and fields for the client: fields stay an object, even
+	 * with none, so that the client sends them back as one.
+	 *
+	 * @param array{blocks: array<int, array<string, mixed>>, fields: array<string, mixed>} $content Blocks and fields.
+	 * @return array{blocks: array<int, array<string, mixed>>, fields: object}
+	 */
+	private static function content( array $content ): array {
+		return array(
+			'blocks' => $content['blocks'],
+			'fields' => (object) $content['fields'],
+		);
 	}
 }

@@ -2,7 +2,8 @@
 
 A WordPress plugin that edits the ACF blocks of a page **on one screen**: the list of blocks on
 the left, the real page in the middle, the settings of the selected block on the right. Change a
-title and the page updates before your eyes.
+title and the page updates before your eyes. The fields of the page's template around the blocks,
+such as a hero, are edited there too, and published with them.
 
 > Status: 0.2.0, in production on [agencecinq.com](https://www.agencecinq.com) since November 2026.
 > It runs end to end on the Agence CINQ theme.
@@ -101,9 +102,9 @@ So we kept what the block editor does well, its packages, and left its data mode
 
 | Area | Content |
 |---|---|
-| Left | The blocks of the page, in order. Drag and drop to move them; each has an **Options** menu (duplicate, move up, move down, delete). **Add a block** opens the catalogue: name, description and guidance from the theme's `mcp.json`. |
+| Left | First the fixed sections: the field groups of the page's template outside its blocks, such as a hero, under the content type's name. They are edited as blocks are, but never moved, duplicated nor deleted. Then the blocks of the page, in order. Drag and drop to move them; each has an **Options** menu (duplicate, move up, move down, delete). **Add a block** opens the catalogue: name, description and guidance from the theme's `mcp.json`. |
 | Middle | The live page, in desktop, tablet or mobile width. Hovering a block outlines it, clicking it selects it. Links lead nowhere, so as not to leave the editor. |
-| Right | The fields of the selected block: text, rich text, images and galleries, links, related content and page links with their archives, users, icons, places, dates and colours, button groups (the theme's schemes and colours as swatches), repeaters, checkboxes, lists. A field refused by ACF is flagged under it, and its panel opens. |
+| Right | The fields of the selected block or section: text, rich text, images and galleries, links, related content and page links with their archives, users, icons, places, dates and colours, button groups (the theme's schemes and colours as swatches), repeaters, checkboxes, lists. A field refused by ACF is flagged under it, and its panel opens. |
 | Top | Buttons to close the list of blocks and the settings, the **Preview** menu, the draft's status (« Saving the draft… », « Draft saved », « Up to date »), **Discard**, **Publish** (**Save** for a page not yet published, ⌘S). The command palette (⌘K) offers the same actions. |
 
 It opens from the list of pages (**Visual editor** when hovering a row), from the edit screen of
@@ -113,12 +114,13 @@ a page (**Open the visual editor**) or from the admin bar on the site (**Edit vi
 
 | Step | What happens |
 |---|---|
-| Opening | The screen sets WordPress's post lock, then `GET /cinq-wp-editor/v1/posts/{id}` returns the layouts offered, the published blocks and the draft, if any. |
-| Editing | After 300 ms without typing, a single `PUT …/draft` call validates the blocks with ACF, writes them with ACF onto a hidden `cinq_wp_editor_draft` post (one per page and per user) and returns the HTML of the changed or added blocks only, each rendered alone with the theme's template. |
-| Preview | The iframe shows the real page with `?cinq-wp-editor={id}`. ACF serves the draft's rows in place of the page's and formats them as usual; the theme renders them without knowing, and marks each block because the `cinq_wp_editor` Twig global is set. When the page's template does not render its blocks, the editor says so and points to the classic edit screen. |
-| Update | The returned block replaces the old one in the preview. Moving or deleting a block happens directly in the preview, without waiting for the server; an added block shows « Loading the block… » until it is rendered. If a block cannot be rendered alone, the preview reloads the whole page. |
+| Opening | The screen sets WordPress's post lock, then `GET /cinq-wp-editor/v1/posts/{id}` returns the layouts offered, the fixed sections, the published blocks and fields, and the draft, if any. |
+| Sections | The fixed sections are the field groups ACF applies to the post, in the main column, without the block zone: the theme's location rules decide, as on the edit screen. A group in the side column holds settings of the post, not content, and stays on the classic edit screen. |
+| Editing | After 300 ms without typing, a single `PUT …/draft` call validates the blocks and the sections' fields with ACF, writes them with ACF onto a hidden `cinq_wp_editor_draft` post (one per page and per user) and returns the HTML of the changed or added blocks only, each rendered alone with the theme's template. |
+| Preview | The iframe shows the real page with `?cinq-wp-editor={id}`. ACF serves the draft's rows and fields in place of the page's and formats them as usual; the theme renders them without knowing, and marks each block because the `cinq_wp_editor` Twig global is set. When the page's template does not render its blocks, the editor says so and points to the classic edit screen. |
+| Update | The returned block replaces the old one in the preview. Moving or deleting a block happens directly in the preview, without waiting for the server; an added block shows « Loading the block… » until it is rendered. If a block cannot be rendered alone, the preview fetches all the blocks again. A section's fields are rendered by the template itself, not alone: the preview reloads, scrolled where it was. |
 | Lock | The edit screen's heartbeat (`wp-refresh-post-lock`) renews the lock every ten seconds, and leaving the page gives it back (`wp-remove-post-lock`). The classic edit screen, the block editor and this one see each other's lock. |
-| Publishing | `POST …/publish` refuses while someone else holds the lock, validates everything, refuses as a whole if one field is invalid (never half a page), writes with ACF, then deletes the draft. |
+| Publishing | `POST …/publish` refuses while someone else holds the lock, validates the blocks and the sections, refuses as a whole if one field is invalid (never half a page), writes with ACF, then deletes the draft. |
 
 ```
 cinq-wp-editor.php       plugin header, requirements, class loading
@@ -129,6 +131,7 @@ includes/
   Rest.php               the routes: state, draft, discard, publish, users
   Model.php              what the editor knows about a post: zone, blocks offered, fields
   Zone.php               the flexible content of a post, read and written with ACF
+  Sections.php           the fixed sections: the post's other field groups, read and written with ACF
   Blocks.php             editor blocks ↔ ACF rows, validated by ACF
   Annotations.php        block descriptions, read from the theme's mcp.json
   Drafts.php             drafts (one hidden post per page and per user)
@@ -164,10 +167,25 @@ templates. In the editor's preview, and there only, the `cinq_wp_editor` Twig gl
 {%- endif -%}
 ```
 
-`views/blocks/blocks.html.twig` includes it for each block with `loop: loop.index0`, renders its
-stack even with no block when `cinq_wp_editor` is set, so a first one can be added, and puts
-`data-cinq-blocks` on the stack's container (a `display: contents` one if it has none). The
-public page is unchanged.
+`views/blocks/blocks.html.twig` includes it for each block with `loop: loop.index0`, and renders
+its stack even with no block when `cinq_wp_editor` is set, so a first one can be added.
+
+Every element rendering a field of the template names it with `data-field`, the field's ACF
+name, the one the template reads: the stack's container is `data-field="blocks"` (in the preview,
+a `display: contents` one if it has none), a hero is `data-field="hero"`. The attribute stays on
+the public page, where the theme's own scripts and tests may use it too. The editor finds the
+zone's stack by it, and outlines, selects and scrolls to a fixed section through the elements
+naming one of its fields, outside the stack.
+
+```twig
+{# views/pages/front-page.html.twig #}
+<section class="…" aria-labelledby="hero-home-title" data-field="hero">
+```
+
+The wrapper of each block stays the preview's alone: the stack also holds the `prepend` and
+`append` of its embed, and a block may render several elements, so the index has to be written;
+and a `display: contents` box takes no margin, so on the public page a `space-y-*` on the stack
+would no longer space its blocks.
 
 ## Installing
 
@@ -198,7 +216,7 @@ WordPress does not ship as a script, is bundled.
 `@wordpress/e2e-test-utils-playwright`, as Gutenberg tests its editor. The tests run against a
 site that is already up, with ACF Pro, a CINQ theme and `bin/mu-plugins/test-block.php` linked
 into its mu-plugins: a block with every ACF Pro field type, added to the theme's `blocks` field
-without touching the theme. Each test creates its own draft page and deletes it.
+without touching the theme, and a fixed section on pages, its tagline rendered in the footer. Each test creates its own draft page and deletes it.
 
 Name the site and an administrator in a `.env.e2e` file, kept out of Git:
 
@@ -231,7 +249,11 @@ attaches it to the release with `update.json`.
 
 - Responsiveness: in a test WordPress, the changed block shows about 1.5 s after the last
   keystroke, 1.2 s of which is WordPress booting on each request. Not yet measured in production.
-- Only the main zone (`blocks`) of a post type is edited: not options pages or terms.
+- Only the main zone (`blocks`) of a post type and its fixed sections are edited: not options
+  pages or terms. A post without a block zone does not open in the editor, even when its template
+  has fields of its own.
+- Each change to a fixed section reloads the preview. A section whose fields the template does
+  not name with `data-field` is selected from the list only, without an outline.
 - Flexible content nested in a block is still edited in the classic edit screen.
 - ACF conditional logic is only evaluated between sibling fields.
 - A theme JS component missing at load time (a block of a type never seen on the page) may not

@@ -15,14 +15,16 @@ defined( 'ABSPATH' ) || exit;
  * Turns a front-end request into the editor's preview.
  *
  * The preview is the real page, rendered by the theme, with three changes:
- * the blocks are read from the editor's draft instead of the post, each block
- * is wrapped in a marker so the editor can find it, and a small script lets
- * the visitor select a block instead of following its links.
+ * the blocks and the fixed sections' fields are read from the editor's draft
+ * instead of the post, each block is wrapped in a marker so the editor can
+ * find it, and a small script lets the visitor select a block or a section
+ * instead of following its links.
  *
- * The markers are the theme's: its `blocks/blocks.html.twig` and
- * `blocks/block.html.twig` put them in when the `cinq_wp_editor` Twig global
- * says the page is the editor's preview. A theme with those two templates is
- * one the editor works with; the public page stays as it was.
+ * The markers are the theme's. Every element rendering a field of the
+ * template carries `data-field`, the field's name, on the public page too:
+ * the container of the zone's stack, a hero. Each block goes through
+ * `blocks/block.html.twig`, which wraps it in a marker of its own when the
+ * `cinq_wp_editor` Twig global says the page is the editor's preview.
  */
 final class Preview {
 
@@ -52,11 +54,25 @@ final class Preview {
 	private static ?Zone $zone = null;
 
 	/**
+	 * Fixed sections the draft replaces.
+	 *
+	 * @var Sections|null
+	 */
+	private static ?Sections $sections = null;
+
+	/**
 	 * Draft read in place of the post's blocks.
 	 *
 	 * @var int
 	 */
 	private static int $draft_id = 0;
+
+	/**
+	 * Whether the draft holds the fixed sections' fields.
+	 *
+	 * @var bool
+	 */
+	private static bool $draft_fields = false;
 
 	/**
 	 * Registers the hooks.
@@ -103,7 +119,7 @@ final class Preview {
 			return;
 		}
 
-		self::activate( $post_id, $zone, Drafts::find( $post_id, get_current_user_id() ) );
+		self::activate( $post_id, $zone, Model::sections( $zone, $post ), Drafts::find( $post_id, get_current_user_id() ) );
 
 		add_filter( 'show_admin_bar', '__return_false' );
 		add_filter( 'wp_robots', 'wp_robots_no_robots' );
@@ -112,20 +128,24 @@ final class Preview {
 	}
 
 	/**
-	 * Reads the draft in place of the post's blocks, and marks each block.
+	 * Reads the draft in place of the post's blocks and fields, and marks
+	 * each block.
 	 *
 	 * Called by the preview page, and by the REST route that renders single
 	 * blocks: both must see exactly the same blocks.
 	 *
-	 * @param int  $post_id  Post being previewed.
-	 * @param Zone $zone     Zone the draft replaces.
-	 * @param int  $draft_id Draft, or 0 to show the post's own blocks.
+	 * @param int      $post_id  Post being previewed.
+	 * @param Zone     $zone     Zone the draft replaces.
+	 * @param Sections $sections Fixed sections the draft replaces.
+	 * @param int      $draft_id Draft, or 0 to show the post's own blocks.
 	 * @return void
 	 */
-	public static function activate( int $post_id, Zone $zone, int $draft_id ): void {
-		self::$post_id  = $post_id;
-		self::$zone     = $zone;
-		self::$draft_id = $draft_id;
+	public static function activate( int $post_id, Zone $zone, Sections $sections, int $draft_id ): void {
+		self::$post_id      = $post_id;
+		self::$zone         = $zone;
+		self::$sections     = $sections;
+		self::$draft_id     = $draft_id;
+		self::$draft_fields = 0 !== $draft_id && null !== Drafts::fields( $draft_id );
 
 		if ( ! has_filter( 'acf/pre_load_value', array( self::class, 'load_draft' ) ) ) {
 			add_filter( 'acf/pre_load_value', array( self::class, 'load_draft' ), 10, 3 );
@@ -135,7 +155,7 @@ final class Preview {
 	}
 
 	/**
-	 * Serves the draft's rows in place of the post's.
+	 * Serves the draft's rows and fields in place of the post's.
 	 *
 	 * @param mixed                $value   Value short-circuiting the load, null to carry on.
 	 * @param int|string           $post_id ACF post ID being read.
@@ -151,9 +171,10 @@ final class Preview {
 			return $value;
 		}
 
-		$is_zone = ( $field['key'] ?? '' ) === self::$zone->key() || ( $field['name'] ?? '' ) === self::$zone->name();
+		$is_zone    = ( $field['key'] ?? '' ) === self::$zone->key() || ( $field['name'] ?? '' ) === self::$zone->name();
+		$is_section = self::$draft_fields && null !== self::$sections && null !== self::$sections->owner( $field );
 
-		if ( ! $is_zone ) {
+		if ( ! $is_zone && ! $is_section ) {
 			return $value;
 		}
 
@@ -162,12 +183,13 @@ final class Preview {
 	}
 
 	/**
-	 * Names the zone's field for the post being previewed.
+	 * Names the zone's and the sections' fields for the post being previewed.
 	 *
 	 * ACF finds a field from its name through the post's `_blocks` meta, which
 	 * it writes on the first save. A post never saved yet has none, and ACF
 	 * falls back on the first field of that name it knows, maybe another
-	 * zone's: the draft's rows would then be read with the wrong layouts.
+	 * zone's: the draft's rows would then be read with the wrong layouts. The
+	 * same goes for a section, as two templates may each have a `hero`.
 	 *
 	 * @param string|null $reference  Field key found so far.
 	 * @param string      $field_name Field name.
@@ -175,11 +197,17 @@ final class Preview {
 	 * @return string|null
 	 */
 	public static function reference( $reference, $field_name, $post_id ) {
-		if ( null !== $reference || null === self::$zone || $field_name !== self::$zone->name() ) {
+		if ( null !== $reference || null === self::$zone || ! is_numeric( $post_id ) || (int) $post_id !== self::$post_id ) {
 			return $reference;
 		}
 
-		return is_numeric( $post_id ) && (int) $post_id === self::$post_id ? self::$zone->key() : $reference;
+		if ( $field_name === self::$zone->name() ) {
+			return self::$zone->key();
+		}
+
+		$own = null === self::$sections ? null : self::$sections->owner( array( 'name' => $field_name ) );
+
+		return null === $own ? $reference : (string) $own['key'];
 	}
 
 	/**
@@ -206,5 +234,27 @@ final class Preview {
 		wp_enqueue_style( 'cinq-wp-editor-preview', CINQ_WP_EDITOR_URL . 'assets/preview.css', array(), Plugin::asset_version( 'assets/preview.css' ) );
 		wp_enqueue_script( 'cinq-wp-editor-preview', CINQ_WP_EDITOR_URL . 'assets/preview.js', array( 'wp-i18n' ), Plugin::asset_version( 'assets/preview.js' ), true );
 		wp_set_script_translations( 'cinq-wp-editor-preview', 'cinq-wp-editor', CINQ_WP_EDITOR_PATH . 'languages' );
+
+		// The fields the page's `data-field` attributes may name: the zone's,
+		// and those of the fixed sections, by section.
+		$sections = array_map(
+			static fn( array $group ): array => array(
+				'key'    => $group['key'],
+				'title'  => $group['title'],
+				'fields' => array_values( array_filter( array_map( static fn( array $field ): string => (string) ( $field['name'] ?? '' ), $group['fields'] ) ) ),
+			),
+			null === self::$sections ? array() : self::$sections->groups
+		);
+
+		wp_add_inline_script(
+			'cinq-wp-editor-preview',
+			'window.cinqWpEditorPreview = ' . wp_json_encode(
+				array(
+					'zone'     => null === self::$zone ? '' : self::$zone->name(),
+					'sections' => $sections,
+				)
+			) . ';',
+			'before'
+		);
 	}
 }

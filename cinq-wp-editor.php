@@ -3,7 +3,7 @@
  * Plugin Name:       CINQ Editor
  * Plugin URI:        https://github.com/agencecinq/cinq-wp-editor
  * Description:       Edits the ACF blocks of a page on one screen: the list of blocks, a live preview of the real site and the settings of the selected block.
- * Version:           0.2.0
+ * Version:           0.3.0
  * Requires at least: 7.1
  * Requires PHP:      8.4
  * Author:            CINQ
@@ -23,7 +23,7 @@ namespace CinqWpEditor;
 
 defined( 'ABSPATH' ) || exit;
 
-const VERSION = '0.2.0';
+const VERSION = '0.3.0';
 
 define( 'CINQ_WP_EDITOR_FILE', __FILE__ );
 
