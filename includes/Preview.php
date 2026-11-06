@@ -236,11 +236,11 @@ final class Preview {
 		wp_set_script_translations( 'cinq-wp-editor-preview', 'cinq-wp-editor', CINQ_WP_EDITOR_PATH . 'languages' );
 
 		// The fields the page's `data-field` attributes may name: the zone's,
-		// and those of the fixed sections, by section.
+		// and those of the fixed sections, by section. Their names come from
+		// the editor, in its user's language, as the blocks' do.
 		$sections = array_map(
 			static fn( array $group ): array => array(
 				'key'    => $group['key'],
-				'title'  => $group['title'],
 				'fields' => array_values( array_filter( array_map( static fn( array $field ): string => (string) ( $field['name'] ?? '' ), $group['fields'] ) ) ),
 			),
 			null === self::$sections ? array() : self::$sections->groups

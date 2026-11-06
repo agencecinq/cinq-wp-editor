@@ -2741,9 +2741,14 @@ function App() {
 	);
 	const selectedIndex = items.findIndex( ( item ) => item.uid === selected );
 	const labelsRef = useRef( labels );
+	const sectionLabels = Object.fromEntries(
+		sections.map( ( section ) => [ section.key, section.title ] )
+	);
+	const sectionLabelsRef = useRef( sectionLabels );
 	const order = items.map( ( item ) => item.uid );
 
 	labelsRef.current = labels;
+	sectionLabelsRef.current = sectionLabels;
 
 	// Reads the labels from a ref: a save scheduled several renders ago
 	// must still send the current ones.
@@ -2755,6 +2760,7 @@ function App() {
 				{
 					source: 'cinq-wp-editor',
 					labels: labelsRef.current,
+					sectionLabels: sectionLabelsRef.current,
 					...message,
 				},
 				ORIGIN
