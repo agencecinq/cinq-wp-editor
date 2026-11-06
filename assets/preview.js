@@ -6,9 +6,10 @@
  * when the editor says the draft changed. It never navigates: links are inert
  * in the preview.
  *
- * The theme names the fields it renders with `data-field`: the zone's stack,
- * and the elements of the fixed sections, such as a hero. What is outlined is
- * a target: a block's index, a number, or a section's key, a string.
+ * The theme names the fields it renders with `data-field`, a list of names
+ * separated by spaces, as `class` is: the zone's stack, and the elements of
+ * the fixed sections, such as a hero. What is outlined is a target: a block's
+ * index, a number, or a section's key, a string.
  */
 (function () {
 	"use strict";
@@ -29,11 +30,13 @@
 	let currentUids = [];
 
 	const send = (message) => window.parent.postMessage({ source: SOURCE, ...message }, ORIGIN);
-	const ZONE = `[data-field="${CSS.escape(zone)}"]`;
+	const ZONE = `[data-field~="${CSS.escape(zone)}"]`;
 	const container = () => document.querySelector(ZONE);
 	const wrapperAt = (index) =>
 		index === null || index === undefined ? null : document.querySelector(`[data-cinq-block="${index}"]`);
 	const sectionByKey = (key) => sections.find((section) => section.key === key);
+	const names = (element) => element.dataset.field.trim().split(/\s+/);
+	const shows = (section, element) => names(element).some((name) => section.fields.includes(name));
 	const toMessage = (target) => (typeof target === "string" ? { section: target } : { index: target });
 
 	/**
@@ -49,7 +52,7 @@
 		}
 
 		return Array.from(document.querySelectorAll("[data-field]")).filter(
-			(element) => section.fields.includes(element.dataset.field) && !(root && root.contains(element))
+			(element) => shows(section, element) && !(root && root.contains(element))
 		);
 	}
 
@@ -60,7 +63,7 @@
 		const root = container();
 
 		for (let node = element.closest("[data-field]"); node; node = node.parentElement && node.parentElement.closest("[data-field]")) {
-			const section = sections.find((candidate) => candidate.fields.includes(node.dataset.field));
+			const section = sections.find((candidate) => shows(candidate, node));
 
 			if (section && !(root && root.contains(node))) {
 				return section.key;

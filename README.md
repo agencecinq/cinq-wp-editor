@@ -182,6 +182,11 @@ naming one of its fields, outside the stack.
 <section class="…" aria-labelledby="hero-home-title" data-field="hero">
 ```
 
+An element rendering several fields names them all, separated by spaces, as `class` lists its
+classes: a page header showing fields that no group field holds together is
+`data-field="overline introduction link"`. It is then found with `[data-field~="introduction"]`,
+in CSS as in JavaScript.
+
 The wrapper of each block stays the preview's alone: the stack also holds the `prepend` and
 `append` of its embed, and a block may render several elements, so the index has to be written;
 and a `display: contents` box takes no margin, so on the public page a `space-y-*` on the stack

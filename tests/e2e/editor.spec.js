@@ -243,9 +243,9 @@ test.describe( 'CINQ WP Editor', () => {
 
 		// The preview reloads with the draft's tagline.
 		const preview = page.frameLocator( 'iframe[title="Page preview"]' );
-		const shown = preview.locator( '[data-field="cinq_test_tagline"]' );
+		const shown = preview.locator( '[data-field~="cinq_test_tagline"]' );
 
-		await expect( shown ).toHaveText( 'Une accroche' );
+		await expect( shown ).toContainText( 'Une accroche' );
 
 		await page.getByRole( 'button', { name: 'Save', exact: true } ).click();
 		await expect( editor.getByText( 'Page saved.' ) ).toBeVisible();
@@ -263,7 +263,7 @@ test.describe( 'CINQ WP Editor', () => {
 		// Opened again: hovering the section in the list outlines it in the
 		// preview, and clicking it in the preview selects it.
 		await page.reload();
-		await expect( shown ).toHaveText( 'Une accroche' );
+		await expect( shown ).toHaveText( 'Une accroche Un sous-titre' );
 		await page
 			.getByRole( 'region', { name: 'Blocks of the page' } )
 			.getByRole( 'button', { name: /Section de test/ } )

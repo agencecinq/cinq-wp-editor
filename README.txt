@@ -17,7 +17,7 @@ Repository: [agencecinq/cinq-wp-editor](https://github.com/agencecinq/cinq-wp-ed
 * WordPress 7.1 or later: the editor follows the latest WordPress release only, to use what it brings as soon as it ships
 * PHP 8.4 or later
 * ACF Pro 6.8 or later, and a theme on Timber 2.5 or later: their latest releases, as for WordPress
-* A Timber theme rendering each block through `views/blocks/block.html.twig`, the convention of CINQ themes: in the editor's preview (the `cinq_wp_editor` Twig global), it wraps the block in `<div data-cinq-block="{{ loop }}" style="display: contents">`, and `views/blocks/blocks.html.twig` renders its stack even with no block. Every element rendering a field of the template names it with `data-field`, on the public page too: the stack's container with `data-field="blocks"`, a hero with `data-field="hero"`.
+* A Timber theme rendering each block through `views/blocks/block.html.twig`, the convention of CINQ themes: in the editor's preview (the `cinq_wp_editor` Twig global), it wraps the block in `<div data-cinq-block="{{ loop }}" style="display: contents">`, and `views/blocks/blocks.html.twig` renders its stack even with no block. Every element rendering a field of the template names it with `data-field`, on the public page too: the stack's container with `data-field="blocks"`, a hero with `data-field="hero"`, an element rendering several fields with their names separated by spaces.
 * Optional: a `mcp.json` at the theme root, whose `blocks` entries describe the blocks in the catalogue
 
 The editor checks them on every request. Missing one, it stays off and says why in the admin.
@@ -65,6 +65,9 @@ Run `composer install`, then `composer lint` (phpcs) or `composer lint:fix` (php
 `bash bin/sandbox.sh` starts a throwaway WordPress with the agencecinq theme and a page filled with real blocks: see the README of the repository.
 
 == Changelog ==
+
+= 0.3.1 =
+* `data-field` may name several fields, separated by spaces, as `class` lists classes: an element rendering fields that no group field holds together, such as a page header, names them all, and is outlined and selected as the section of any of them.
 
 = 0.3.0 =
 * The fields of the page's template around its blocks, such as a hero, are edited in the editor as fixed sections: listed above the blocks, under the content type's name, never moved, duplicated nor deleted. A section is a field group ACF applies to the post, in the main column, without the block zone; a group in the side column, settings of the post, stays on the classic edit screen. Its fields are validated by ACF, saved in the draft and published with the blocks, as a whole or not at all.
