@@ -143,13 +143,10 @@ final class Sections {
 	 * @return array<string, mixed>|null
 	 */
 	public function owner( array $field ): ?array {
-		foreach ( $this->fields() as $own ) {
-			if ( ( $field['key'] ?? '' ) === $own['key'] || ( $field['name'] ?? '' ) === $own['name'] ) {
-				return $own;
-			}
-		}
-
-		return null;
+		return array_find(
+			$this->fields(),
+			static fn( array $own ): bool => ( $field['key'] ?? '' ) === $own['key'] || ( $field['name'] ?? '' ) === $own['name']
+		);
 	}
 
 	/**

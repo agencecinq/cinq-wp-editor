@@ -10,18 +10,18 @@
  * separated by spaces, as `class` is: the zone's stack, and the elements of
  * the fixed sections, such as a hero. What is outlined is a target: a block's
  * index, a number, or a section's key, a string.
+ *
+ * A script module: its data comes from the `script_module_data_` filter, its
+ * translations through `wp.i18n`, as WordPress loads them for modules.
  */
-(function () {
-	"use strict";
-
-	if (window.parent === window) {
-		return;
-	}
+function preview() {
 
 	const ORIGIN = window.location.origin;
 	const SOURCE = "cinq-wp-editor-preview";
 	const { __, sprintf } = window.wp.i18n;
-	const { zone, sections } = window.cinqWpEditorPreview;
+	const { zone, sections } = JSON.parse(
+		document.getElementById("wp-script-module-data-cinq-wp-editor-preview").textContent
+	);
 
 	// Names the editor gives the blocks, by index, and the sections, by key.
 	let labels = [];
@@ -467,4 +467,9 @@
 
 	// The editor warns when the template renders no block zone.
 	send({ type: "ready", blocks: Boolean(container()) });
-})();
+}
+
+// Outside the editor's frame, the page stays as it is.
+if (window.parent !== window) {
+	preview();
+}

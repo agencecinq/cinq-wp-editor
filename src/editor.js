@@ -73,6 +73,7 @@ import {
 	external,
 	link as linkIcon,
 	listView,
+	lock as lockIcon,
 	mobile,
 	moreVertical,
 	pencil,
@@ -2295,6 +2296,13 @@ function BlockList( {
 											) || ' ' }
 										</span>
 									</button>
+									{ /* Locked, as the List View marks a block that cannot be moved nor removed. */ }
+									<span
+										className="cinq-blocks__lock"
+										aria-hidden
+									>
+										<Icon icon={ lockIcon } size={ 24 } />
+									</span>
 								</li>
 							);
 						} ) }

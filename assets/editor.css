@@ -222,6 +222,11 @@ html.wp-toolbar:has(.cinq-wp-editor-screen) {
 	padding-left: 18px;
 }
 
+.cinq-blocks__lock {
+	display: flex;
+	color: var(--cinq-muted);
+}
+
 .cinq-blocks__item:hover,
 .cinq-blocks__item.is-hovered {
 	background: #f6f7f7;

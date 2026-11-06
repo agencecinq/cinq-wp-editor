@@ -232,12 +232,24 @@ final class Preview {
 	 */
 	public static function enqueue(): void {
 		wp_enqueue_style( 'cinq-wp-editor-preview', CINQ_WP_EDITOR_URL . 'assets/preview.css', array(), Plugin::asset_version( 'assets/preview.css' ) );
-		wp_enqueue_script( 'cinq-wp-editor-preview', CINQ_WP_EDITOR_URL . 'assets/preview.js', array( 'wp-i18n' ), Plugin::asset_version( 'assets/preview.js' ), true );
-		wp_set_script_translations( 'cinq-wp-editor-preview', 'cinq-wp-editor', CINQ_WP_EDITOR_PATH . 'languages' );
 
-		// The fields the page's `data-field` attributes may name: the zone's,
-		// and those of the fixed sections, by section. Their names come from
-		// the editor, in its user's language, as the blocks' do.
+		// The module reads its strings through `wp.i18n`, where WordPress puts
+		// the translations of modules: the script must be there even without.
+		wp_enqueue_script( 'wp-i18n' );
+		wp_enqueue_script_module( 'cinq-wp-editor-preview', CINQ_WP_EDITOR_URL . 'assets/preview.js', array(), Plugin::asset_version( 'assets/preview.js' ) );
+		wp_set_script_module_translations( 'cinq-wp-editor-preview', 'cinq-wp-editor', CINQ_WP_EDITOR_PATH . 'languages' );
+		add_filter( 'script_module_data_cinq-wp-editor-preview', array( self::class, 'data' ) );
+	}
+
+	/**
+	 * Returns the preview module's data: the fields the page's `data-field`
+	 * attributes may name, the zone's and those of the fixed sections, by
+	 * section. Their names come from the editor, in its user's language, as
+	 * the blocks' do.
+	 *
+	 * @return array{zone: string, sections: array<int, array{key: string, fields: array<int, string>}>}
+	 */
+	public static function data(): array {
 		$sections = array_map(
 			static fn( array $group ): array => array(
 				'key'    => $group['key'],
@@ -246,15 +258,9 @@ final class Preview {
 			null === self::$sections ? array() : self::$sections->groups
 		);
 
-		wp_add_inline_script(
-			'cinq-wp-editor-preview',
-			'window.cinqWpEditorPreview = ' . wp_json_encode(
-				array(
-					'zone'     => null === self::$zone ? '' : self::$zone->name(),
-					'sections' => $sections,
-				)
-			) . ';',
-			'before'
+		return array(
+			'zone'     => null === self::$zone ? '' : self::$zone->name(),
+			'sections' => $sections,
 		);
 	}
 }

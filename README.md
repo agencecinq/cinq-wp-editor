@@ -50,12 +50,13 @@ way WordPress's own screens use it. The result looks, behaves and is built like 
 
 | The editor needs to… | It uses |
 |---|---|
-| find the block zone of a post | `acf_get_field_groups()`, which applies the theme's location rules |
+| find the block zone and the fixed sections of a post | `acf_get_field_groups()`, which applies the theme's location rules |
 | know which blocks to offer | `acf_prepare_field()`, as the edit screen does |
 | validate and save | `acf_validate_value()` and `acf_update_value()`: the rules, the messages and the HTML filtering of the edit screen |
 | preview a draft | ACF's `acf/pre_load_value` and `acf/pre_load_reference` filters, Timber's `timber/twig` |
 | talk to the server | the REST API, through `@wordpress/api-fetch` and its nonce |
-| draw the interface | `@wordpress/components`, `@wordpress/icons`, the admin colour scheme |
+| draw the interface | `@wordpress/components`, `@wordpress/icons`, the admin colour scheme; a fixed section carries the List View's `lock` icon, as a block that cannot be moved nor removed |
+| run in the preview | a script module, `wp_enqueue_script_module()`, given its data by the `script_module_data_{$id}` filter and its translations by `wp_set_script_module_translations()` |
 | edit fields | the block editor's `LinkControl`, the media library's `MediaUpload`, the classic editor's TinyMCE with ACF's toolbars, WordPress's date and colour pickers |
 | tell what happened | the `core/notices` store: snackbars and banners, read out to screen readers |
 | remember choices | the `core/preferences` store, kept per user |
