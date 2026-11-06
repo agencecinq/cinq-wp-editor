@@ -507,15 +507,16 @@ add_action(
 	}
 );
 
-// The section's template: its tagline, named as a theme names the fields it
-// renders.
+// The section's template: its tagline and subtitle in one element, named as a
+// theme names the fields it renders.
 add_action(
 	'wp_footer',
 	static function (): void {
-		$tagline = is_page() ? get_field( 'cinq_test_tagline', get_queried_object_id() ) : '';
+		$tagline  = is_page() ? get_field( 'cinq_test_tagline', get_queried_object_id() ) : '';
+		$subtitle = is_page() ? get_field( 'cinq_test_subtitle', get_queried_object_id() ) : '';
 
-		if ( $tagline ) {
-			printf( '<p data-field="cinq_test_tagline">%s</p>', esc_html( $tagline ) );
+		if ( $tagline || $subtitle ) {
+			printf( '<p data-field="cinq_test_tagline cinq_test_subtitle">%s %s</p>', esc_html( (string) $tagline ), esc_html( (string) $subtitle ) );
 		}
 	}
 );
