@@ -66,6 +66,9 @@ Run `composer install`, then `composer lint` (phpcs) or `composer lint:fix` (php
 
 == Changelog ==
 
+= 0.3.4 =
+* A repeater is spaced from the fields around it, as fields and groups are: its legend no longer sits against the field above, nor the field below against its add button.
+
 = 0.3.3 =
 * A fixed section carries a lock in the list, as the block editor's List View marks a block that cannot be moved nor removed.
 * The preview script is a script module, as WordPress 7.1 loads them: its data comes as JSON through the `script_module_data_cinq-wp-editor-preview` filter instead of a `window.cinqWpEditorPreview` global, and its translations through `wp_set_script_module_translations()`.

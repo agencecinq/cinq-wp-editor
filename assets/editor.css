@@ -397,9 +397,7 @@ html.wp-toolbar:has(.cinq-wp-editor-screen) {
 	margin: 12px 16px 0;
 }
 
-.cinq-field + .cinq-field,
-.cinq-group + .cinq-field,
-.cinq-field + .cinq-group {
+:is(.cinq-field, .cinq-group, .cinq-repeater) + :is(.cinq-field, .cinq-group, .cinq-repeater) {
 	margin-top: 16px;
 }
 
